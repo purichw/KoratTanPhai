@@ -12,9 +12,21 @@ async function camera(page: Page) {
   });
 }
 
+async function waitForPageScrollToSettle(page: Page) {
+  let previous = Number.NaN;
+  let stableSamples = 0;
+  await expect.poll(async () => {
+    const current = await page.evaluate(() => scrollY);
+    stableSamples = current === previous ? stableSamples + 1 : 0;
+    previous = current;
+    return stableSamples;
+  }, { intervals: [100] }).toBeGreaterThanOrEqual(3);
+}
+
 async function mapPoint(page: Page) {
   const svg = page.locator('.nr-map-svg');
   await svg.evaluate(element => window.scrollTo({ top: scrollY + element.getBoundingClientRect().top - 150, behavior: 'instant' }));
+  await waitForPageScrollToSettle(page);
   return svg.evaluate(element => {
     const box = element.getBoundingClientRect();
     for (const xr of [.5, .4, .6, .3, .7]) for (const yr of [.5, .4, .6, .3, .7, .2, .8]) {
@@ -79,6 +91,8 @@ for (const route of ['/', '/drought', '/soeng-sang', '/phimai/t-301503']) {
     expect(await camera(page)).toEqual(beforeScroll);
     await expect(panel).not.toHaveClass(/is-dragging/);
 
+    // Native momentum can keep moving the hit target after touchEnd on CI.
+    await waitForPageScrollToSettle(page);
     // A browser-cancelled vertical scroll must not swallow the next ordinary tap.
     const tapPoint = await mapPoint(page);
     await page.touchscreen.tap(tapPoint.x, tapPoint.y);
