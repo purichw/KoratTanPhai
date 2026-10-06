@@ -23,6 +23,44 @@ the newest release supersedes earlier statements about production state.
 
 ## Recent Changes
 
+Mobile forecast touch-pan release candidate (2026-10-06, not promoted):
+
+- Pushed `fix/forecast-touch-pan-20261006`; candidate source is
+  `35a6e9cffc94decb44280cc32333e0e33bb22593`. The isolated worktree is
+  `artifacts/forecast-touch-pan-20261006`, based on `4523b9d`; existing
+  production cleanup and unrelated root changes are preserved.
+- Horizontal one-finger swipes now pan immediately. Vertical-first gestures
+  retain native page scrolling, and a cancelled scroll does not consume the
+  next ordinary tap. No Admin, CSS, database or native-app changes are included.
+- All seven jobs passed in [Quality Gate 37472277405](https://github.com/purichw/korattanphai/actions/runs/37472277405).
+  Local verification included 467 unit tests, protected build/exposure/bundle
+  gates, and 32 repeated focused mobile cases across database and built modes.
+  The first CI run exposed a test race: native momentum moved the page during
+  coordinate hit testing. The test now waits for stable page scroll without
+  changing its gesture, map, or tap assertions.
+- Production-configured candidate `dpl_GuFJRXDVjnArgnMrLh53bNvsDonb`
+  (`https://korattanphai-oipy4gd3g-purich-w.vercel.app`) is READY, with explicit
+  Supabase/CMS flags and the hosted CMS marker reporting `fallback: false`.
+  It is NOT promoted: required authenticated candidate smoke remains blocked.
+- Earlier `fc65231` candidate passed visitor, map-label and four-route touch
+  checks. Those results are not substituted for the final candidate gate.
+  The final candidate intermittently failed to load geometry within the app's
+  existing timeout during visitor smoke. A read-only network probe observed
+  successful CMS responses, including a 14.6-second geometry read and all 289
+  polygons, but subsequent full smoke failed again. A separate touch harness
+  also timed out at its initial readiness assertion before exercising gestures.
+  No timeouts or assertions were weakened and repeated blind retries stopped.
+- Evidence: `artifacts/forecast-touch-pan-20261006/artifacts/` contains
+  `ci-first-failure`, `verified-touch-settled`, `verified-touch-built`,
+  `candidate-verified-smoke`, `candidate-verified-map`, `candidate-final-smoke`,
+  `candidate-touch-final`, and `network-probe.json`/`.png`.
+- Next: diagnose hosted CMS transport/readiness, obtain a passing final-candidate
+  read-only smoke, recheck the primary alias, then promote and verify production.
+  Do not infer that CI success alone authorizes bypassing the candidate gate.
+  The primary alias was rechecked and still serves `f135936` from
+  `dpl_CsXdJbb13WkbfGeS5tPV7MsGQnwa`; this remains the recovery deployment.
+  No production data mutation or physical-iPhone verification was performed.
+
 Actions usage rollout (2026-10-03, verified 21:18 Asia/Bangkok):
 
 - `e60716c` passed full [Quality Gate 37128487838](https://github.com/purichw/korattanphai/actions/runs/37128487838),
