@@ -1308,6 +1308,8 @@ export function NakhonRatchasimaLocalMap({
             startPinch();
             return;
           }
+          // A cancelled page-scroll gesture must not consume the next tap.
+          suppressClick.current = false;
           const current = transformRef.current;
           dragStart.current = {
             x: event.clientX,
@@ -1346,16 +1348,20 @@ export function NakhonRatchasimaLocalMap({
           if (event.pointerType === "touch" && !touchPanReady.current) {
             const movedX = Math.abs(event.clientX - start.x);
             const movedY = Math.abs(event.clientY - start.y);
-            if (movedX > 8 || movedY > 8) {
-              if (longPressTimer.current !== null) {
-                window.clearTimeout(longPressTimer.current);
-                longPressTimer.current = null;
-              }
+            if (Math.max(movedX, movedY) <= 8) return;
+            if (longPressTimer.current !== null) {
+              window.clearTimeout(longPressTimer.current);
+              longPressTimer.current = null;
+            }
+            suppressClick.current = true;
+            // pan-y leaves horizontal swipes to the map and vertical ones to the page.
+            if (movedY >= movedX) {
               dragStart.current = null;
               activePointers.current.delete(event.pointerId);
-              if (movedX > 4 || movedY > 4) suppressClick.current = true;
+              return;
             }
-            return;
+            touchPanReady.current = true;
+            (event.target as Element).setPointerCapture(event.pointerId);
           }
           event.preventDefault();
           const delta = svgDeltaForClient(

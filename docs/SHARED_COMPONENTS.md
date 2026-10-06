@@ -299,6 +299,9 @@ recovery feedback. Neither resets persisted state automatically.
   not duplicate SVG map interaction logic; shared math and labels live in
   `src/mapInteraction.ts`, `src/mapLabels.ts`, and
   `src/useFullscreenTarget.ts`.
+  Local forecast maps accept one-finger horizontal swipes without a long press;
+  vertical-first swipes keep scrolling the page. Preserve pinch zoom, tap
+  previews, camera bounds, and existing long-press panning when changing gestures.
 - **Forecast workspace/archive:** use `DroughtCompactForecastWorkspace` as the
   top drought forecast module for province, district, and subdistrict pages.
   It owns the single primary `DroughtForecastArchiveHorizonSelector`, passes the

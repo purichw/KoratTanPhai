@@ -202,6 +202,11 @@ needs audit:
 - Map zoom/pan must stay bounded inside the map canvas so long-press or
   touchpad dragging cannot reveal page-level horizontal overscroll or move
   Thailand out of focus.
+- Local forecast maps allow immediate one-finger horizontal panning within
+  camera bounds. Vertical-first gestures scroll the page; a cancelled scroll
+  must not swallow the next tap. Keep pinch zoom and long-press panning intact.
+  `e2e/map-touch-pan.spec.ts` covers real Chromium touch input across overview,
+  province, district, and tambon routes without waiting for a long press.
 - Province, district, subdistrict, and future Bangkok district/subdistrict
   equivalents (`เขต`/`แขวง`) share the same wheel/touchpad zoom contract:
   vertical wheel input over the map zooms around the pointer quickly, while
