@@ -9,10 +9,9 @@ per-account followed areas/saved filters. The site brand is Korat Tan Phai /
 
 - Repo: `/Users/point/korattanphai`
 - Production: `https://korattanphai.vercel.app`
-- Current release branch: `fix/legacy-cleanup-20261003`
-- Verified Actions update on that branch: `e60716cc816cc28b99dc2f039d7a07404255b8fc`
-  (CI and Preview passed; this update did not promote production)
-- Deployed runtime: `f1359369c44f49357ad25513d1a6343897bfd9f7`
+- Current release branch: `fix/forecast-touch-pan-20261006`
+- Verified runtime Quality Gate: `37472277405` (all seven jobs passed)
+- Deployed runtime: `35a6e9cffc94decb44280cc32333e0e33bb22593`
 - Source snapshot: copied from Kaset Tan Phai commit
   `0f16794bb57d5dec93b7c6312de7d9362bb97013`.
 
@@ -22,6 +21,38 @@ Recent changes below are chronological checkpoints;
 the newest release supersedes earlier statements about production state.
 
 ## Recent Changes
+
+Mobile forecast touch-pan production release (2026-10-07):
+
+- Promoted the existing verified candidate `dpl_GuFJRXDVjnArgnMrLh53bNvsDonb`
+  (`https://korattanphai-oipy4gd3g-purich-w.vercel.app`) to the primary alias.
+  Runtime is `35a6e9c`; no new application changes or duplicate build were
+  needed during this continuation. The primary alias was checked against
+  `f135936` immediately before promotion and against the intended SHA afterward.
+- The preceding hosted-smoke block was re-investigated before retrying. Fresh
+  request timing showed all three CMS geometry reads returning HTTP 200 in
+  approximately 0.9-1.5 seconds, versus 14.6 seconds in the earlier diagnostic.
+  All 289 polygons loaded. This demonstrates recovered observed latency, not
+  a proven root cause or a guarantee that the intermittent slowdown is fixed.
+  Application timeouts, CMS data, access controls and release assertions remain
+  unchanged. The local touch harness now waits for map-data readiness using its
+  existing action timeout before checking visibility and gestures.
+- Final-candidate and production authenticated read-only smoke both passed:
+  39 visitor checks, desktop/mobile map-label and pinch coverage, and horizontal
+  touch pan on `/`, `/drought`, `/soeng-sang`, and `/phimai/t-301503`. Vertical
+  page scrolling, unchanged zoom, next-tap preview and no horizontal overflow
+  were verified. The map/touch harnesses reported no application writes.
+- Hosted markers confirm Supabase forecasts and CMS references with
+  `fallback: false`. Current source/CI evidence remains the successful full
+  [Quality Gate 37472277405](https://github.com/purichw/korattanphai/actions/runs/37472277405).
+  Docs-only closeout does not require another runtime deployment.
+- Evidence under `artifacts/forecast-touch-pan-20261006/artifacts/`:
+  `network-probe-20261007.json`, `candidate-smoke-20261007/`, and
+  `production-smoke-20261007/`. Mobile production screenshots accompany each
+  touch route. Physical iPhone verification was not performed.
+- Recovery remains `dpl_CsXdJbb13WkbfGeS5tPV7MsGQnwa` (`f135936`). Existing
+  production cleanup and unrelated work were preserved. No migration or
+  production application-data mutation was performed.
 
 Mobile forecast touch-pan release candidate (2026-10-06, not promoted):
 
