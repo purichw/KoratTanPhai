@@ -10,8 +10,8 @@ per-account followed areas/saved filters. The site brand is Korat Tan Phai /
 - Repo: `/Users/point/korattanphai`
 - Production: `https://korattanphai.vercel.app`
 - Current release branch: `fix/forecast-touch-pan-20261006`
-- Verified runtime Quality Gate: `37472277405` (all seven jobs passed)
-- Deployed runtime: `35a6e9cffc94decb44280cc32333e0e33bb22593`
+- Verified runtime Quality Gate: `37776954891` (all seven jobs passed)
+- Deployed runtime: `3742db78fee90b464e48f0585f76ce59682544b2`
 - Source snapshot: copied from Kaset Tan Phai commit
   `0f16794bb57d5dec93b7c6312de7d9362bb97013`.
 
@@ -21,6 +21,46 @@ Recent changes below are chronological checkpoints;
 the newest release supersedes earlier statements about production state.
 
 ## Recent Changes
+
+Admin import review and offline repair release (2026-10-08):
+
+- Released only this chat's repairable Admin import and reviewed-file work on
+  `fix/forecast-touch-pan-20261006`. Commits `05fc8bc` and `3742db7` add source-row
+  diagnostics, explicit on-screen repairs, shared API inspection, reviewed
+  Excel/CSV downloads, and validation on reupload. Existing publication gates,
+  visitor data, permissions and unrelated checkout changes are preserved.
+- All seven jobs passed in [Quality Gate 37776954891](https://github.com/purichw/korattanphai/actions/runs/37776954891).
+  Full built coverage passed 216 cases, database-mode coverage 150, and CMS-mode
+  coverage 53, with pre-existing mode/viewport skips retained. Local checks also
+  passed 481 unit tests, 21 related backend/database tests, and 12 focused built
+  desktop/mobile cases. The first CI attempt exposed missing JSON import
+  attributes through the new exporter dependency; the fix was reproduced using
+  complete test discovery. The station fixture now also seeds CMS references,
+  and CMS CI explicitly includes the new import-repair tests.
+- Promoted exact candidate `dpl_BU1exuHZeWZUWaAtEAFVGpiqcjVK`
+  (`https://korattanphai-37kigrvr8-purich-w.vercel.app`) after authenticated
+  read-only candidate checks passed: import/download/external-edit/reupload,
+  39 visitor checks, and desktop/mobile Admin navigation and area workflows.
+  The production alias was checked against `35a6e9c` immediately before
+  promotion and verified against `3742db7` afterward. Both backend markers
+  confirm Supabase/CMS with `fallback: false`.
+- Candidate visitor smoke initially observed one forecast RPC HTTP 500 at
+  `/phimai/t-301503`. A targeted read-only probe subsequently returned HTTP 200
+  for all requests and rendered 289 polygons across the same routes. One
+  unchanged diagnostic rerun passed all 39 checks. This records observed
+  recovery, not a proven root cause or a fix for intermittent backend failures;
+  no timeout, fallback, assertion or release gate was weakened.
+- Post-promotion authenticated read-only checks also passed on the production
+  alias: reviewed-file import/revalidation, all 39 visitor checks, and Admin
+  navigation/area workflows on desktop and mobile. Evidence is under
+  `artifacts/forecast-touch-pan-20261006/artifacts/import-release-20261008/`:
+  `candidate-final/`, `candidate-final-retry/`, `probe.json`, and `production/`.
+  Recovery deployment: `dpl_GuFJRXDVjnArgnMrLh53bNvsDonb` (`35a6e9c`).
+- No migration or production application-data mutation. Raw reviews are
+  memory-only until a draft is saved; downloads are review snapshots and every
+  reupload is revalidated. New forecast origins, geometry replacement, native
+  iOS builds, physical-device testing and native Excel rendering are outside
+  this release. See [ADMIN_CMS.md](ADMIN_CMS.md) for exact format boundaries.
 
 Mobile forecast touch-pan production release (2026-10-07):
 

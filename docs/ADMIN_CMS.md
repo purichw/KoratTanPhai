@@ -6,7 +6,12 @@ passed with the original data unchanged. This is the scoped CMS foundation,
 not complete no-code ownership of every data family; see remaining gates below.
 See `docs/CMS_CUTOVER_20260928.md` for the checkpoint and final outcome.
 
-## Repairable File Import (2026-10-08, Local)
+## Repairable File Import (2026-10-08)
+
+Released in runtime `3742db7` after full Quality Gate `37776954891` and
+authenticated read-only candidate checks. Production promotion and verification
+are recorded in [HANDOFF.md](HANDOFF.md). The notes below describe the feature
+and its initial local evidence, not a database migration.
 
 - `AdminImport` retains readable XLSX/XLS/CSV rows in a review step before
   conversion. `ImportSheetReview` shows source sheet/physical row/column, error
@@ -443,8 +448,9 @@ Do not describe this as complete no-code ownership of every dataset yet:
   publication timing, recovery and production row/hash parity. The 2026-09-28
   database results and remaining activation status are in the cutover record.
 - iOS reference readers are not migrated by this web CMS release.
-- Generalized arbitrary workbook schemas, CSV upload and geometry/asset upload
-  are outside the currently implemented adapters.
+- Generalized arbitrary workbook schemas and geometry/asset upload are outside
+  the implemented adapters. CSV upload is supported for rev3 and observation
+  tables; format-specific metadata and repair limits are documented above.
 
 ## Candidate Runbook
 
