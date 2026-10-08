@@ -6,6 +6,98 @@ passed with the original data unchanged. This is the scoped CMS foundation,
 not complete no-code ownership of every data family; see remaining gates below.
 See `docs/CMS_CUTOVER_20260928.md` for the checkpoint and final outcome.
 
+## Repairable File Import (2026-10-08, Local)
+
+- `AdminImport` retains readable XLSX/XLS/CSV rows in a review step before
+  conversion. `ImportSheetReview` shows source sheet/physical row/column, error
+  and warning counts, recovery guidance, search, issue-only/all/excluded filters,
+  paginated rows, a bounded row editor and CSV downloads. It reuses the existing
+  selects, dialogs, empty state, brand styles and formula-safe CSV serializer.
+- Duplicate/blank headers receive distinct positional labels instead of losing
+  cells. Mapping requires explicit acknowledgement of those headers. Unsafe
+  property names remain rejected. Formula, Excel-error and date cells are retained
+  as text plus blocking issues; cached formula results are never accepted or
+  executed. An operator must explicitly replace each affected mapped cell.
+- Rev3 inspection collects invalid years/months, unsupported origins, unknown
+  source IDs, invalid risks/placeholders, duplicate groups and missing areas.
+  Exact duplicate forecasts are warnings; conflicting values block conversion.
+  Operators can edit values or exclude/restore rows with a reason. Missing-area
+  insertion uses the authenticated crosswalk, is disabled until source/identity
+  issues are fixed, and inserts `ยังไม่กรอก` risks, never zero or out-of-scope.
+  Blank source risks keep the existing approved rev3 out-of-scope meaning.
+- Raw edits are in memory until `สร้างฉบับร่าง`; navigation/close protection and
+  corrected CSV download are available, not durable raw-file autosave. Switching
+  sheets retains corrections. Returning from an edited normalized preview requires
+  explicit discard confirmation. Rev3 drafts keep original selected-origin source
+  rows and SHA-256 separately from `sourceImport.review` corrections, reasons,
+  excluded physical rows and added records. This evidence is immutable on draft
+  edits and survives Excel/JSON export. It is not the original binary file.
+- After conversion, authenticated `POST action=inspect` performs a read-only
+  server preview using the existing API validators. It creates no draft or
+  publication. Inspection is debounced and stale/cancelled results are ignored.
+  Row fixes and metadata changes trigger inspection again. Invalid field values
+  can still be saved as a repairable draft; acceptance remains server-gated.
+- Forecast diagnostics collect multiple cell/field issues through the same rule
+  function used by the integration acceptance gate. Other families collect basic
+  field-shape issues and per-row domain failures; their existing semantic validators
+  can still report the first dependent failure per row/batch. Do not claim complete
+  simultaneous enumeration of every observation-domain conflict.
+- Draft validation runs on open and after each saved revision, with explicit retry.
+  Stale revisions, permissions, source/base locking, explicit confirmation/reason,
+  atomic publication and the visitor read paths remain unchanged. The import review
+  distinguishes ordinary changed values versus a published baseline from conflicting
+  duplicate source records.
+- Remaining boundaries: corrupt/encrypted/oversized files, malformed CSV quoting
+  or column counts, unsafe headers and damaged metadata still stop with recovery
+  text. Header-row auto-detection, merged-header reconstruction, new forecast origins,
+  geometry import, durable raw-review drafts and generic source-file binary storage
+  are not added. The source evidence extension is rev3-specific; other families
+  retain their original API envelopes without CMS-only fields.
+- Verification: targeted parser/review/cache/unsaved-change unit tests, CMS/API
+  contract and isolated SQL lifecycle/publication tests, desktop/mobile import
+  journeys (including invalid year/ID/formula/missing-area repair, duplicates,
+  save/reload/export, stale edits and explicit publish), and protected CMS build.
+  Screenshots: `artifacts/import-repair/`. No remote mutation, migration, commit,
+  push or deploy is included in this local checkpoint.
+
+### Reviewed Downloads And Offline Repair
+
+- Both the raw-file review and the normalized API preview use
+  `ImportReviewDownloads`. They export the current in-memory values, including
+  UI corrections, without creating a draft, publishing or filtering exports to
+  only the currently visible table page. Pending/failed server inspection cannot
+  be downloaded as a reviewed normalized payload.
+- `Excel พร้อมผลตรวจ` creates `Korat_import_reviewed.xlsx`: editable `Data`,
+  `_รายงานตรวจ`, `_วิธีใช้`, optional `_ไม่นำเข้า`, and existing `_Metadata` when
+  applicable. It reuses the Admin Excel writer, Cordia New, centered data cells,
+  frozen headings and filters. Error/warning cells have color and notes; rev3
+  risks also have input guidance and validation choices. These annotations are
+  snapshots, not a live validation engine inside Excel.
+- `Data` retains import columns without adding diagnostic fields. Reports refer
+  to the original source row plus the one-based exported record position, not
+  CSV physical line numbers (quoted multiline values can occupy several lines).
+  Excluded records are not included in Data; Excel keeps them on `_ไม่นำเข้า`.
+  Only the selected source sheet is exported. Recheck column mapping on upload.
+- `CSV สำหรับแก้ไข` is available for raw rev3 and observation tables, alongside
+  `รายงานปัญหา CSV`. CSV has no color, cell notes or envelope metadata. Observation
+  source/batch metadata must be entered again. Canonical forecast/archive payloads
+  need their envelope/base/scope metadata, so their offline-edit download is Excel,
+  not a misleading data-only CSV that the existing importer cannot round-trip.
+- Unresolved formula/error/date source cells are written as literal text prefixed
+  with `[KTP_REVIEW_REQUIRED] ` in both formats. The reader restores a blocking
+  issue for unchanged markers. Operators must replace the whole value with verified
+  source data, not just remove a warning to bypass review. Formula cached results
+  are never executed or accepted. Generic CSV formula guarding remains enabled;
+  Excel keeps string types, including leading-zero IDs. Opening CSV directly in
+  spreadsheet software may infer types; use Excel or import CSV identifiers as text.
+- Reimport is a new upload and hash, with fresh validation, not a merge into a
+  saved draft. Raw corrections/exclusions are not a hidden trusted approval.
+  Canonical Excel preserves the existing metadata envelope; no API or publication
+  contract is changed. Tests cover unchanged holds, explicit external fixes,
+  null/zero, identifiers, metadata, report-sheet exclusion, and browser download /
+  edit / reupload / save on desktop and mobile emulation. Native Excel rendering
+  and physical-device testing are not part of this local checkpoint.
+
 ## Returning to loaded Admin data (local follow-up)
 
 - `createAdminClient` retains up to 16 successful list/detail/catalogue reads in

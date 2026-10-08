@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { validateBatch, MAX_BODY_BYTES } from '../model-inputs/contract.mjs';
-import { validateForecastResult, validateForecastCells, shiftMonth } from '../model-inputs/model-contract.mjs';
+import { validateForecastResult, validateForecastCells, inspectForecastCells, shiftMonth } from '../model-inputs/model-contract.mjs';
 import { isKoratSubdistrict } from '../model-inputs/domain-contract.mjs';
 import { DATA_FIELDS } from '../../shared/dataFields.mjs';
 
@@ -43,9 +43,19 @@ export function validateCmsPayload(kind, payload) {
       && ['schemaVersion', 'baseDatasetId', 'originMonth', 'scope', 'predictions'].every(key => Object.hasOwn(payload, key)), 'invalid_archive_envelope');
     if (payload.sourceImport !== undefined) {
       const source = payload.sourceImport;
-      requireCms(source && typeof source === 'object' && Object.keys(source).length === 3 && /^[a-f0-9]{64}$/.test(source.sha256)
+      requireCms(source && typeof source === 'object' && Object.keys(source).every(key => ['sha256', 'sheet', 'rows', 'review'].includes(key)) && /^[a-f0-9]{64}$/.test(source.sha256)
         && typeof source.sheet === 'string' && source.sheet.length <= 100 && Array.isArray(source.rows) && source.rows.length <= 2000
         && source.rows.every(row => Number.isInteger(row.sourceRow) && row.sourceRow >= 2 && row.values && typeof row.values === 'object'), 'invalid_import_evidence');
+      if (source.review !== undefined) {
+        const review = source.review;
+        requireCms(review && typeof review === 'object' && Object.keys(review).length === 3
+          && Array.isArray(review.corrections) && review.corrections.length <= 24000
+          && review.corrections.every(item => item && Number.isInteger(item.row) && item.row >= 0 && Number.isInteger(item.sourceRow) && item.sourceRow >= 0
+            && typeof item.column === 'string' && Object.hasOwn(item, 'before') && Object.hasOwn(item, 'after')
+            && typeof item.reason === 'string' && item.reason.trim() && item.reason.length <= 1000)
+          && Array.isArray(review.excludedRows) && review.excludedRows.length <= 2000 && review.excludedRows.every(row => Number.isInteger(row) && row >= 0)
+          && Array.isArray(review.addedRows) && review.addedRows.length <= 289 && review.addedRows.every(row => row && typeof row === 'object' && !Array.isArray(row)), 'invalid_import_evidence');
+      }
     }
     requireCms(payload.schemaVersion === 1 && /^[a-f0-9-]{36}$/.test(payload.baseDatasetId), 'invalid_archive_envelope');
     shiftMonth(payload.originMonth, 0);
@@ -65,8 +75,26 @@ export function inspectCmsPayload(kind, payload) {
   checkEditablePayload(kind, payload);
   const issues = [];
   const rowKey = ['forecast', 'archive'].includes(kind) ? 'predictions' : 'observations';
+  if (['forecast', 'archive'].includes(kind)) {
+    try {
+      shiftMonth(payload.originMonth, 0);
+      if (Array.isArray(payload.scope?.subdistrictCodes)) issues.push(...inspectForecastCells(payload[rowKey], { codes: payload.scope.subdistrictCodes, originMonth: payload.originMonth }));
+      if (kind === 'archive') payload[rowKey].forEach((row, index) => {
+        if (row.status === 'insufficient_data') issues.push({ row: index + 1, field: 'status', code: 'archive_status', message: 'archive_cannot_relabel_insufficient_data', suggestion: 'ข้อมูลแก้ไขรอบเดิมต้องคงความหมายค่าพยากรณ์หรือนอกขอบเขตจากต้นฉบับ' });
+      });
+    } catch { /* Envelope errors are reported by the authoritative validator below. */ }
+  }
   if (!['forecast', 'archive'].includes(kind)) {
     payload[rowKey].forEach((row, index) => {
+      for (const field of DATA_FIELDS[kind]) {
+        const value = row[field.key];
+        if (value === undefined && field.optional || value === null && field.nullable) continue;
+        if (value === undefined || field.type === 'number' && (typeof value !== 'number' || !Number.isFinite(value))
+          || field.type === 'text' && typeof value !== 'string' || field.options && !field.options.includes(value)) {
+          issues.push({ row: index + 1, field: field.key, code: 'field_type', message: `${field.label}: รูปแบบข้อมูลไม่ถูกต้อง`,
+            suggestion: field.options ? `เลือก ${field.options.join(', ')}` : field.type === 'number' ? 'กรอกตัวเลข หรือเลือกไม่มีค่าจากต้นทางเมื่อช่องนี้รองรับ' : 'กรอกข้อความตามรูปแบบของช่องนี้' });
+        }
+      }
       try { validateCmsPayload(kind, { ...payload, [rowKey]: [row] }); }
       catch (error) { issues.push({ row: index + 1, message: error.message }); }
     });
@@ -76,8 +104,9 @@ export function inspectCmsPayload(kind, payload) {
     return { valid: true, issues: [], rowCount: payload[rowKey].length, contentHash: contentHash(canonical) };
   } catch (error) {
     // The complete validator also catches duplicate identities and incomplete T+.
-    if (!issues.length) issues.push({ row: /^Prediction (\d+):/.exec(error.message)?.[1]
-      ? Number(/^Prediction (\d+):/.exec(error.message)[1]) : null, message: error.message });
+    const position = /^(?:Prediction|Observation) (\d+):/.exec(error.message)?.[1];
+    if (!issues.length || !/^Prediction \d+:/.test(error.message) && !issues.some(issue => issue.message === error.message)) issues.push({ row: position ? Number(position) : null,
+      message: error.message, ...(/duplicate/i.test(error.message) ? { code: 'duplicate', suggestion: 'ตรวจข้อมูลของรายการที่ซ้ำ เลือกแก้รหัสหรือไม่นำเข้ารายการที่ไม่ใช้ ห้ามเลือกค่าล่าสุดโดยอัตโนมัติ' } : {}) });
     return { valid: false, issues, rowCount: payload[rowKey].length, contentHash: null };
   }
 }

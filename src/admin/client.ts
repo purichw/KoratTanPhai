@@ -26,7 +26,7 @@ export type AdminReadOptions = { id?: string; offset?: number; body?: unknown };
 export const adminReadKey = (action: string, options: AdminReadOptions = {}) =>
   JSON.stringify([action, options.id ?? null, options.offset ?? null, options.body ?? null]);
 const cachedReads = new Set(['list', 'get', 'forecast-catalog', 'resource-catalog', 'resource-get']);
-const otherReads = new Set(['audit', 'validate', 'resource-history', 'original', 'schema', 'forecast-crosswalk', 'forecast-source']);
+const otherReads = new Set(['inspect', 'audit', 'validate', 'resource-history', 'original', 'schema', 'forecast-crosswalk', 'forecast-source']);
 
 export function createAdminClient(userId: string) {
   // Owned by one mounted, account-keyed Admin workspace. Never persist drafts

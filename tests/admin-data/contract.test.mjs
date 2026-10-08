@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { DATA_FIELDS } from '../../shared/dataFields.mjs';
 import { validateBatch, hashBatch } from '../../server/model-inputs/contract.mjs';
 import { validateCmsPayload, inspectCmsPayload, checkDraft, contentHash } from '../../server/admin-data/contract.mjs';
+import { inspectForecastCells, validateForecastCells } from '../../server/model-inputs/model-contract.mjs';
 
 export const stationBatch = {
   schemaVersion: 1, sourceId: 'cms-test', batchId: 'zero-rain-v1',
@@ -64,4 +65,27 @@ test('crop nullable fields and denominator are retained, not replaced with deriv
   }] };
   assert.deepEqual(validateCmsPayload('crop', batch), validateBatch(batch));
   assert.deepEqual(DATA_FIELDS.crop.map(field => field.key).sort(), Object.keys(batch.observations[0]).sort());
+});
+
+test('forecast diagnostics collect independent cells and fields using the API acceptance rules', () => {
+  const options = { codes: ['300101'], originMonth: '2025-12' };
+  const predictions = Array.from({ length: 6 }, (_, index) => ({ subdistrictCode: '300101', horizonMonths: index + 1,
+    targetMonth: `2026-0${index + 1}`, status: 'predicted', riskCode: 0 }));
+  assert.deepEqual(inspectForecastCells(predictions, options), []);
+  assert.doesNotThrow(() => validateForecastCells(predictions, options));
+  predictions[0].targetMonth = '2025-01'; predictions[0].riskCode = 5;
+  predictions[4].status = 'unresolved'; predictions[5] = { ...predictions[1] };
+  const issues = inspectForecastCells(predictions, options);
+  assert.deepEqual(issues.map(issue => issue.code), ['target', 'risk', 'status', 'risk', 'duplicate']);
+  assert.ok(issues.every(issue => issue.row > 0 && issue.field && issue.suggestion));
+  assert.throws(() => validateForecastCells(predictions, options), /Prediction 1: targetMonth/);
+});
+
+test('generic import returns all basic field errors without changing canonical acceptance', () => {
+  const payload = structuredClone(stationBatch);
+  payload.observations[0].value = 'bad'; payload.observations[0].metric = 'unknown'; payload.observations[0].periodMinutes = 'bad';
+  const report = inspectCmsPayload('station', payload);
+  assert.equal(report.valid, false);
+  assert.deepEqual(report.issues.filter(issue => issue.code === 'field_type').map(issue => issue.field), ['metric', 'value', 'periodMinutes']);
+  assert.throws(() => validateBatch(payload));
 });

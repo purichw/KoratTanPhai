@@ -34,11 +34,28 @@ describe('CSV and legacy Excel input', () => {
   it('rejects malformed records instead of inventing missing cells or dropping extras', () => {
     expect(() => readCsv('a,b,c\n1,2')).toThrow('จำนวนช่อง');
     expect(() => readCsv('a,b\n"unfinished,2')).toThrow('ยังไม่ปิด');
-    expect(() => readCsv('a,a\n1,2')).toThrow('ไม่ซ้ำ');
+    const duplicate = readCsv('a,a\n1,2').sheets[0];
+    expect(duplicate.headerWarnings).toHaveLength(1);
+    expect(Object.values(duplicate.rows[0])).toEqual(['1', '2']);
+    expect(new Set(duplicate.columns).size).toBe(2);
     expect(() => readCsv('__proto__,b\n1,2')).toThrow('หัวคอลัมน์');
   });
   it('explains corrupt Excel files without exposing a ZIP parser error', async () => {
     await expect(readDataFile(csvBytes('not an Excel file'), 'xlsx')).rejects.toThrow('อ่านไฟล์ Excel ไม่สำเร็จ');
+  });
+  it('retains all recoverable Excel cells across sheets without silently consuming cached values or dates', async () => {
+    const book = xlsx.utils.book_new();
+    const bad = xlsx.utils.aoa_to_sheet([['ID', 'value', 'when'], ['001', 2, new Date('2025-12-01T00:00:00Z')]], { cellDates: true });
+    bad.B2 = { t: 'n', f: '1+1', v: 2 };
+    xlsx.utils.book_append_sheet(book, bad, 'Needs review');
+    xlsx.utils.book_append_sheet(book, xlsx.utils.aoa_to_sheet([['ID', 'value'], ['002', 0]]), 'Ready');
+    const imported = await readDataFile(xlsx.write(book, { type: 'array', bookType: 'xlsx', cellDates: true }), 'xlsx');
+    expect(imported.sheets).toHaveLength(2);
+    expect(imported.sheets[0].cellProblems?.map(problem => problem.column)).toEqual(['value', 'when']);
+    expect(imported.sheets[0].rows[0].value).toBe('=1+1');
+    expect(typeof imported.sheets[0].rows[0].when).toBe('string');
+    expect(imported.sheets[1].cellProblems).toBeUndefined();
+    expect(imported.sheets[1].rows[0].value).toBe(0);
   });
   it('supports explicit Thai Windows-874 and fails visibly when UTF-8 cannot decode it', async () => {
     const codepage = requireAdmin('xlsx/dist/cpexcel.js');
@@ -57,8 +74,10 @@ describe('CSV and legacy Excel input', () => {
     expect(rows.slice(0, 6).map(row => row.riskCode)).toEqual([0, 1, 2, null, null, 2]);
     expect(rows[0].targetMonth).toBe('2026-01'); expect(rows[5].targetMonth).toBe('2026-06');
   });
-  it('rejects formulas in XLS and files renamed to XLS', async () => {
-    await expect(readDataFile(buffer(readFileSync('tests/fixtures/admin-formula.xls')), 'xls')).rejects.toThrow('พบสูตร');
+  it('retains XLS formulas as blocked source cells, never cached values; rejects renamed files', async () => {
+    const sheet = (await readDataFile(buffer(readFileSync('tests/fixtures/admin-formula.xls')), 'xls')).sheets[0];
+    expect(sheet.cellProblems).toEqual([{ row: 0, column: 'ค่า', message: expect.stringContaining('พบสูตร') }]);
+    expect(sheet.rows[0]['ค่า']).toBe('=1+1');
     await expect(readDataFile(csvBytes('a,b\n1,2'), 'xls')).rejects.toThrow('ไม่ใช่ Excel');
   });
   it('maps Thai CSV to the same rev3 meanings without mutating source evidence', async () => {

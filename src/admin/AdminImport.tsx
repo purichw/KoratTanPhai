@@ -8,7 +8,7 @@ import { MetadataForm } from './DataRecordForm';
 import { kindLabels, rowsKey, type Payload, type Draft } from './types';
 import type { ImportFile, ImportSheet } from './workbook';
 import type { createAdminClient } from './client';
-import { isOriginalForecastSheet, workbookOrigins, importOriginalForecast, matchRev3Columns, normalizeRev3Sheet, rev3Fields, riskHelp } from './normalizedForecastImport';
+import { isOriginalForecastSheet, importOriginalForecast, matchRev3Columns, normalizeRev3Sheet, rev3Fields, riskHelp } from './normalizedForecastImport';
 import type { CsvEncoding, DataFileFormat } from './readDataFile';
 import templateUrl from '../assets/rev3-import-template.xlsx?url';
 import csvTemplateUrl from '../assets/rev3-import-template.csv?url';
@@ -16,6 +16,10 @@ import { readWorkbookInWorker } from './readWorkbook';
 import { ConfirmAction } from './ConfirmAction';
 import { useUnsavedChanges } from './useUnsavedChanges';
 import { monthLabel } from './dataPresentation';
+import { ImportSheetReview } from './ImportSheetReview';
+import { activeImportSheet, importCellIssues, importEvidence, inspectRev3Import, type ImportArea } from './importReview';
+import { ImportPayloadReview } from './ImportPayloadReview';
+import { useImportValidation } from './useImportValidation';
 
 export function emptyEnvelope(kind: DataKind): Payload {
   if (kind === 'archive') return { schemaVersion: 1, baseDatasetId: '', originMonth: '', scope: { subdistrictCodes: [] }, predictions: [] };
@@ -30,9 +34,13 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
   const [filename, setFilename] = useState('');
   const [book, setBook] = useState<ImportFile | null>(null);
   const [sheet, setSheet] = useState<ImportSheet | null>(null);
+  const [originalSheet, setOriginalSheet] = useState<ImportSheet | null>(null);
+  const [areas, setAreas] = useState<ImportArea[] | null>(null);
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [ignored, setIgnored] = useState<string[]>([]);
   const [payload, setPayload] = useState<Payload | null>(null);
+  const [basePayload, setBasePayload] = useState<Payload | null>(null);
+  const [headerReviewed, setHeaderReviewed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [fileHash, setFileHash] = useState('');
@@ -40,23 +48,30 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
   const [catalog, setCatalog] = useState<{ revision: { datasetId: string }; periods: string[] } | null>(null);
   const [rowStart, setRowStart] = useState(1);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [confirmBack, setConfirmBack] = useState(false);
   const [csvEncoding, setCsvEncoding] = useState<CsvEncoding>('utf-8');
   const reading = useRef<AbortController | null>(null);
   const lastFile = useRef<File | undefined>(undefined);
   const input = useRef<HTMLInputElement>(null);
+  const editedSheets = useRef(new Map<string, ImportSheet>());
+  const preparedPayload = useRef<Payload | null>(null);
+  const showPreview = (next: Payload) => { preparedPayload.current = next; setPayload(next); };
   const allowSavedNavigation = useUnsavedChanges(Boolean(payload || sheet) || busy, setError);
   useEffect(() => () => reading.current?.abort(), []);
   const rev3 = kind === 'archive' && !book?.metadata?.baseDatasetId;
+  const validation = useImportValidation(api, kind, payload);
+  const inspection = useMemo(() => sheet ? rev3 ? inspectRev3Import(sheet, mapping, areas, catalog?.periods ?? null, origin)
+    : { issues: importCellIssues(sheet, Object.values(mapping)), periods: [], missing: [] } : null, [sheet, rev3, mapping, areas, catalog, origin]);
   const parsed = useMemo(() => {
     if (!sheet || !rev3) return { sheet: null, periods: [] as string[], error: '' };
     try {
-      const normalized = normalizeRev3Sheet(sheet, mapping);
-      return { sheet: normalized, periods: workbookOrigins(normalized), error: '' };
+      const normalized = normalizeRev3Sheet(activeImportSheet(sheet), mapping);
+      return { sheet: normalized, periods: inspection?.periods ?? [], error: '' };
     } catch (failure) { return { sheet: null, periods: [] as string[], error: failure instanceof Error ? failure.message : 'ตรวจรูปแบบไม่สำเร็จ' }; }
-  }, [sheet, mapping, rev3]);
+  }, [sheet, mapping, rev3, inspection]);
   useEffect(() => { if (!parsed.periods.includes(origin)) setOrigin(parsed.periods[0] ?? ''); }, [parsed, origin]);
   function selectSheet(next: ImportSheet, nextKind = kind, metadata = book?.metadata) {
-    setSheet(next); setIgnored([]); setRowStart(1);
+    setSheet(editedSheets.current.get(next.name) ?? next); setOriginalSheet(next); setIgnored([]); setRowStart(1); setHeaderReviewed(false);
     if (isOriginalForecastSheet(next)) { nextKind = 'archive'; setKind('archive'); }
     setMapping(nextKind === 'archive' && !metadata?.baseDatasetId ? matchRev3Columns(next)
       : Object.fromEntries(DATA_FIELDS[nextKind].map(field => [field.key, next.columns.includes(field.key) ? field.key : next.columns.includes(field.label) ? field.label : ''])));
@@ -64,7 +79,7 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
   async function read(file?: File, encoding = csvEncoding) {
     if (!file) return;
     lastFile.current = file;
-    setBusy(true); setError(''); setPayload(null); setBook(null); setSheet(null); setCatalog(null);
+    setBusy(true); setError(''); setPayload(null); setBasePayload(null); setBook(null); setSheet(null); setOriginalSheet(null); setCatalog(null); setAreas(null); editedSheets.current.clear();
     try {
       if (file.size > 20 * 1024 * 1024) throw new Error('ไฟล์เกิน 20 MB');
       setFilename(file.name); setTitle(file.name.replace(/\.[^.]+$/, ''));
@@ -74,7 +89,7 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
         const nextKind: DataKind = 'predictions' in next ? ('baseDatasetId' in next ? 'archive' : 'forecast') : next.kind === 'satellite' ? 'satellite' : next.kind === 'crop' ? 'crop' : 'station';
         if (nextKind === 'forecast') throw new Error('การนำเข้าผลแบบจำลองใหม่ยังไม่เปิดใช้ เลือกไฟล์พยากรณ์รอบเดิมที่ส่งออกจากระบบ');
         if (!Array.isArray(next[rowsKey(nextKind)])) throw new Error('ไม่พบตารางข้อมูลในไฟล์ กรุณาเลือกไฟล์ที่ส่งออกจากระบบ');
-        setKind(nextKind); setPayload(next);
+        setKind(nextKind); showPreview(next);
       } else if (/\.(xlsx|xls|csv)$/i.test(file.name)) {
         const bytes = await file.arrayBuffer();
         setFileHash([...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(value => value.toString(16).padStart(2, '0')).join(''));
@@ -86,7 +101,10 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
         if (nextKind === 'forecast') throw new Error('การนำเข้าผลแบบจำลองใหม่ยังไม่เปิดใช้ เลือกไฟล์พยากรณ์รอบเดิมที่ส่งออกจากระบบ');
         const initial = imported.sheets.find(isOriginalForecastSheet) ?? imported.sheets[0];
         setKind(nextKind); setBook(imported); selectSheet(initial, nextKind, imported.metadata);
-        if (nextKind === 'archive' || imported.sheets.some(isOriginalForecastSheet)) setCatalog(await api<NonNullable<typeof catalog>>('forecast-catalog'));
+        if (nextKind === 'archive') {
+          setCatalog(await api<NonNullable<typeof catalog>>('forecast-catalog'));
+          setAreas(await api<ImportArea[]>('forecast-crosswalk'));
+        }
       } else throw new Error('รองรับ CSV, Excel .xlsx และ .xls หรือ JSON ที่ส่งออกจากระบบ');
     } catch (failure) { setError(failure instanceof Error ? failure.message : 'อ่านไฟล์ไม่สำเร็จ'); }
     finally { setBusy(false); if (input.current) input.current.value = ''; }
@@ -95,19 +113,22 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
     if (!sheet) return;
     setError(''); setBusy(true);
     try {
+      if (inspection?.issues.some(issue => issue.severity === 'error')) throw new Error('แก้ไขจุดที่ต้องตรวจสอบในไฟล์ก่อนดำเนินการต่อ');
+      if (sheet.headerWarnings?.length && !headerReviewed) throw new Error('ยืนยันการจับคู่หัวคอลัมน์ที่ว่างหรือซ้ำก่อน');
       if (rev3) {
         if (!parsed.sheet || !origin) throw new Error(parsed.error || 'ยังไม่มีแถวข้อมูล กรุณากรอกข้อมูลตามแม่แบบ');
         if (!catalog?.revision || !catalog.periods.includes(origin)) throw new Error('รอบเดือนนี้ยังไม่มีในคลังที่เผยแพร่ การเพิ่มรอบใหม่ยังไม่เปิดใช้');
         const base = await api<Payload>('forecast-source', { body: { datasetId: catalog.revision.datasetId, originMonth: origin } });
-        const crosswalk = await api<{ sourceId: number; subdistrictCode: string }[]>('forecast-crosswalk');
-        const next = importOriginalForecast(parsed.sheet, base, crosswalk, origin);
-        const sourceRows = parsed.sheet.rows.flatMap((row, index) => `${row.Year}-${String(row.Month).padStart(2, '0')}` === origin ? [{ sourceRow: sheet.sourceRows?.[index] ?? index + 2, values: sheet.rows[index] }] : []);
-        setPayload({ ...next, sourceImport: { sha256: fileHash, sheet: sheet.name, rows: sourceRows } });
+        setBasePayload(base);
+        if (!areas || !originalSheet) throw new Error('ยังโหลดทะเบียนพื้นที่ไม่สำเร็จ กรุณาลองใหม่');
+        const next = importOriginalForecast(parsed.sheet, base, areas, origin);
+        showPreview({ ...next, sourceImport: importEvidence(originalSheet, sheet, fileHash, mapping, origin) });
         return;
       }
       const { mapImportRows } = await import('./workbook');
-      const batch = { ...sheet, rows: sheet.rows.slice(rowStart - 1, rowStart - 1 + 2000) };
-      setPayload({ ...emptyEnvelope(kind), ...book?.metadata, [rowsKey(kind)]: mapImportRows(kind, batch, mapping, ignored) });
+      const active = activeImportSheet(sheet);
+      const batch = { ...active, rows: active.rows.slice(rowStart - 1, rowStart - 1 + 2000) };
+      showPreview({ ...emptyEnvelope(kind), ...book?.metadata, [rowsKey(kind)]: mapImportRows(kind, batch, mapping, ignored) });
     } catch (failure) { setError(failure instanceof Error ? failure.message : 'จับคู่คอลัมน์ไม่สำเร็จ'); }
     finally { setBusy(false); }
   }
@@ -133,7 +154,7 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
       {!payload ? <>
         <div className="cms-import-controls"><AppSelect label="ประเภทข้อมูล" ariaLabel="ประเภทข้อมูล" value={kind}
           options={Object.entries(kindLabels).filter(([value]) => value !== 'forecast').map(([value, label]) => ({ value, label }))}
-          onChange={value => { setKind(value as DataKind); if (sheet) selectSheet(sheet, value as DataKind); }} />
+          onChange={value => { setKind(value as DataKind); if (sheet) selectSheet(book?.sheets.find(item => item.name === sheet.name) ?? sheet, value as DataKind); }} />
           <input ref={input} className="sr-only" type="file" accept=".xlsx,.xls,.csv,.json" disabled={busy} aria-label="ไฟล์ข้อมูล"
             onChange={event => { void read(event.target.files?.[0]); }} />
           <button className="primary-button" type="button" disabled={busy} onClick={() => input.current?.click()}><FileUp size={18} />{busy ? 'กำลังอ่านไฟล์' : 'เลือกไฟล์'}</button></div>
@@ -157,7 +178,7 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
               <div className="cms-mapping">{rev3Fields.map(field => <div key={field.key}><div><strong>{field.label}</strong><p>{field.description}</p><small>ตัวอย่างที่กรอกได้: {field.example}</small>
                 {mapping[field.key] && <small>พบในไฟล์: {sheet.rows.slice(0, 3).map(row => String(row[mapping[field.key]] ?? '') || 'ช่องว่าง').join(' · ')}</small>}</div>
                 <AppSelect ariaLabel={`คอลัมน์ ${field.label}`} value={mapping[field.key] ?? ''} searchable options={[{ value: '', label: 'เลือกคอลัมน์ในไฟล์' }, ...sheet.columns.map(column => ({ value: column, label: column }))]}
-                  onChange={value => setMapping(current => ({ ...current, [field.key]: value }))} /></div>)}</div>
+                  onChange={value => { setHeaderReviewed(false); setMapping(current => ({ ...current, [field.key]: value })); }} /></div>)}</div>
             </details>
             {parsed.error && <p className="cms-warning" role="status">{parsed.error}</p>}
             {parsed.periods.length > 0 && <><MonthSelect ariaLabel="เดือนตั้งต้นในไฟล์นำเข้า" value={origin} onChange={setOrigin}
@@ -168,26 +189,35 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
             <span>{field.label}{field.optional && <small>ไม่บังคับ</small>}</span>
             <AppSelect ariaLabel={`คอลัมน์ ${field.label}`} value={mapping[field.key] ?? ''} searchable
               options={[{ value: '', label: 'ยังไม่จับคู่' }, ...sheet.columns.map(column => ({ value: column, label: column }))]}
-              onChange={value => setMapping(current => ({ ...current, [field.key]: value }))} />
+              onChange={value => { setHeaderReviewed(false); setMapping(current => ({ ...current, [field.key]: value })); }} />
           </div>)}</div>
           {sheet.columns.filter(column => !Object.values(mapping).includes(column)).map(column => <label className="cms-check" key={column}>
             <input type="checkbox" checked={ignored.includes(column)} onChange={event => setIgnored(current => event.target.checked ? [...current, column] : current.filter(item => item !== column))} />ไม่นำเข้าคอลัมน์ {column}</label>)}
           {sheet.rows.length > 2000 && <label className="cms-field">ช่วงรายการนำเข้า<AppSelect ariaLabel="ช่วงรายการนำเข้า" value={String(rowStart)}
             options={Array.from({ length: Math.ceil(sheet.rows.length / 2000) }, (_, index) => ({ value: String(index * 2000 + 1), label: `${index * 2000 + 1}–${Math.min(sheet.rows.length, (index + 1) * 2000)} จาก ${sheet.rows.length} รายการ` }))}
             onChange={value => setRowStart(Number(value))} /></label>}</>}
-          <footer className="cms-actions"><button className="primary-button" type="button" disabled={busy || (rev3 && (!parsed.sheet || !catalog?.revision || !catalog.periods.includes(origin)))} onClick={() => { void prepare(); }}>ตรวจรายละเอียด<ArrowRight size={18} /></button></footer>
+          {inspection && <ImportSheetReview sheet={sheet} mapping={mapping} issues={inspection.issues} areas={areas} missing={inspection.missing} origin={origin} rev3={rev3} metadata={book.metadata} onChange={next => { editedSheets.current.set(next.name, next); setSheet(next); }} />}
+          {Boolean(sheet.headerWarnings?.length) && <label className="cms-check"><input type="checkbox" checked={headerReviewed} onChange={event => setHeaderReviewed(event.target.checked)} />ตรวจค่าตัวอย่างและยืนยันการจับคู่คอลัมน์ที่ว่างหรือซ้ำแล้ว</label>}
+          {rev3 && (!catalog || !areas) && <p className="cms-warning">ยังตรวจทะเบียนและรอบเดือนไม่สำเร็จ <button className="cms-text-button" type="button" onClick={() => {
+            setBusy(true); setError(''); void (async () => { try { setCatalog(await api<NonNullable<typeof catalog>>('forecast-catalog')); setAreas(await api<ImportArea[]>('forecast-crosswalk')); }
+              catch (failure) { setError(failure instanceof Error ? failure.message : 'โหลดทะเบียนไม่สำเร็จ'); } finally { setBusy(false); } })();
+          }}>ลองใหม่</button></p>}
+          <footer className="cms-actions"><button className="primary-button" type="button" disabled={busy || Boolean(sheet.headerWarnings?.length && !headerReviewed) || inspection?.issues.some(issue => issue.severity === 'error') || (rev3 && (!areas || !parsed.sheet || !catalog?.revision || !catalog.periods.includes(origin)))} onClick={() => { void prepare(); }}>ตรวจรายละเอียด<ArrowRight size={18} /></button></footer>
         </>}
       </> : <>
         <div className="cms-import-summary"><strong>{kindLabels[kind]}</strong><span>{(payload[rowsKey(kind)] as Payload[]).length} รายการ · {filename}</span></div>
         <label className="cms-field">ชื่อชุดข้อมูล<input value={title} maxLength={160} onChange={event => setTitle(event.target.value)} /></label>
         {kind === 'archive' ? <p>ข้อมูลต้นทาง {monthLabel(payload.originMonth)} · {(payload.predictions as Payload[]).length} ค่าพยากรณ์</p>
           : <MetadataForm value={{ ...emptyEnvelope(kind), ...payload }} onChange={setPayload} />}
+        <ImportPayloadReview kind={kind} payload={payload} base={basePayload} validation={validation} onChange={setPayload} />
         <footer className="cms-actions">
-          <button className="secondary-button" type="button" disabled={busy} onClick={() => setPayload(null)}><ArrowLeft size={18} />ย้อนกลับ</button>
+          <button className="secondary-button" type="button" disabled={busy} onClick={() => { if (payload !== preparedPayload.current) setConfirmBack(true); else setPayload(null); }}><ArrowLeft size={18} />ย้อนกลับ</button>
           <button className="primary-button" type="button" disabled={busy || !title.trim()} onClick={() => { void save(); }}>{busy ? 'กำลังบันทึก' : 'สร้างฉบับร่าง'}</button>
         </footer>
       </>}
     </fieldset>
   </WorkspaceDialog>{confirmDiscard && <ConfirmAction title="ยังไม่บันทึกฉบับร่าง" message="ไฟล์ที่เลือกยังไม่ถูกบันทึกเข้าระบบ"
-    confirmLabel="ปิดโดยไม่บันทึก" onCancel={() => setConfirmDiscard(false)} onConfirm={() => { allowSavedNavigation(); onClose(); }} />}</>;
+    confirmLabel="ปิดโดยไม่บันทึก" onCancel={() => setConfirmDiscard(false)} onConfirm={() => { allowSavedNavigation(); onClose(); }} />}
+    {confirmBack && <ConfirmAction title="ย้อนกลับไปตรวจไฟล์?" message="ค่าที่แก้ในขั้นตรวจรายละเอียดจะไม่ถูกเก็บไว้ แต่การแก้แถวในขั้นตรวจไฟล์ยังอยู่"
+      confirmLabel="ย้อนกลับโดยไม่เก็บค่าขั้นนี้" onCancel={() => setConfirmBack(false)} onConfirm={() => { setConfirmBack(false); setPayload(null); }} />}</>;
 }

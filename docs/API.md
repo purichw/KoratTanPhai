@@ -11,6 +11,19 @@ share the V1 domain fields; draft bookkeeping is a separate envelope.
 references are authenticated read-only RPCs, not direct table access. See
 [CMS contracts](ADMIN_CMS.md) and [activation evidence](CMS_CUTOVER_20260928.md).
 
+Local import-review addition (2026-10-08): `POST /api/admin-data?action=inspect`
+accepts exactly `{kind, payload}` and returns `{valid, issues, rowCount,
+contentHash}` without creating or editing a draft. It requires the same verified
+Admin session, database operator access, same-origin POST checks and 2 MiB request
+limit as the other CMS actions. Issues retain `row` (one-based normalized record,
+or null for the envelope) and `message`; supported diagnostics add `field`, `code`
+and `suggestion`. `validate` still inspects a saved revision and `accept` always
+revalidates independently. This preview response never grants publication.
+Rev3 `sourceImport` can also contain an immutable `review` evidence object with
+`corrections`, `excludedRows` and `addedRows`; API forecast prediction fields and
+observation envelopes are unchanged. See the repairable-import section in
+`ADMIN_CMS.md` for source-row versus normalized-record positions and remaining limits.
+
 Local-only addition: `GET /api/operational-context[?period=YYYY-MM]` returns trusted
 server time, Bangkok current/next-month boundary, the selected data family, policy
 version and empty source catalogs. It is public metadata, not a record endpoint;

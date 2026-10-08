@@ -1,8 +1,12 @@
 import ExcelJS from '@protobi/exceljs';
 import { DATA_FIELDS, type DataKind } from '../../shared/dataFields.mjs';
 import { rowsKey, type Payload, type Json } from './types';
+import { reviewedImportRows, reviewedIssueRows, reviewReportColumns, sourceRowLabel, type ImportIssue } from './importReview';
 
-export type ImportSheet = { name: string; columns: string[]; rows: Payload[]; sourceRows?: number[] };
+export type ImportCellProblem = { row: number; column: string; message: string };
+export type ImportCorrection = { row: number; column: string; before: Json; after: Json; reason: string };
+export type ImportSheet = { name: string; columns: string[]; rows: Payload[]; sourceRows?: number[];
+  cellProblems?: ImportCellProblem[]; headerWarnings?: string[]; excludedRows?: number[]; corrections?: ImportCorrection[] };
 export type ImportFile = { sheets: ImportSheet[]; metadata: Payload | null };
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const MAX_ROWS = 100000;
@@ -102,23 +106,102 @@ export async function createAdminWorkbook(kind: DataKind, payload: Payload) {
     return value === undefined || value === null ? null : typeof value === 'object' ? JSON.stringify(value) : value;
   })));
   sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: rows.length + 1, column: keys.length } };
+  addAdminMetadata(workbook, Object.fromEntries(Object.entries(payload).filter(([key]) => key !== rowKey)));
+  workbook.worksheets.forEach(styleAdminSheet);
+  const buffer = await workbook.xlsx.writeBuffer();
+  return new Uint8Array(buffer);
+}
+
+function addAdminMetadata(workbook: ExcelJS.Workbook, payload: Payload) {
   const metadata = workbook.addWorksheet('_Metadata');
   metadata.columns = [{ header: 'field', key: 'field', width: 30 }, { header: 'value_json', key: 'value', width: 100 }, { header: 'part', width: 10 }, { header: 'parts', width: 10 }];
-  for (const [key, value] of Object.entries(payload)) if (key !== rowKey) {
+  for (const [key, value] of Object.entries(payload)) {
     const json = JSON.stringify(value);
     const count = Math.max(1, Math.ceil(json.length / 30000));
     for (let part = 1; part <= count; part++) metadata.addRow([key, json.slice((part - 1) * 30000, part * 30000), part, count]);
   }
-  for (const page of workbook.worksheets) {
-    page.eachRow((row, index) => {
-      row.height = index === 1 ? 32 : 28;
-      row.eachCell({ includeEmpty: true }, cell => {
-        cell.font = { name: 'Cordia New', size: 16, bold: index === 1, color: { argb: 'FF20362E' } };
-        cell.alignment = { vertical: 'middle', horizontal: page.name === '_Metadata' ? 'left' : 'center', wrapText: true };
-        if (index === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F2EC' } };
-      });
+}
+
+function styleAdminSheet(page: ExcelJS.Worksheet) {
+  page.eachRow((row, index) => {
+    row.height = index === 1 ? 32 : 28;
+    row.eachCell({ includeEmpty: true }, cell => {
+      cell.font = { name: 'Cordia New', size: 16, bold: index === 1, color: { argb: 'FF20362E' } };
+      cell.alignment = { vertical: 'middle', horizontal: page.name === '_Metadata' ? 'left' : 'center', wrapText: true };
+      if (index === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F2EC' } };
     });
+  });
+}
+
+/** Reports stay outside Data so the reviewed workbook remains a normal import. */
+export async function createReviewedImportWorkbook(source: ImportSheet, issues: ImportIssue[], metadata: Payload | null,
+  mapping: Record<string, string> = {}) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'โคราชทันภัย'; workbook.created = new Date();
+  const data = workbook.addWorksheet('Data', { views: [{ state: 'frozen', ySplit: 1, xSplit: 1 }] });
+  data.columns = source.columns.map(column => ({ header: column, width: /name|TAMBON|AMPHOE|ชื่อ/i.test(column) ? 30 : 23 }));
+  const exported = reviewedImportRows(source);
+  const issuesByCell = new Map<string, ImportIssue[]>();
+  issues.forEach(issue => {
+    if (issue.row === null) return;
+    const key = `${issue.row}/${issue.column ?? '*'}`;
+    const list = issuesByCell.get(key) ?? []; list.push(issue); issuesByCell.set(key, list);
+  });
+  const riskColumns = new Set(Object.entries(mapping).filter(([key]) => /^Pred_Risk_T\+[1-6]$/.test(key)).map(([, column]) => column));
+  exported.forEach(({ index, values }) => {
+    const row = data.addRow(source.columns.map(column => {
+      const value = values[column]; return value && typeof value === 'object' ? JSON.stringify(value) : value;
+    }));
+    row.eachCell({ includeEmpty: true }, (cell, position) => {
+      const column = source.columns[position - 1];
+      // Strings, including leading-zero identifiers and formula-like text, stay text.
+      if (typeof cell.value === 'string') cell.numFmt = '@';
+      const problems = [...issuesByCell.get(`${index}/${column}`) ?? [], ...issuesByCell.get(`${index}/*`) ?? []];
+      if (problems.length) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: problems.some(issue => issue.severity === 'error') ? 'FFFFE9E9' : 'FFFFF2D5' } };
+        cell.note = `${source.name} · ${sourceRowLabel(source, index)}\n${problems.map(problem => `${problem.message}\n${problem.suggestion}`).join('\n\n')}\nผลตรวจ ณ เวลาดาวน์โหลด ต้องนำกลับเข้าระบบเพื่อตรวจใหม่`;
+      }
+      if (riskColumns.has(column)) cell.dataValidation = { type: 'list', allowBlank: true,
+        formulae: ['"0,1,2,นอกขอบเขตการศึกษา"'], showInputMessage: true, promptTitle: 'ผลพยากรณ์จากต้นทาง',
+        prompt: '0, 1, 2 หรือ นอกขอบเขตการศึกษา; ช่องว่าง rev3 หมายถึงนอกขอบเขต ไม่ใช่ 0', showErrorMessage: true,
+        errorStyle: 'warning', errorTitle: 'ตรวจค่าพยากรณ์', error: 'ค่าที่เลือกต้องตรงกับหลักฐานต้นทาง ระบบจะตรวจซ้ำเมื่อนำเข้า' };
+    });
+  });
+  data.autoFilter = { from: { row: 1, column: 1 }, to: { row: exported.length + 1, column: source.columns.length } };
+  const report = workbook.addWorksheet('_รายงานตรวจ', { views: [{ state: 'frozen', ySplit: 1 }] });
+  report.columns = reviewReportColumns.map((column, index) => ({ header: column, width: [22, 20, 22, 26, 16, 48, 70][index] }));
+  const reportRows = reviewedIssueRows(source, issues);
+  reportRows.forEach(row => report.addRow(reviewReportColumns.map(column => row[column])));
+  if (!reportRows.length) report.addRow(['', '', '', '', '', 'ไม่พบปัญหาในขั้นตรวจไฟล์ ณ เวลาดาวน์โหลด', 'ยังต้องตรวจรายละเอียดและยืนยันก่อนเผยแพร่']);
+  report.autoFilter = `A1:G${report.rowCount}`;
+  if (source.excludedRows?.length) {
+    const excluded = workbook.addWorksheet('_ไม่นำเข้า', { views: [{ state: 'frozen', ySplit: 1 }] });
+    excluded.columns = [{ header: 'แถวต้นทาง', width: 20 }, ...source.columns.map(column => ({ header: column, width: 23 }))];
+    source.excludedRows.forEach(index => excluded.addRow([sourceRowLabel(source, index), ...source.columns.map(column => {
+      const value = source.rows[index][column]; return value && typeof value === 'object' ? JSON.stringify(value) : value;
+    })]));
   }
+  const guide = workbook.addWorksheet('_วิธีใช้');
+  guide.columns = [{ header: 'หัวข้อ', width: 28 }, { header: 'รายละเอียด', width: 100 }];
+  [
+    ['ชีตต้นทาง', source.name], ['ตรวจเมื่อ', workbook.created.toISOString()],
+    ['ข้อมูลสำหรับแก้ไข', `${exported.length} รายการใน Data; รวมทุกแถวที่เลือกนำเข้า ไม่จำกัดตามตัวกรองบนหน้าจอ`],
+    ['แก้แล้วนำเข้าใหม่', 'แก้ค่าใน Data โดยคงหัวคอลัมน์ไว้ บันทึก .xlsx แล้วอัปโหลดกลับเข้า CMS เลือก Data และตรวจการจับคู่คอลัมน์'],
+    ['สีและหมายเหตุ', 'สีชมพู = ต้องแก้ไข; สีเหลือง = คำเตือน สี หมายเหตุ และรายงานเป็นผลตรวจ ณ เวลาดาวน์โหลด ไม่อัปเดตเองเมื่อแก้ไฟล์'],
+    ['เซลล์ที่ยังรอยืนยัน', 'ข้อความ [KTP_REVIEW_REQUIRED] เก็บช่องที่เคยมีสูตร/ข้อผิดพลาด/วันที่ไว้ให้ตรวจ แทนที่ทั้งช่องด้วยค่าต้นทางที่ยืนยันแล้ว ห้ามลบเครื่องหมายเพื่อข้ามการตรวจ'],
+    ['ความหมายข้อมูล', 'ค่าศูนย์ไม่ใช่ค่าว่าง สำหรับ rev3 ช่องความเสี่ยงว่างหมายถึงนอกขอบเขตการศึกษา พื้นที่ที่ขาดหรือยังไม่กรอกต้องหาค่าจากต้นทาง ไม่เติม 0 โดยอัตโนมัติ'],
+    ['รายงานปัญหา', '_รายงานตรวจ อ้างแถวต้นทางเดิมและลำดับรายการใน Data (ไม่รวมหัวคอลัมน์) เมื่อเรียงหรือเพิ่มแถวให้ตรวจใหม่ใน CMS'],
+    ['รายการที่ไม่นำเข้า', '_ไม่นำเข้าเป็นหลักฐานเท่านั้น ระบบไม่นำชีตที่ขึ้นต้นด้วย _ มาเป็นแถวข้อมูล'],
+    ['CSV', 'CSV ไม่มีสี หมายเหตุ หรือรายละเอียดชุดข้อมูลประกอบ ให้ดาวน์โหลดรายงานปัญหาแยกและระบุรายละเอียดชุดข้อมูลใหม่เมื่อนำเข้า รหัสที่มีศูนย์นำหน้าควรเปิดเป็นข้อความหรือใช้ .xlsx'],
+    ['สถานะ', 'ไฟล์นี้เป็นสำเนาที่อยู่ระหว่างตรวจ ไม่ใช่การยืนยันว่าข้อมูลถูกต้องหรือเผยแพร่แล้ว ระบบจะตรวจใหม่และไม่เปลี่ยนหน้าบ้านจนกว่าจะยืนยันเผยแพร่'],
+  ].forEach(row => guide.addRow(row));
+  if (metadata) addAdminMetadata(workbook, metadata);
+  workbook.worksheets.forEach(styleAdminSheet);
+  data.eachRow(row => { row.height = 44; });
+  for (const page of [report, guide]) page.eachRow((row, index) => {
+    row.height = index === 1 ? 36 : 64;
+    if (index !== 1) row.eachCell(cell => { cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true }; });
+  });
   const buffer = await workbook.xlsx.writeBuffer();
   return new Uint8Array(buffer);
 }

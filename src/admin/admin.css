@@ -51,6 +51,16 @@
 .cms-issues ul { max-height: 220px; overflow: auto; padding-left: 22px; }
 .cms-issues li { padding: 5px 0; overflow-wrap: anywhere; }
 .cms-issues li button { margin-right: 8px; }
+.cms-issues li small { display: block; margin-top: 4px; color: var(--text-secondary, #53665e); }
+.cms-import-review { display: grid; gap: 16px; min-width: 0; border-block-start: 1px solid var(--border-color, #d7e1db); padding-block: 20px; }
+.cms-import-review .cms-validation-bar { margin: 0; }
+.cms-import-rows { max-height: 400px; overflow: auto; }
+.cms-import-rows .cms-table { min-width: 560px; }
+.cms-field.has-issue { border-inline-start: 3px solid #b77516; padding-inline-start: 12px; }
+.cms-field.has-issue small, .cms-field-error { color: #805009; }
+.cms-field.has-issue .cms-field-label { display: flex; align-items: center; gap: 8px; }
+.cms-field.is-choice .cms-field-label { display: flex; justify-content: center; text-align: center; }
+.cms-field[aria-invalid="true"], .cms-field input[aria-invalid="true"] { border-color: #b77516; }
 .cms-table tr.has-issue { background: #fffaf0; }
 .cms-editor-footer { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 16px; }
 .cms-import, .cms-form { padding: 4px 0; }
@@ -84,6 +94,8 @@
 .cms-audit time, .cms-audit small { display: block; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
 .cms-warning { color: #8c611d; }
 @media (max-width: 800px) {
+  .cms-review-downloads .cms-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .cms-review-downloads .cms-actions > button { width: 100%; justify-content: center; }
   .cms-draft-strip { align-items: flex-start; flex-direction: column; }
   .cms-page-header h1 { font-size: 24px; }
   .cms-field-grid, .cms-filter-row, .cms-import-controls { grid-template-columns: minmax(0, 1fr); }

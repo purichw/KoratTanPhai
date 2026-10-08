@@ -67,7 +67,7 @@ test('CMS import, repair, reload, export, conflict and acceptance use the persis
   } finally { await database.close(); }
 });
 
-test('original T+ workbook imports through a worker and preserves conflicts for no-code repair', async ({ page, context }) => {
+test('original T+ workbook blocks conflicts until explicitly resolved, retaining source evidence', async ({ page, context }) => {
   test.setTimeout(90000);
   const database = await cmsTestDatabase(context, { forecasts: true, references: true });
   try {
@@ -82,6 +82,10 @@ test('original T+ workbook imports through a worker and preserves conflicts for 
     await page.getByRole('button', { name: 'นำเข้าข้อมูล', exact: true }).first().click();
     await page.getByLabel('ไฟล์ข้อมูล', { exact: true }).setInputFiles({ name: 'normalized-test.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from(await workbook.xlsx.writeBuffer()) });
     await expect(page.getByRole('heading', { name: 'พยากรณ์ล่วงหน้า 1–6 เดือนจากต้นฉบับ', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'ตรวจรายละเอียด', exact: true })).toBeDisabled();
+    await page.getByRole('button', { name: /แถว 291 · ความเสี่ยง|แถว 291 · Pred_Risk/ }).first().click();
+    await page.getByLabel('เหตุผลการแก้ไฟล์', { exact: true }).fill('ตรวจต้นฉบับแล้ว แถวท้ายซ้ำผิดค่า');
+    await page.getByRole('button', { name: 'ไม่นำเข้าแถวนี้', exact: true }).click();
     await page.getByRole('button', { name: 'ตรวจรายละเอียด', exact: true }).click();
     await page.getByRole('button', { name: 'สร้างฉบับร่าง', exact: true }).click();
     await expect(page).toHaveURL(/draft=/);
@@ -91,8 +95,9 @@ test('original T+ workbook imports through a worker and preserves conflicts for 
     expect(draft.payload.sourceImport.sha256).toMatch(/^[a-f0-9]{64}$/);
     expect(draft.payload.predictions).toHaveLength(1734);
     await page.getByRole('button', { name: 'ตรวจข้อมูล', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'เผยแพร่รุ่นใหม่', exact: true })).toBeDisabled();
-    expect(draft.payload.predictions.some((row: { status: string }) => row.status === 'unresolved')).toBe(true);
+    await expect(page.getByRole('button', { name: 'เผยแพร่รุ่นใหม่', exact: true })).toBeEnabled();
+    expect(draft.payload.predictions.some((row: { status: string }) => row.status === 'unresolved')).toBe(false);
+    expect(draft.payload.sourceImport.review.excludedRows).toEqual([291]);
   } finally { await database.close(); }
 });
 

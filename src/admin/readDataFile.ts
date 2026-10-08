@@ -1,17 +1,27 @@
-import type { ImportFile, ImportSheet } from './workbook';
+import type { ImportFile, ImportSheet, ImportCellProblem } from './workbook';
 import type { Json, Payload } from './types';
 import { legacyCodepages } from './legacyCodepages';
+import { isReviewHeld, reviewHoldMessage } from './importReviewMarkers';
 
 export type DataFileFormat = 'xlsx' | 'xls' | 'csv';
 export type CsvEncoding = 'utf-8' | 'windows-874';
 const maxRows = 100000;
 const unsafe = new Set(['__proto__', 'constructor', 'prototype']);
-function columnsFor(values: Json[]) {
+function columnsFor(values: Json[], warnings: string[]) {
   const columns = values.map(value => String(value ?? '').replace(/^\uFEFF/, '').trim());
-  if (!columns.length || columns.length > 100 || columns.some(key => !key || unsafe.has(key)) || new Set(columns).size !== columns.length) {
+  if (!columns.length || columns.length > 100 || columns.some(key => unsafe.has(key))) {
     throw new Error('หัวคอลัมน์ต้องไม่ว่าง ไม่ซ้ำกัน และมีไม่เกิน 100 คอลัมน์');
   }
-  return columns;
+  const used = new Set<string>();
+  return columns.map((column, index) => {
+    let key = column;
+    if (!key || used.has(key)) {
+      key = `${column || 'ไม่มีหัวคอลัมน์'} [${index + 1}]`;
+      while (used.has(key) || columns.includes(key)) key += '_';
+      warnings.push(`คอลัมน์ ${index + 1}: ${column ? `ชื่อ “${column}” ซ้ำ` : 'ไม่มีหัวคอลัมน์'} เลือกจับคู่จากตำแหน่งและค่าตัวอย่าง`);
+    }
+    used.add(key); return key;
+  });
 }
 
 /** CSV remains text until the selected field contract interprets a value. */
@@ -50,12 +60,13 @@ export function readCsv(text: string): ImportFile {
   if (quoted) throw new Error(`แถว ${start}: CSV มีข้อความที่ยังไม่ปิดเครื่องหมายคำพูด`);
   if (cell || row.length || closed) finishRow();
   if (!matrix.length) throw new Error('ไฟล์ CSV ไม่มีข้อมูล');
-  const columns = columnsFor(matrix[0]);
+  const headerWarnings: string[] = [];
+  const columns = columnsFor(matrix[0], headerWarnings);
   const rows = matrix.slice(1).map((values, index) => {
     if (values.length !== columns.length) throw new Error(`แถว ${sourceRows[index + 1]}: จำนวนช่องไม่ตรงกับหัวคอลัมน์ กรุณาตรวจตัวคั่นหรือช่องที่ขาด`);
     return Object.fromEntries(columns.map((column, i) => [column, values[i]]));
   });
-  return { sheets: [{ name: 'ข้อมูล CSV', columns, rows, sourceRows: sourceRows.slice(1) }], metadata: null };
+  return { sheets: [{ name: 'ข้อมูล CSV', columns, rows, sourceRows: sourceRows.slice(1), ...(headerWarnings.length ? { headerWarnings } : {}) }], metadata: null };
 }
 
 async function readExcelFile(bytes: ArrayBuffer, format: 'xls' | 'xlsx'): Promise<ImportFile> {
@@ -77,13 +88,19 @@ async function readExcelFile(bytes: ArrayBuffer, format: 'xls' | 'xlsx'): Promis
     const extent = xlsx.utils.decode_range(sheet['!fullref'] ?? sheet['!ref']!);
     if (extent.e.r > maxRows || extent.e.c >= 100) throw new Error('หนึ่งชีตรับได้ไม่เกิน 100,000 รายการและ 100 คอลัมน์');
     const matrix: Json[][] = []; const sourceRows: number[] = [];
+    const problems: { sourceRow: number; column: number; message: string }[] = [];
     for (let r = 0; r <= extent.e.r; r++) {
       const row: Json[] = [];
       for (let c = 0; c <= extent.e.c; c++) {
         const cell = sheet[xlsx.utils.encode_cell({ r, c })];
-        if (cell?.f || cell?.t === 'e') throw new Error(`ชีต ${name} แถว ${r + 1}: พบสูตรหรือข้อผิดพลาด กรุณาใช้ค่าข้อมูลที่ยืนยันแล้ว`);
-        if (cell?.t === 'd') throw new Error(`ชีต ${name} แถว ${r + 1}: วันที่ต้องเป็นข้อความตามรูปแบบของช่อง`);
-        row.push(cell?.v ?? null);
+        const message = cell?.f ? 'พบสูตร กรุณาระบุค่าที่ตรวจสอบแล้ว ระบบไม่คำนวณสูตร'
+          : cell?.t === 'e' ? 'พบข้อผิดพลาดใน Excel กรุณาระบุค่าต้นทางที่ถูกต้อง'
+          : cell?.t === 'd' ? 'วันที่ต้องเป็นข้อความตามรูปแบบของช่อง กรุณาระบุวันที่และเขตเวลาให้ชัดเจน' : '';
+        if (message && (r === 0 || name === '_Metadata')) throw new Error(`ชีต ${name} แถว ${r + 1}: ${message}`);
+        if (message) problems.push({ sourceRow: r + 1, column: c, message });
+        // Never execute formulas or accept their cached result as source data.
+        row.push(cell?.f ? `=${cell.f}` : cell?.t === 'e' ? String(cell.w ?? `Excel error ${cell.v}`)
+          : cell?.t === 'd' ? String(cell.w ?? cell.v) : cell?.v ?? null);
       }
       if (r === 0 || row.some(value => value !== null && value !== '')) { matrix.push(row); sourceRows.push(r + 1); }
     }
@@ -102,8 +119,12 @@ async function readExcelFile(bytes: ArrayBuffer, format: 'xls' | 'xlsx'): Promis
       }
       continue;
     }
-    const columns = columnsFor(matrix[0]);
-    sheets.push({ name, columns, rows: matrix.slice(1).map(row => Object.fromEntries(columns.map((column, i) => [column, row[i]]))), sourceRows: sourceRows.slice(1) });
+    const headerWarnings: string[] = [];
+    const columns = columnsFor(matrix[0], headerWarnings);
+    const rowIndices = new Map(sourceRows.slice(1).map((sourceRow, index) => [sourceRow, index]));
+    const cellProblems: ImportCellProblem[] = problems.map(problem => ({ row: rowIndices.get(problem.sourceRow)!, column: columns[problem.column], message: problem.message }));
+    sheets.push({ name, columns, rows: matrix.slice(1).map(row => Object.fromEntries(columns.map((column, i) => [column, row[i]]))), sourceRows: sourceRows.slice(1),
+      ...(cellProblems.length ? { cellProblems } : {}), ...(headerWarnings.length ? { headerWarnings } : {}) });
   }
   if (!sheets.length) throw new Error('ไม่พบตารางข้อมูลในไฟล์');
   return { sheets, metadata };
@@ -128,5 +149,12 @@ export async function readDataFile(bytes: ArrayBuffer, format: DataFileFormat, e
   }
   // These names belong to the shipped template; other workbooks keep all data tabs.
   if (result.sheets.some(sheet => sheet.name === 'ข้อมูลพยากรณ์')) result.sheets = result.sheets.filter(sheet => !['คำอธิบาย', 'ตัวอย่าง', 'รายชื่อพื้นที่'].includes(sheet.name));
+  for (const sheet of result.sheets) {
+    const problems = [...sheet.cellProblems ?? []];
+    sheet.rows.forEach((row, index) => sheet.columns.forEach(column => {
+      if (isReviewHeld(row[column])) problems.push({ row: index, column, message: reviewHoldMessage });
+    }));
+    if (problems.length) sheet.cellProblems = problems;
+  }
   return result;
 }

@@ -40,6 +40,8 @@ describe('CMS Excel/API parity', () => {
     sheet.addRow(['value']); sheet.addRow([{ formula: '1+1', result: 2 }]);
     const bad = await workbook.xlsx.writeBuffer();
     await expect(readAdminWorkbook(new Uint8Array(bad).buffer)).rejects.toThrow('พบสูตร');
-    await expect(readDataFile(new Uint8Array(bad).buffer, 'xlsx')).rejects.toThrow('พบสูตร');
+    const review = (await readDataFile(new Uint8Array(bad).buffer, 'xlsx')).sheets[0];
+    expect(review.rows[0].value).toBe('=1+1');
+    expect(review.cellProblems?.[0]).toMatchObject({ row: 0, column: 'value' });
   });
 });

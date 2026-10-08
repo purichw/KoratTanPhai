@@ -31,6 +31,13 @@ test('HTTP admin boundary verifies identity, forbids actor injection, revalidate
     assert.equal((await request('?action=schema', null, 'forged-token')).status, 401);
     assert.equal(calls.length, 0);
     assert.equal((await request('?action=schema')).status, 200);
+    const beforeInspect = calls.length;
+    const inspection = await request('?action=inspect', { kind: 'station', payload });
+    assert.equal(inspection.status, 200); assert.equal((await inspection.json()).valid, true);
+    assert.deepEqual(calls.slice(beforeInspect).map(call => call.operation), ['access']);
+    assert.equal((await request('?action=inspect', { kind: 'station', payload }, '')).status, 401);
+    assert.equal((await request('?action=inspect', { kind: 'station', payload, actor: id })).status, 400);
+    assert.equal((await request('?action=inspect', { kind: 'unknown', payload })).status, 400);
     assert.equal((await request(`?action=accept&id=${id}`, { revision: 1, reason: 'test', actor: id })).status, 400);
     assert.equal((await request(`?action=accept&id=${id}`, { revision: 2, reason: 'test' })).status, 409);
     payload.observations[0].value = null;

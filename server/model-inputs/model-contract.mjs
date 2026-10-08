@@ -106,20 +106,35 @@ export function validateForecastResult(result) {
 }
 
 export function validateForecastCells(predictions, { codes, originMonth }) {
-  assert(Array.isArray(predictions) && predictions.length === codes.length * 6, 'Return all T+1 through T+6 cells for every scoped subdistrict.');
-  const seen = new Set();
-  for (const [index, row] of predictions.entries()) {
-    try {
-    assert(exactKeys(row, requiredFields('forecast')), 'Invalid prediction row.');
-    assert(codes.includes(row.subdistrictCode) && Number.isInteger(row.horizonMonths) && row.horizonMonths >= 1 && row.horizonMonths <= 6, 'Prediction is outside its area/horizon scope.');
-    assert(row.targetMonth === shiftMonth(originMonth, row.horizonMonths), 'targetMonth must equal originMonth + horizonMonths.');
-    assert(['predicted', 'out_of_scope', 'insufficient_data'].includes(row.status), 'Invalid prediction status.');
-    assert(row.status === 'predicted' ? [0, 1, 2].includes(row.riskCode) : row.riskCode === null, 'Predicted risk must be 0/1/2; other statuses require null.');
-    const key = `${row.subdistrictCode}/${row.horizonMonths}`;
-    assert(!seen.has(key), 'Duplicate prediction cell.'); seen.add(key);
-    } catch (error) { throw new InputError(`Prediction ${index + 1}: ${error.message}`); }
-  }
+  const issue = inspectForecastCells(predictions, { codes, originMonth })[0];
+  if (issue) throw new InputError(`${issue.row === null ? '' : `Prediction ${issue.row}: `}${issue.message}`);
   return predictions;
+}
+
+// The API acceptance gate and CMS diagnostics consume the same rules.
+export function inspectForecastCells(predictions, { codes, originMonth }) {
+  const issues = [];
+  const add = (row, field, code, message, suggestion) => issues.push({ row, field, code, message, suggestion });
+  if (!Array.isArray(predictions) || predictions.length !== codes.length * 6) add(null, null, 'coverage',
+    'Return all T+1 through T+6 cells for every scoped subdistrict.', 'ต้องมีครบทุกตำบลในขอบเขตและทุกระยะ T+1–T+6 โดยไม่เติมพื้นที่ที่หายเป็นระดับ 0');
+  if (!Array.isArray(predictions)) return issues;
+  const seen = new Map(); const scope = new Set(codes);
+  const targets = Array.from({ length: 6 }, (_, i) => shiftMonth(originMonth, i + 1));
+  for (const [index, row] of predictions.entries()) {
+    const n = index + 1;
+    if (!exactKeys(row, requiredFields('forecast'))) add(n, null, 'row_shape', 'Invalid prediction row.', 'กรอกช่องที่จำเป็นให้ครบและนำคอลัมน์ที่ไม่รองรับออก');
+    if (!row || typeof row !== 'object') continue;
+    if (!scope.has(row.subdistrictCode)) add(n, 'subdistrictCode', 'area', 'Prediction is outside its area/horizon scope.', 'เลือกรหัสตำบลในทะเบียนและขอบเขตชุดข้อมูล');
+    const horizon = Number.isInteger(row.horizonMonths) && row.horizonMonths >= 1 && row.horizonMonths <= 6;
+    if (!horizon) add(n, 'horizonMonths', 'horizon', 'Prediction is outside its area/horizon scope.', 'ระยะพยากรณ์ต้องเป็นจำนวนเต็ม 1–6');
+    if (horizon && row.targetMonth !== targets[row.horizonMonths - 1]) add(n, 'targetMonth', 'target', 'targetMonth must equal originMonth + horizonMonths.', `เดือนที่ถูกต้องคือ ${targets[row.horizonMonths - 1]}`);
+    if (!['predicted', 'out_of_scope', 'insufficient_data'].includes(row.status)) add(n, 'status', 'status', 'Invalid prediction status.', 'เลือกผลพยากรณ์ที่ตรวจสอบแล้ว ค่าที่ขัดแย้งต้องได้รับการตัดสินก่อน');
+    if (!(row.status === 'predicted' ? [0, 1, 2].includes(row.riskCode) : row.riskCode === null)) add(n, 'riskCode', 'risk', 'Predicted risk must be 0/1/2; other statuses require null.', 'ค่าพยากรณ์เป็น 0, 1, 2; สถานะไม่มีค่าต้องเป็น null ไม่ใช่ 0');
+    const key = `${row.subdistrictCode}/${row.horizonMonths}`;
+    if (seen.has(key)) add(n, 'subdistrictCode', 'duplicate', 'Duplicate prediction cell.', `ซ้ำกับรายการ ${seen.get(key)} ตรวจพื้นที่และระยะพยากรณ์ ห้ามเลือกค่าล่าสุดแทนโดยอัตโนมัติ`);
+    else seen.set(key, n);
+  }
+  return issues;
 }
 
 export function forecastCellsForReview(input) {

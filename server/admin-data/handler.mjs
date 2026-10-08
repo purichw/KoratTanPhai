@@ -6,7 +6,7 @@ import { CMS_BODY_LIMIT, CmsError, requireCms, checkDraft, checkEditablePayload,
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const readActions = new Set(['list', 'get', 'original', 'audit', 'schema', 'forecast-catalog', 'forecast-crosswalk', 'resource-catalog']);
-const writeActions = new Set(['create', 'edit', 'validate', 'accept', 'clone-forecast', 'forecast-source', 'resource-get', 'resource-clone', 'resource-edit', 'resource-publish', 'resource-history']);
+const writeActions = new Set(['inspect', 'create', 'edit', 'validate', 'accept', 'clone-forecast', 'forecast-source', 'resource-get', 'resource-clone', 'resource-edit', 'resource-publish', 'resource-history']);
 
 export function createCmsHandler({ authenticate, operation }) {
   return async (request, response) => {
@@ -45,6 +45,10 @@ export function createCmsHandler({ authenticate, operation }) {
         throw new CmsError(403, 'cross_origin_denied');
       }
       const body = await readSmallJson(request, CMS_BODY_LIMIT, 10000);
+      if (action === 'inspect') {
+        requireCms(body && typeof body === 'object' && !Array.isArray(body) && Object.keys(body).length === 2 && Object.hasOwn(DATA_FIELDS, body.kind) && Object.hasOwn(body, 'payload'));
+        return sendJson(response, 200, inspectCmsPayload(body.kind, body.payload));
+      }
       if (action.startsWith('resource-')) return sendJson(response, 200, await handleResourceAction(actor, action.slice(9), body, operation));
       if (action === 'clone-forecast' || action === 'forecast-source') {
         requireCms(body && typeof body === 'object' && Object.keys(body).length === 2 && UUID.test(body.datasetId)

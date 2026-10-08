@@ -113,6 +113,7 @@ function DraftEditor({ draft, api, onSaved, refreshing }: { draft: Draft; api: R
   const [mode, setMode] = useState('all');
   const [page, setPage] = useState(0);
   const [report, setReport] = useState<ValidationReport | null>(null);
+  const [validationPending, setValidationPending] = useState(false);
   const [error, setError] = useState('');
   const [operationBusy, setBusy] = useState(false);
   const busy = operationBusy || refreshing;
@@ -125,6 +126,15 @@ function DraftEditor({ draft, api, onSaved, refreshing }: { draft: Draft; api: R
   useUnsavedChanges(Boolean(edit), setError);
   const rowKey = rowsKey(draft.kind);
   const rows = draft.payload[rowKey] as Payload[];
+  useEffect(() => {
+    const controller = new AbortController();
+    setReport(null); setValidationPending(true);
+    void api<ValidationReport>('validate', { id: draft.id, body: { revision: draft.revision }, signal: controller.signal }).then(next => {
+      if (!controller.signal.aborted) setReport(next);
+    }).catch(failure => { if (!controller.signal.aborted) setError(errorText(failure)); })
+      .finally(() => { if (!controller.signal.aborted) setValidationPending(false); });
+    return () => controller.abort();
+  }, [api, draft.id, draft.revision]);
   const areaLabel = (value: Payload) => {
     const area = getNakhonRatchasimaSubdistrictByCode(String(value.subdistrictCode ?? ''));
     const district = getNakhonRatchasimaDistrictByCode(area?.districtCode);
@@ -167,12 +177,12 @@ function DraftEditor({ draft, api, onSaved, refreshing }: { draft: Draft; api: R
     {draft.kind !== 'archive' && <p className="cms-help">{draft.kind === 'forecast' ? 'เก็บผลพยากรณ์เพื่อทบทวน การเผยแพร่ผลแบบจำลองใหม่ยังไม่เปิดใช้' : 'รับเก็บข้อมูลจากไฟล์ ไม่ได้เชื่อมข้อมูลสดหรือเปลี่ยนพยากรณ์บนแผนที่โดยอัตโนมัติ'}</p>}
     {error && <p className="cms-error" role="alert">{error}</p>}{notice && <p className="cms-success" role="status"><CheckCircle2 size={18} />{notice}</p>}
     <div className="cms-validation-bar"><div>{report ? <><strong>{report.valid ? 'ผ่านการตรวจรูปแบบข้อมูล' : `พบ ${report.issues.length} จุดที่ต้องตรวจสอบ`}</strong>
-      <span>รุ่นแก้ไข {report.revision}</span></> : <strong>รอตรวจรูปแบบและความครบถ้วน</strong>}</div>
+      <span>รุ่นแก้ไข {report.revision}</span></> : <strong>{validationPending ? 'กำลังตรวจข้อมูล' : 'รอตรวจรูปแบบและความครบถ้วน'}</strong>}</div>
       <button className="secondary-button" disabled={busy} onClick={() => { void run(async () => setReport(await api<ValidationReport>('validate', { id: draft.id, body: { revision: draft.revision } }))); }}><ShieldCheck size={18} />ตรวจข้อมูล</button>
     </div>
     {report && !report.valid && <details className="cms-issues" open><summary>รายละเอียดที่ต้องแก้ไข</summary><ul>{report.issues.slice(0, 100).map((issue, index) => <li key={index}>
       {issue.row != null && <button className="cms-text-button" disabled={busy || draft.state === 'accepted'} onClick={() => { setReason(''); setEdit({ index: issue.row! - 1, value: structuredClone(rows[issue.row! - 1]) }); }}>แถว {issue.row}</button>}
-      <span>{issue.message}</span></li>)}</ul>{report.issues.length > 100 && <p>แสดง 100 จาก {report.issues.length} จุด</p>}</details>}
+      <span>{issue.message}</span>{issue.suggestion && <small>{issue.suggestion}</small>}</li>)}</ul>{report.issues.length > 100 && <p>แสดง 100 จาก {report.issues.length} จุด</p>}</details>}
     <div className="cms-filter-row"><label className="cms-search"><Search size={18} /><input aria-label="ค้นหารายการข้อมูล" placeholder="ชื่อตำบล อำเภอ สถานี หรือรหัสพื้นที่" value={query} onChange={event => setQuery(event.target.value)} />
       {query && <button className="icon-button" aria-label="ล้างคำค้น" onClick={() => setQuery('')}><X size={16} /></button>}</label>
       <AppSelect ariaLabel="กรองปัญหาข้อมูล" value={mode} options={[{ value: 'all', label: 'ทุกรายการ' }, { value: 'issues', label: 'รายการที่ต้องแก้ไข', disabled: !report }]}
@@ -199,7 +209,7 @@ function DraftEditor({ draft, api, onSaved, refreshing }: { draft: Draft; api: R
     {edit && <WorkspaceDialog title={edit.metadata ? 'รายละเอียดชุดข้อมูล' : edit.index === null ? 'เพิ่มรายการ' : `แก้ไขแถว ${edit.index + 1}`} wide bounded onClose={closeEdit} closeLabel="ปิดการแก้ไข">
       <div className="cms-form" aria-busy={busy}>{error && <p className="cms-error" role="alert">{error}</p>}
         <fieldset disabled={busy}>{edit.metadata ? <MetadataForm value={edit.value} onChange={value => setEdit({ ...edit, value })} />
-          : <DataRecordForm kind={draft.kind} value={edit.value} onChange={value => setEdit({ ...edit, value })} />}
+          : <DataRecordForm kind={draft.kind} value={edit.value} issues={report?.issues.filter(issue => issue.row === (edit.index ?? -1) + 1)} onChange={value => setEdit({ ...edit, value })} />}
           <label className="cms-field cms-reason">เหตุผลการแก้ไข<textarea aria-label="เหตุผลการแก้ไข" required maxLength={1000} value={reason} onChange={event => setReason(event.target.value)} /></label></fieldset>
         <footer className="cms-actions">{edit.index !== null && !edit.metadata && draft.kind !== 'archive' && <button className="secondary-button" disabled={busy || !reason.trim() || rows.length <= 1}
           onClick={() => setPendingAction('remove')}><Trash2 size={16} />นำรายการออก</button>}

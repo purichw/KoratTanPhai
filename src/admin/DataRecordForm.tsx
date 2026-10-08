@@ -1,11 +1,11 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { AppSelect } from '../components/AppSelect';
 import { DATA_FIELDS, type DataKind } from '../../shared/dataFields.mjs';
-import type { Json, Payload } from './types';
+import type { Json, Payload, ValidationIssue } from './types';
 import { getNakhonRatchasimaDistrictByCode, getNakhonRatchasimaSubdistrictByCode } from '../domain';
 import { choiceLabels, forecastChoice, monthLabel, riskOptions, updateForecastChoice } from './dataPresentation';
 
-export function DataRecordForm({ kind, value, onChange }: { kind: DataKind; value: Payload; onChange: (value: Payload) => void }) {
+export function DataRecordForm({ kind, value, onChange, issues = [] }: { kind: DataKind; value: Payload; onChange: (value: Payload) => void; issues?: ValidationIssue[] }) {
   if (kind === 'archive') return <ForecastRecordForm value={value} onChange={onChange} />;
   const fields = DATA_FIELDS[kind];
   const change = (key: string, next: Json | undefined) => {
@@ -17,7 +17,9 @@ export function DataRecordForm({ kind, value, onChange }: { kind: DataKind; valu
     const present = Object.prototype.hasOwnProperty.call(value, field.key);
     const current = value[field.key];
     const label = field.label;
-    return <div className="cms-field" key={field.key}>
+    const problems = issues.filter(issue => issue.field === field.key);
+    const helpId = `cms-field-${field.key}-errors`;
+    return <div className={`cms-field${problems.length ? ' has-issue' : ''}`} key={field.key}>
       <div className="cms-field-label"><span>{field.label}</span></div>
       {field.optional && <label className="cms-check"><input type="checkbox" checked={present}
         onChange={event => change(field.key, event.target.checked ? '' : undefined)} />ระบุข้อมูล</label>}
@@ -28,7 +30,7 @@ export function DataRecordForm({ kind, value, onChange }: { kind: DataKind; valu
           options={[{ value: '', label: 'ยังไม่ระบุ' }, ...(!field.options.includes(String(current)) && current ? [{ value: String(current), label: `ค่าต้นทาง: ${current}` }] : []),
             ...field.options.map(option => ({ value: option, label: choiceLabels[option] ?? option }))]}
           onChange={next => change(field.key, next)} />
-          : <input aria-label={label} value={typeof current === 'object' ? JSON.stringify(current) : String(current ?? '')}
+          : <input aria-label={label} aria-invalid={problems.length > 0} aria-describedby={problems.length ? helpId : undefined} value={typeof current === 'object' ? JSON.stringify(current) : String(current ?? '')}
             inputMode={field.type === 'number' ? 'decimal' : undefined}
             onChange={event => {
               const raw = event.target.value;
@@ -36,6 +38,7 @@ export function DataRecordForm({ kind, value, onChange }: { kind: DataKind; valu
               change(field.key, numeric ? Number(raw) : raw);
             }} />)}
       </>}
+      {problems.length > 0 && <small id={helpId} className="cms-field-error">{problems.map(problem => problem.suggestion || problem.message).join(' · ')}</small>}
     </div>;
   })}{Object.keys(value).filter(key => !fields.some(field => field.key === key)).map(key => <div className="cms-field" key={key}>
     <span>คอลัมน์ {key}</span><span className="cms-warning">ข้อมูลเพิ่มเติมที่รูปแบบนี้ยังไม่รองรับ</span>

@@ -141,6 +141,26 @@ imports/drafts and reference resources. Forecast facts reuse centered
 counts come from the API; the six-month lead is the existing rev3 contract and
 published status describes the current dataset, not draft readiness. Resource
 cards use the existing supported catalogue without invented row counts.
+
+`ImportSheetReview` is the Admin-only raw-file review adapter. It composes
+`AppSelect`, `WorkspaceDialog`, `WorkspaceEmptyState` and `ConfirmAction` without
+changing their defaults. Parser issues and corrections retain source positions;
+forecast identity choices come from the authenticated crosswalk. It reuses
+`referenceCsv` for formula-safe corrected-file and issue exports.
+`ImportPayloadReview` reuses `DataRecordForm` for normalized-record fixes and
+`useImportValidation` for debounced, abortable server inspection. The row editor
+accepts optional structured issues for field helpers and invalid input semantics.
+Raw review state, API payload state and saved draft revisions remain separate;
+neither review component owns auth or publication. See `ADMIN_CMS.md`.
+Both review steps compose `ImportReviewDownloads`, which owns only download
+busy/error state and the existing button layout. Parents own current rows,
+issues, metadata and validation readiness. It lazy-loads the existing Admin
+Excel writer for annotated reviewed workbooks and reuses `referenceCsv` for
+data/report CSV. Canonical forecast envelopes use Excel for editable round-trips;
+raw rev3 and observation rows also offer CSV. The portable source-hold marker
+is shared by the writer and file reader so re-export cannot silently clear an
+unresolved source-cell issue. No public UI defaults or API schema change.
+
 The reference catalogue shows three task groups on desktop and mobile: area
 identities with tambon boundaries, map layers and source references. The map group
 expands to the province outline and neighboring provinces; search matches nested
