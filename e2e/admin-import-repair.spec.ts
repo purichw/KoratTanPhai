@@ -76,7 +76,7 @@ test('repairs invalid year, unknown ID, formula and missing area in the UI, then
 
 test('API-shaped CSV reports field errors before save and rechecks fixes and duplicate removal automatically', async ({ page, context }, testInfo) => {
   test.setTimeout(90000);
-  const db = await cmsTestDatabase(context);
+  const db = await cmsTestDatabase(context, { references: true });
   try {
     await seedAdminSession(page); await page.goto('/admin?view=upload');
     await page.getByRole('combobox', { name: /^ประเภทข้อมูล / }).click();

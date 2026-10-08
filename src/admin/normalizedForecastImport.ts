@@ -1,6 +1,6 @@
 import type { ImportSheet } from './workbook';
 import type { Payload } from './types';
-import fields from './rev3Fields.json';
+import fields from './rev3Fields.json' with { type: 'json' };
 
 export const rev3Fields = fields;
 export const riskHelp = 'เลือก ไม่พบความเสี่ยง / เสี่ยงปานกลาง / เสี่ยงสูง / นอกขอบเขตการศึกษา หรือใช้ 0 / 1 / 2 / ช่องว่างตามต้นฉบับ ช่องว่างไม่ใช่ค่าศูนย์';
