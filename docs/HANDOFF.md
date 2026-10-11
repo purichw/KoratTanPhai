@@ -10,8 +10,8 @@ per-account followed areas/saved filters. The site brand is Korat Tan Phai /
 - Repo: `/Users/point/korattanphai`
 - Production: `https://korattanphai.vercel.app`
 - Current release branch: `fix/forecast-touch-pan-20261006`
-- Verified runtime Quality Gate: `37776954891` (all seven jobs passed)
-- Deployed runtime: `3742db78fee90b464e48f0585f76ce59682544b2`
+- Verified runtime Quality Gate: `38156665900`, attempt 2 (all seven jobs passed)
+- Deployed runtime: `8b05a25bbaa24ffafb2bf92fee0d47ff4614a190`
 - Source snapshot: copied from Kaset Tan Phai commit
   `0f16794bb57d5dec93b7c6312de7d9362bb97013`.
 
@@ -22,7 +22,7 @@ the newest release supersedes earlier statements about production state.
 
 ## Recent Changes
 
-Loading waterfall reduction (2026-10-11, local only):
+Loading waterfall reduction (implemented 2026-10-11, released 2026-10-12):
 
 - Read-only production probes found avoidable serialized reads in Visitor map
   startup, the Admin dashboard, forecast-file import and the unified area view.
@@ -32,9 +32,34 @@ Loading waterfall reduction (2026-10-11, local only):
 - The area view may identify its resource type from the account-owned catalog
   to start the published counterpart early. Unknown/old links still wait for
   the explicitly requested revision; they never substitute a newer resource.
-- No database mutation, migration, push or deployment is included. Production
-  remains the verified `3742db7` runtime below. See
-  [PERFORMANCE_20261011.md](PERFORMANCE_20261011.md) for scope and evidence.
+- Pushed only this chat's changes as `f756b6a` and `8b05a25` on
+  `fix/forecast-touch-pan-20261006`. The latter adds `.vercelignore` matching
+  `.gitignore` so local artifacts, dependencies and env files stay out of CLI
+  deployment uploads. No tracked source is excluded.
+- [Quality Gate 38156665900](https://github.com/purichw/KoratTanPhai/actions/runs/38156665900),
+  attempt 2, passed all seven jobs on exact `8b05a25`. Attempt 1 was blocked
+  before runner steps by GitHub billing. After the owner changed the repository
+  to public, the unchanged rerun completed successfully; no tests or gates were
+  removed and no speculative code repair was needed.
+- Promoted the existing production-configured candidate
+  `dpl_F39b2Mi6SE1owJWJJ52xBQwBPFKG`
+  (`https://korattanphai-6iegaqz75-purich-w.vercel.app`) after authenticated
+  read-only candidate smoke passed: 39 Visitor checks, Admin navigation and
+  area workflows, and reviewed-file download/external repair/revalidation on
+  desktop/mobile. Rechecked the primary alias against `3742db7` immediately
+  before promotion and against `8b05a25` afterward. Supabase/CMS markers,
+  `fallback: false`, and no-store process health passed.
+- Post-promotion [Deployment Smoke 38159969482](https://github.com/purichw/KoratTanPhai/actions/runs/38159969482)
+  passed against the production alias with exact `8b05a25` harness source.
+  Local read-only Admin navigation/areas and import-review smoke also passed
+  on desktop/mobile, including separate Visitor/Admin sessions and no
+  application-data writes. Evidence is in the isolated worktree's
+  `artifacts/performance-20261011/candidate/` and `production-release/`.
+- No migration, production application-data mutation or unrelated checkout
+  work is included. Recovery deployment is
+  `dpl_BU1exuHZeWZUWaAtEAFVGpiqcjVK` (`3742db7`). See
+  [PERFORMANCE_20261011.md](PERFORMANCE_20261011.md) for scoped evidence and
+  measurement limits; no specific percentage speedup is claimed.
 
 Admin import review and offline repair release (2026-10-08):
 
