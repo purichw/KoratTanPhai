@@ -43,6 +43,7 @@ export default function AdminWorkspace({ userId, draftId, view, onNavigate }: { 
   const visibleItems = items.filter(item => !isCutoverVerification(item));
   const openDraft = (next: Draft) => onNavigate(`/admin?draft=${encodeURIComponent(next.id)}`);
   const importsView = view === 'imports' || view === 'upload';
+  const showCatalog = !draftId && !resourceId && !importsView && (!error || Boolean(read.data));
   const title = draft?.title ?? (importsView ? 'รายการนำเข้าและฉบับร่าง' : 'จัดการข้อมูล');
   return <section className="cms-workspace" aria-labelledby={resourceId ? undefined : 'cms-title'} aria-label={resourceId ? 'รายละเอียดข้อมูลประกอบเว็บไซต์' : undefined}>
     {!resourceId && <><div className="cms-context-bar"><nav aria-label="เส้นทางหน้าผู้ดูแล"><span>พื้นที่ผู้ดูแล</span><ChevronRight size={14} aria-hidden="true" /><span>{draftId ? 'ฉบับร่าง' : title}</span></nav>
@@ -56,13 +57,13 @@ export default function AdminWorkspace({ userId, draftId, view, onNavigate }: { 
       {draft && <p>{kindLabels[draft.kind]} · รุ่นแก้ไข {draft.revision} · {draft.state === 'accepted' ? 'รับเข้าระบบแล้ว' : 'ฉบับร่าง'}</p>}</div>
     </header></>}
     {error && read.data && <p className="cms-error" role="alert">{error} · กำลังแสดงข้อมูลที่โหลดไว้ก่อนหน้า</p>}
+    {showCatalog && <PublishedForecasts api={api} onCreated={openDraft} refreshVersion={refreshVersion} />}
     {loading ? <div className="cms-loading" role="status" aria-label="กำลังโหลดชุดข้อมูล"><Skeleton /><Skeleton /><Skeleton /></div>
       : error && !read.data ? <WorkspaceEmptyState className="cms-empty" role="alert" heading="h2" icon={Database} title="ยังเปิดชุดข้อมูลไม่ได้" description={error}
         action={<button className="secondary-button" onClick={read.reload}><RefreshCw size={16} />ลองใหม่</button>} />
       : draft ? <DraftEditor key={draft.id} draft={draft} api={api} onSaved={read.setData} refreshing={read.refreshing} />
       : resourceId ? <ReferenceResources api={api} resourceId={resourceId} onNavigate={onNavigate} refreshVersion={refreshVersion} />
       : <>
-        {!importsView && <PublishedForecasts api={api} onCreated={openDraft} refreshVersion={refreshVersion} />}
         <section className="cms-drafts-panel" aria-label="รายการนำเข้าและฉบับร่าง">
         <div className="cms-list-heading"><div className="cms-section-heading"><span className="cms-section-icon"><FileText size={22} aria-hidden="true" /></span><div>{!importsView && <h2>รายการนำเข้าและฉบับร่าง</h2>}<p className="cms-help">ทำต่อจากที่บันทึกไว้ ข้อมูลจะเปลี่ยนบนเว็บไซต์เมื่อยืนยันเผยแพร่เท่านั้น</p></div></div>
           {!importsView && <button className="secondary-button cms-view-imports" onClick={() => onNavigate('/admin?view=imports')}>ดูทั้งหมด<ChevronRight size={16} /></button>}</div>
@@ -75,8 +76,8 @@ export default function AdminWorkspace({ userId, draftId, view, onNavigate }: { 
         {total > 50 && <div className="cms-pagination"><button className="icon-button" aria-label="หน้าก่อน" disabled={offset === 0} onClick={() => setOffset(value => value - 50)}><ArrowLeft size={18} /></button>
           <span>{offset + 1}–{Math.min(total, offset + 50)} / {total}</span><button className="icon-button" aria-label="หน้าถัดไป" disabled={offset + 50 >= total} onClick={() => setOffset(value => value + 50)}><ArrowRight size={18} /></button></div>}
         </section>
-        {!importsView && <ReferenceResources api={api} resourceId={null} onNavigate={onNavigate} refreshVersion={refreshVersion} />}
       </>}
+    {showCatalog && <ReferenceResources api={api} resourceId={null} onNavigate={onNavigate} refreshVersion={refreshVersion} />}
     {view === 'upload' && !loading && !error && <AdminImport api={api} onClose={() => onNavigate('/admin?view=imports')} onCreated={openDraft} />}
   </section>;
 }

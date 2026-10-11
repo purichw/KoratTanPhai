@@ -5,6 +5,68 @@ import { forecastSlice } from '../tests/fixtures/forecast-slice.mjs';
 
 test.skip(process.env.PLAYWRIGHT_REFERENCE_BACKEND !== 'cms', 'Requires the dedicated CMS build and database fixture');
 
+test('Visitor starts pinned geometry while the forecast is still pending', async ({ page, context }, testInfo) => {
+  test.setTimeout(90000);
+  const database = await cmsTestDatabase(context, { references: true });
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  const geometryReads: string[] = [];
+  let forecastStarted = false;
+  page.on('request', request => {
+    if (request.url().includes('ktp_cms_reference_read')) geometryReads.push(request.postDataJSON().p_id);
+  });
+  try {
+    const overview = JSON.parse(await readFile('src/data/generated/forecast-overview-t1.json', 'utf8'));
+    await page.route('**/rest/v1/rpc/ktp_load_forecast_slice', async route => {
+      forecastStarted = true;
+      await held;
+      await route.fulfill({ json: forecastSlice(overview, route.request().postDataJSON()) });
+    });
+    await seedAuthSession(page); await page.goto('/');
+    await expect.poll(() => forecastStarted).toBe(true);
+    await expect.poll(() => geometryReads.length).toBe(3);
+    await expect(page.locator('.app-startup')).toBeVisible();
+    release();
+    await expect(page.locator('.nr-map-shape')).toHaveCount(289);
+    await expect(page.locator('.app-startup')).toHaveCount(0);
+    expect(new Set(geometryReads).size).toBe(3);
+    expect(geometryReads).toHaveLength(3);
+    await page.screenshot({ path: testInfo.outputPath('parallel-visitor-ready.png') });
+  } finally { release(); await database.close(); }
+});
+
+test('Admin starts both catalogs before the draft list finishes and does not preload Visitor geometry', async ({ page, context }, testInfo) => {
+  test.setTimeout(90000);
+  const database = await cmsTestDatabase(context, { forecasts: true, references: true });
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  const actions: string[] = []; const geometry: string[] = [];
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.pathname === '/api/admin-data') actions.push(url.searchParams.get('action')!);
+    if (url.pathname.endsWith('/ktp_cms_reference_read')) geometry.push(url.pathname);
+  });
+  await page.route('**/api/admin-data?**', async route => {
+    if (new URL(route.request().url()).searchParams.get('action') === 'list') await held;
+    await route.fallback();
+  });
+  try {
+    await seedAdminSession(page); await page.goto('/admin');
+    await expect.poll(() => actions.includes('list')).toBe(true);
+    await expect.poll(() => actions.includes('forecast-catalog') && actions.includes('resource-catalog')).toBe(true);
+    await expect(page.locator('.app-startup')).toBeVisible();
+    release();
+    await expect(page.locator('.app-startup')).toHaveCount(0);
+    await expect(page.locator('.cms-forecast-metrics')).toContainText('เผยแพร่แล้ว');
+    await expect(page.locator('.cms-resource-group')).toHaveCount(2);
+    expect(actions.filter(action => action === 'list')).toHaveLength(1);
+    expect(actions.filter(action => action === 'forecast-catalog')).toHaveLength(1);
+    expect(actions.filter(action => action === 'resource-catalog')).toHaveLength(1);
+    expect(geometry).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath('parallel-admin-ready.png') });
+  } finally { release(); await database.close(); }
+});
+
 test('Admin and public workspaces read only the active CMS geography without creating reference drafts', async ({ page, context }, testInfo) => {
   test.setTimeout(120000);
   const database = await cmsTestDatabase(context, { references: true });
@@ -52,6 +114,42 @@ test('Admin and public workspaces read only the active CMS geography without cre
     expect(errors).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   } finally { await database.close(); }
+});
+
+test('Admin opens the known boundary counterpart while the selected area register is pending', async ({ page, context }, testInfo) => {
+  test.setTimeout(90000);
+  const database = await cmsTestDatabase(context, { references: true });
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  const reads: string[] = [];
+  try {
+    const catalog = await database.operation('resource:catalog', {});
+    const names = catalog.find((row: { resource_key: string }) => row.resource_key === 'canonical/nakhon_ratchasima/admin_hierarchy');
+    const boundaries = catalog.find((row: { resource_key: string }) => row.resource_key === 'geodata/nakhon-ratchasima-subdistricts');
+    await seedAdminSession(page); await page.goto('/admin');
+    await expect(page.locator('.app-startup')).toHaveCount(0);
+    await page.getByLabel('ค้นหาข้อมูลประกอบ', { exact: true }).fill('ข้อมูลพื้นที่');
+    await page.route('**/api/admin-data?**', async route => {
+      if (new URL(route.request().url()).searchParams.get('action') === 'resource-get') {
+        const id = route.request().postDataJSON().id;
+        reads.push(id);
+        if (id === names.id) await held;
+      }
+      await route.fallback();
+    });
+    await page.getByRole('button', { name: 'เปิดข้อมูล', exact: true }).click();
+    await expect.poll(() => reads.includes(names.id)).toBe(true);
+    await expect.poll(() => reads.includes(boundaries.id)).toBe(true);
+    await expect(page.locator('.app-startup')).toBeVisible();
+    release();
+    await expect(page.locator('.cms-area-workspace')).toHaveAttribute('aria-busy', 'false');
+    await expect(page.getByRole('cell', { name: 'ในเมือง', exact: true })).toBeVisible();
+    expect(reads.filter(id => id === names.id)).toHaveLength(1);
+    expect(reads.filter(id => id === boundaries.id)).toHaveLength(1);
+    await page.getByRole('button', { name: 'แผนที่', exact: true }).click();
+    await expect(page.locator('.cms-area-map-canvas > svg > g > path')).toHaveCount(289);
+    await page.screenshot({ path: testInfo.outputPath('parallel-admin-area-map.png') });
+  } finally { release(); await database.close(); }
 });
 
 test('map geometry comes from the pinned CMS revision and zoom behavior is preserved', async ({ page, context }, testInfo) => {

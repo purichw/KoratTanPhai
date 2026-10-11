@@ -3,6 +3,33 @@ import { cmsTestDatabase } from '../tests/fixtures/admin-data.mjs';
 import { readFile, mkdir } from 'node:fs/promises';
 import ExcelJS from '@protobi/exceljs';
 
+test('import starts the area crosswalk before its month catalog finishes', async ({ page, context }) => {
+  test.setTimeout(90000);
+  const db = await cmsTestDatabase(context, { forecasts: true, references: true });
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  const started = new Set<string>();
+  try {
+    await seedAdminSession(page); await page.goto('/admin?view=upload');
+    await expect(page.getByLabel('ไฟล์ข้อมูล', { exact: true })).toBeVisible();
+    await page.route('**/api/admin-data?**', async route => {
+      const action = new URL(route.request().url()).searchParams.get('action')!;
+      started.add(action);
+      if (action === 'forecast-catalog') await held;
+      await route.fallback();
+    });
+    await page.getByLabel('ไฟล์ข้อมูล', { exact: true }).setInputFiles({
+      name: 'forecast.csv', mimeType: 'text/csv', buffer: Buffer.from('Year,Month,ID,Pred_Risk_T+1\n2025,12,1,0'),
+    });
+    await expect.poll(() => started.has('forecast-catalog')).toBe(true);
+    await expect.poll(() => started.has('forecast-crosswalk')).toBe(true);
+    await expect(page.locator('fieldset.cms-import')).toHaveAttribute('aria-busy', 'true');
+    release();
+    await expect(page.locator('fieldset.cms-import')).toHaveAttribute('aria-busy', 'false');
+    expect((await db.operation('list', {})).total).toBe(0);
+  } finally { release(); await db.close(); }
+});
+
 test('repairs invalid year, unknown ID, formula and missing area in the UI, then persists source and corrections', async ({ page, context }, testInfo) => {
   test.setTimeout(120000);
   const db = await cmsTestDatabase(context, { forecasts: true, references: true });

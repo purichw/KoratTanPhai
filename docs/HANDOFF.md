@@ -22,6 +22,20 @@ the newest release supersedes earlier statements about production state.
 
 ## Recent Changes
 
+Loading waterfall reduction (2026-10-11, local only):
+
+- Read-only production probes found avoidable serialized reads in Visitor map
+  startup, the Admin dashboard, forecast-file import and the unified area view.
+  Independent requests now start concurrently through existing authenticated
+  loaders. Account ownership, pinned revisions, fail-closed behavior, explicit
+  publication and the page-readiness overlay remain unchanged.
+- The area view may identify its resource type from the account-owned catalog
+  to start the published counterpart early. Unknown/old links still wait for
+  the explicitly requested revision; they never substitute a newer resource.
+- No database mutation, migration, push or deployment is included. Production
+  remains the verified `3742db7` runtime below. See
+  [PERFORMANCE_20261011.md](PERFORMANCE_20261011.md) for scope and evidence.
+
 Admin import review and offline repair release (2026-10-08):
 
 - Released only this chat's repairable Admin import and reviewed-file work on

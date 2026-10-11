@@ -62,7 +62,12 @@ export function ReferenceResources({ api, resourceId, onNavigate, refreshVersion
   const updatedDate = updated && Number.isFinite(Date.parse(updated)) ? new Date(updated) : null;
   const dateTitle = item?.updated_at ? 'บันทึกล่าสุด' : 'เผยแพร่เมื่อ';
   const districtCount = view?.view === 'areas' ? new Set(table.rows.map(row => row.cells[0])).size : null;
-  if (item && isAreaResource(item.resource_key)) return <AreaWorkspace key={item.id} api={api} primary={item} onNavigate={onNavigate} onReload={read.reload} refreshing={read.refreshing} error={read.error} />;
+  // The account-owned catalog can identify an area before its payload arrives.
+  // Load the published counterpart concurrently; unknown/old links still wait
+  // for their explicitly requested resource, never substituting a newer head.
+  const knownResource = resourceId ? api.cached<Resource[]>('resource-catalog')?.find(resource => resource.id === resourceId || resource.draft_id === resourceId) : undefined;
+  const areaKey = item?.resource_key ?? knownResource?.resource_key;
+  if (resourceId && areaKey && isAreaResource(areaKey) && (!read.error || item)) return <AreaWorkspace key={resourceId} api={api} primary={item} primaryKey={areaKey} onNavigate={onNavigate} onReload={read.reload} refreshing={read.refreshing} error={read.error} />;
   return <section className={`cms-reference${!resourceId ? ' is-catalog' : ' is-detail'}`} aria-labelledby="cms-reference-title" aria-busy={busy}>
     {resourceId && <div className="cms-context-bar cms-reference-context"><nav aria-label="เส้นทางหน้าผู้ดูแล"><a href="/admin" onClick={event => { event.preventDefault(); onNavigate('/admin'); }}><ArrowLeft size={15} aria-hidden="true" />จัดการข้อมูล</a><ChevronRight size={14} aria-hidden="true" /><span aria-current="page">{title}</span></nav>
       <button className="icon-button" disabled={busy} aria-busy={read.refreshing} aria-label="โหลดข้อมูลประกอบใหม่" title="โหลดข้อมูลประกอบใหม่" onClick={() => { setError(''); read.reload(); }}><RefreshCw size={16} /></button></div>}

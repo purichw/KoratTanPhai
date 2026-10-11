@@ -93,7 +93,7 @@ it('keeps direct admin entry on its own login and retains the draft return URL',
   window.history.replaceState(null, '', '/admin?draft=123');
   render(<App />);
   expect(await screen.findByRole('heading', { name: 'เข้าสู่ระบบผู้ดูแล' })).toBeInTheDocument();
-  expect(window.location.pathname).toBe('/admin/login');
+  await waitFor(() => expect(window.location.pathname).toBe('/admin/login'));
   expect(new URLSearchParams(window.location.search).get('next')).toBe('/admin?draft=123');
   expect(screen.queryByText(/Protected:/)).toBeNull();
 });

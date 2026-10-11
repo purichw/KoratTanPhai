@@ -102,8 +102,11 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
         const initial = imported.sheets.find(isOriginalForecastSheet) ?? imported.sheets[0];
         setKind(nextKind); setBook(imported); selectSheet(initial, nextKind, imported.metadata);
         if (nextKind === 'archive') {
-          setCatalog(await api<NonNullable<typeof catalog>>('forecast-catalog'));
-          setAreas(await api<ImportArea[]>('forecast-crosswalk'));
+          const [nextCatalog, nextAreas] = await Promise.all([
+            api<NonNullable<typeof catalog>>('forecast-catalog'),
+            api<ImportArea[]>('forecast-crosswalk'),
+          ]);
+          setCatalog(nextCatalog); setAreas(nextAreas);
         }
       } else throw new Error('รองรับ CSV, Excel .xlsx และ .xls หรือ JSON ที่ส่งออกจากระบบ');
     } catch (failure) { setError(failure instanceof Error ? failure.message : 'อ่านไฟล์ไม่สำเร็จ'); }

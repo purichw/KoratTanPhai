@@ -8,8 +8,13 @@ import { StorageNotice } from "./components/StorageNotice";
 import { AppStartup } from "./components/AppStartup";
 
 const AuthenticatedApp = lazy(async () => {
-  const { bootstrapCmsReferences } = await import('./data/cmsReferences');
+  const { bootstrapCmsReferences, cmsReferencesEnabled } = await import('./data/cmsReferences');
   await bootstrapCmsReferences();
+  // Maps and forecasts are independent reads. Start geometry while the
+  // workspace code/forecast loads, but never for a signed-out or Admin page.
+  if (cmsReferencesEnabled && authScopeForPath(window.location.pathname) === 'visitor') {
+    void import('./data/localMapGeometry').then(({ preloadLocalMapGeometry }) => preloadLocalMapGeometry()).catch(() => {});
+  }
   return import('./AuthenticatedApp');
 });
 

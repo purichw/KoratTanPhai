@@ -13,16 +13,17 @@ import { AreaBoundaryMap } from './AreaBoundaryMap';
 import './areas.css';
 
 type Props = { api: ReturnType<typeof createAdminClient>; primary: ReferenceResourceData; onNavigate: (url: string) => void; onReload: () => void; refreshing: boolean; error: string };
+type LoadingProps = Omit<Props, 'primary'> & { primary?: ReferenceResourceData; primaryKey: string };
 function download(bytes: string, filename: string, type: string) {
   const url = URL.createObjectURL(new Blob([bytes], { type })); const link = document.createElement('a');
   link.href = url; link.download = filename; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function AreaWorkspace(props: Props) {
+export function AreaWorkspace(props: LoadingProps) {
   const [version, setVersion] = useState(0);
   const [pair, setPair] = useState<{ id: string; data?: ReferenceResourceData; error: string; refreshing: boolean }>();
   const catalog = useAdminRead<ReferenceResource[]>(props.api, 'resource-catalog', {}, version);
-  const counterpartKey = props.primary.resource_key === AREA_NAMES_KEY ? AREA_BOUNDARIES_KEY : AREA_NAMES_KEY;
+  const counterpartKey = props.primaryKey === AREA_NAMES_KEY ? AREA_BOUNDARIES_KEY : AREA_NAMES_KEY;
   // Pair the explicitly opened revision (including an old link/draft) with the
   // published counterpart. Never silently replace it with a working draft.
   const counterpart = catalog.data?.find(resource => resource.resource_key === counterpartKey);
@@ -30,8 +31,8 @@ export function AreaWorkspace(props: Props) {
   const currentPair = pair?.id === counterpart?.id ? pair : undefined;
   return <>
     {counterpart && <AreaPair api={props.api} counterpartId={counterpart.id} version={version} onRead={setPair} />}
-    <AreaBrowser {...props} companion={currentPair?.data} companionError={catalog.error || currentPair?.error || (!catalog.loading && !counterpart ? 'ยังไม่มีข้อมูลอีกชุดที่เผยแพร่ใน CMS' : '')}
-      refreshing={props.refreshing || catalog.refreshing || Boolean(counterpart && (!currentPair || currentPair.refreshing))} onReload={reload} />
+    {props.primary && <AreaBrowser {...props} primary={props.primary} companion={currentPair?.data} companionError={catalog.error || currentPair?.error || (!catalog.loading && !counterpart ? 'ยังไม่มีข้อมูลอีกชุดที่เผยแพร่ใน CMS' : '')}
+      refreshing={props.refreshing || catalog.refreshing || Boolean(counterpart && (!currentPair || currentPair.refreshing))} onReload={reload} />}
   </>;
 }
 function AreaPair({ api, counterpartId, version, onRead }: { api: Props['api']; counterpartId: string; version: number; onRead: (value: { id: string; data?: ReferenceResourceData; error: string; refreshing: boolean }) => void }) {
