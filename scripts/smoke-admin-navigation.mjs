@@ -123,7 +123,7 @@ try {
         await round.getByRole('button', { name: 'ปิดรอบพยากรณ์', exact: true }).click();
         await page.getByRole('button', { name: 'ประวัติและกู้คืน', exact: true }).click();
         const history = page.getByRole('dialog', { name: 'กู้คืนจากรุ่นที่เผยแพร่', exact: true });
-        await expect(history.getByRole('combobox', { name: 'รุ่นต้นทางที่จะกู้คืน', exact: true })).toBeVisible();
+        await expect(history.getByRole('combobox', { name: /^รุ่นต้นทาง / })).toBeVisible();
         await expect(history.getByRole('alert')).toHaveCount(0);
         await page.screenshot({ path: path.join(output, `${device}-recovery.png`), fullPage: true });
         await history.getByRole('button', { name: 'ปิดรอบพยากรณ์', exact: true }).click();
@@ -167,6 +167,9 @@ try {
 
       await navigate('รายการนำเข้าและฉบับร่าง');
       await expect(page.getByRole('heading', { name: 'รายการนำเข้าและฉบับร่าง', exact: true })).toBeVisible();
+      // First entry reads the owner-only work list; measure the warm return
+      // after that distinct cold route is ready, as in admin-resume.spec.ts.
+      await watchStartup();
       holdReads('forecast-catalog', 'resource-catalog');
       await navigate('จัดการข้อมูล');
       await expect.poll(() => ['forecast-catalog', 'resource-catalog'].every(action => arrivedActions.has(action))).toBe(true);

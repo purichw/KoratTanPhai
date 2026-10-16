@@ -46,7 +46,7 @@ test('a map failure exits loading and can retry without reloading the forecast',
 test('Admin keeps one splash through list, forecast catalogue and reference reads', async ({ page }, testInfo) => {
   await seedAdminSession(page);
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  const list = gate(); const forecast = gate(); const references = gate();
+  const list = gate(); const forecast = gate(); const references = gate(); const work = gate();
   const reads: string[] = [];
   await page.route('**/api/admin-data**', async route => {
     const action = new URL(route.request().url()).searchParams.get('action')!;
@@ -54,6 +54,7 @@ test('Admin keeps one splash through list, forecast catalogue and reference read
     if (action === 'list') { await list.promise; await route.fulfill({ json: { items: [], total: 0 } }); }
     else if (action === 'forecast-catalog') { await forecast.promise; await route.fulfill({ json: { revision: null, periods: [] } }); }
     else if (action === 'resource-catalog') { await references.promise; await route.fulfill({ json: [] }); }
+    else if (action === 'work-list') { await work.promise; await route.fulfill({ json: [] }); }
     else throw new Error(`Unexpected CMS action: ${action}`);
   });
   try {
@@ -75,11 +76,14 @@ test('Admin keeps one splash through list, forecast catalogue and reference read
     await expect(page.getByRole('heading', { name: 'จัดการข้อมูล', exact: true })).toBeVisible();
     await expect(page.getByText('ยังไม่มีรายการนำเข้าที่ต้องดำเนินการ เริ่มจากนำเข้าไฟล์ หรือตรวจแก้พยากรณ์ในหน้าจัดการข้อมูล', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'นำเข้าข้อมูล', exact: true }).first().click();
+    await expect.poll(() => reads.includes('work-list')).toBe(true);
+    await expect(page.locator('.app-startup')).toBeVisible();
+    work.release();
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.locator('.app-startup')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    expect(reads.sort()).toEqual(['forecast-catalog', 'list', 'resource-catalog']);
-  } finally { list.release(); forecast.release(); references.release(); }
+    expect(reads.sort()).toEqual(['forecast-catalog', 'list', 'resource-catalog', 'work-list']);
+  } finally { list.release(); forecast.release(); references.release(); work.release(); }
 });
 
 test('Admin failure releases loading, offers retry and leaves independent panels usable', async ({ page }) => {

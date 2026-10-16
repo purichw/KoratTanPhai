@@ -1,9 +1,10 @@
 # Forecast Operations: New Rounds, Readiness And Recovery
 
-Status: implementation candidate in `feat/cms-forecast-lifecycle-20261015`.
-The migrations in this change are **not applied to production**. Publication and
-recovery tests use isolated PGlite databases. Deployment requires a separate
-owner instruction and the existing release gates.
+Status: release in progress in `feat/cms-forecast-lifecycle-20261015`, explicitly
+authorized on 2026-10-16. Both migrations are applied to production; existing
+rows and the published dataset are unchanged. Runtime promotion still requires
+the completed CI and authenticated candidate gates. Publication/recovery write
+tests use isolated PGlite databases, never synthetic live forecasts.
 
 ## Operator Journey
 
@@ -179,3 +180,15 @@ were performed. No whole-site accessibility or Safari certification is claimed.
   `CMS_VERIFY_LIFECYCLE=1` adds denial checks for the new private storage and RPCs.
   Candidate/production migration, CI and promotion results must be recorded
   separately after completion.
+- Live migration completed in a single guarded transaction, including migration
+  ledger entries. The guard required the captured migration list and published
+  revision before applying. Post-migration comparison confirmed all 442,918
+  original rows unchanged; five reference resources and 18 private-access denial
+  checks passed through real authenticated PostgREST.
+- Candidate `0028ebb` passed read-only Visitor and Admin lifecycle smoke, but
+  Quality Gate `38868088194` failed two built-browser loading cases: their
+  allowlisted fixture did not answer the new `work-list` read. Other jobs passed.
+  The fixture now gates that read explicitly and checks loading before/after
+  response. Smoke selectors use the shared select's visible accessible name and
+  measure warm return only after the new work-list route's initial read settles.
+  No product code, assertion budget or authentication boundary was relaxed.
