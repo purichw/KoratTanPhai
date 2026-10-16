@@ -11,9 +11,18 @@ const mode = process.argv[2];
 assert.ok(['capture', 'rehearse', 'compare'].includes(mode), 'Use capture, rehearse or compare');
 const output = path.resolve(process.env.CMS_SNAPSHOT_DIR ?? 'artifacts/cms-recovery');
 const linkedRoot = path.resolve(process.env.CMS_LINKED_ROOT ?? process.cwd());
+const profile = process.env.CMS_SNAPSHOT_PROFILE ?? 'initial-cutover';
+assert.ok(['initial-cutover', 'forecast-lifecycle'].includes(profile));
+const lifecycle = profile === 'forecast-lifecycle';
 const tables = ['ktp_districts', 'ktp_subdistricts', 'ktp_forecast_datasets',
   'ktp_research_crosswalk', 'ktp_forecast_runs', 'ktp_forecast_values',
-  'ktp_followed_areas', 'ktp_saved_filters'];
+  'ktp_followed_areas', 'ktp_saved_filters', ...(lifecycle ? ['model_input_batches',
+    'ktp_cms_operators', 'ktp_cms_drafts', 'ktp_cms_audit', 'ktp_cms_forecast_publications',
+    'ktp_cms_resources', 'ktp_cms_resource_audit'] : [])];
+const cmsMigrations = ['20260909010000_model_input_batches.sql', '20260927010000_cms_data_drafts.sql',
+  '20260927020000_cms_forecast_review.sql', '20260927030000_cms_reference_resources.sql',
+  '20260928010000_cms_publication_readiness.sql'];
+const lifecycleMigrations = ['20261015010000_cms_forecast_lifecycle.sql', '20261015020000_cms_import_work.sql'];
 const identifier = name => { assert.match(name, /^[a-z_][a-z0-9_]*$/); return `"${name}"`; };
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 function query(sql) {
@@ -32,7 +41,9 @@ if (mode === 'capture') {
     where table_schema='public' order by table_name,ordinal_position`);
   assert.deepEqual([...new Set(schema.map(c => c.table_name))].sort(), [...tables].sort(), 'Unexpected live tables: review snapshot scope first');
   const metadata = {
-    at: new Date().toISOString(), project: 'dihchjflzhcekywarhxd', schema,
+    at: new Date().toISOString(), project: 'dihchjflzhcekywarhxd', profile, schema,
+    publication: query('select public.ktp_latest_forecast_revision() revision')[0].revision,
+    migrations: query('select version,name from supabase_migrations.schema_migrations order by version'),
     authIds: query('select id from auth.users order by id').map(row => row.id),
     functions: query(`select p.proname,pg_get_functiondef(p.oid) definition,p.proacl::text acl
       from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' order by p.proname`),
@@ -46,7 +57,9 @@ if (mode === 'capture') {
     const columns = schema.filter(c => c.table_name === table && c.is_generated === 'NEVER').map(c => c.column_name);
     const predicates = table === 'ktp_forecast_values'
       ? query('select distinct extract(year from origin_period)::integer as year from public.ktp_forecast_values order by year')
-        .map(({ year }) => { assert.ok(Number.isInteger(year)); return `extract(year from origin_period)=${year}`; }) : ['true'];
+        .map(({ year }) => { assert.ok(Number.isInteger(year)); return `extract(year from origin_period)=${year}`; })
+      : lifecycle && table === 'ktp_cms_resources' ? query('select id from public.ktp_cms_resources order by id')
+        .map(({ id }) => { assert.match(id, /^[a-f0-9-]{36}$/); return `id='${id}'::uuid`; }) : ['true'];
     for (const [index, predicate] of predicates.entries()) {
       const rows = query(rowQuery(table, columns, predicate))[0].data;
       const file = `${table}-${index}.json`;
@@ -60,6 +73,7 @@ if (mode === 'capture') {
 } else if (mode === 'compare') {
   assert.equal((await fs.readFile(path.join(linkedRoot, 'supabase/.temp/project-ref'), 'utf8')).trim(), 'dihchjflzhcekywarhxd');
   const metadata = JSON.parse(await fs.readFile(path.join(output, 'manifest.json'), 'utf8'));
+  assert.equal(metadata.profile ?? 'initial-cutover', profile);
   for (const part of metadata.parts) {
     assert.ok(tables.includes(part.table));
     const expected = JSON.parse(await fs.readFile(path.join(output, part.file), 'utf8'));
@@ -68,21 +82,27 @@ if (mode === 'capture') {
   }
   const report = { checkedAt: new Date().toISOString(), everyExistingRowUnchanged: true,
     rows: metadata.parts.reduce((sum, part) => sum + part.rows, 0) };
+  if (metadata.publication) assert.deepEqual(query('select public.ktp_latest_forecast_revision() revision')[0].revision, metadata.publication);
   await save(`comparison-${Date.now()}.json`, report); console.log(JSON.stringify(report));
 } else {
   const metadata = JSON.parse(await fs.readFile(path.join(output, 'manifest.json'), 'utf8'));
   assert.equal(metadata.project, 'dihchjflzhcekywarhxd');
+  assert.equal(metadata.profile ?? 'initial-cutover', profile);
   const db = new PGlite();
   try {
     await db.exec(`set timezone='UTC'; create role anon; create role authenticated; create role service_role;
       create schema auth; create table auth.users(id uuid primary key);
       create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
       grant usage on schema auth,public to authenticated,anon;`);
-    for (const id of metadata.authIds) await db.query('insert into auth.users values($1)', [id]);
+    if (!lifecycle) for (const id of metadata.authIds) await db.query('insert into auth.users values($1)', [id]);
     await db.exec(await fs.readFile('supabase/baseline/20260905_existing.sql', 'utf8'));
     for (const migration of ['20260905110000_archive_and_saved_workspaces.sql', '20260905124000_target_month_archive_publication.sql',
       '20260906010000_saved_filter_irrigation.sql', '20260906160000_rev03_origin_forecast.sql', '20260907040000_scoped_forecast_reads.sql']) {
       await db.exec(await fs.readFile(`supabase/migrations/${migration}`, 'utf8'));
+    }
+    if (lifecycle) {
+      for (const migration of cmsMigrations) await db.exec(await fs.readFile(`supabase/migrations/${migration}`, 'utf8'));
+      for (const id of metadata.authIds) await db.query('insert into auth.users values($1)', [id]);
     }
     // Restore published historical rows verbatim only inside this throwaway DB.
     await db.exec('set session_replication_role=replica');
@@ -93,7 +113,7 @@ if (mode === 'capture') {
       for (let offset = 0; offset < rows.length; offset += 2000) {
         const records = rows.slice(offset, offset + 2000).map(values => Object.fromEntries(part.columns.map((key, index) => [key, values[index]])));
         const columns = part.columns.map(identifier).join(',');
-        await db.query(`insert into public.${identifier(part.table)}(${columns})
+        await db.query(`insert into public.${identifier(part.table)}(${columns}) overriding system value
           select ${columns} from jsonb_populate_recordset(null::public.${identifier(part.table)},$1::jsonb)`, [JSON.stringify(records)]);
       }
       const restored = (await db.query(rowQuery(part.table, part.columns, part.predicate))).rows[0].data;
@@ -101,15 +121,14 @@ if (mode === 'capture') {
         fields: part.columns.filter((_, index) => restored.some((row, rowIndex) => !isDeepStrictEqual(row[index], rows[rowIndex]?.[index]))),
       }));
       assert.ok(isDeepStrictEqual(restored, rows), `Restored fields differ: ${part.file}`);
+      console.log(JSON.stringify({ restored: part.file, rows: rows.length }));
     }
     await db.exec('set session_replication_role=origin');
     const original = metadata.functions.find(fn => fn.proname === 'ktp_latest_forecast_revision');
     assert.ok(original);
     await db.exec(original.definition);
     const before = (await db.query('select ktp_latest_forecast_revision() revision')).rows[0].revision;
-    for (const migration of ['20260909010000_model_input_batches.sql', '20260927010000_cms_data_drafts.sql',
-      '20260927020000_cms_forecast_review.sql', '20260927030000_cms_reference_resources.sql',
-      '20260928010000_cms_publication_readiness.sql']) {
+    for (const migration of lifecycle ? lifecycleMigrations : cmsMigrations) {
       await db.exec(await fs.readFile(`supabase/migrations/${migration}`, 'utf8'));
     }
     const after = (await db.query('select ktp_latest_forecast_revision() revision')).rows[0].revision;
@@ -121,5 +140,8 @@ if (mode === 'capture') {
     const report = { checkedAt: new Date().toISOString(), restoredRows: metadata.parts.reduce((sum, part) => sum + part.rows, 0),
       parts: metadata.parts.length, everyFieldMatches: true, migrationsPreserveEveryExistingRow: true, unchangedPublication: before.datasetId };
     await save('rehearsal.json', report); console.log(JSON.stringify(report, null, 2));
+  } catch (error) {
+    console.error(JSON.stringify({ error: error.message, code: error.code, table: error.table, column: error.column, constraint: error.constraint }));
+    process.exitCode = 1;
   } finally { await db.close(); }
 }

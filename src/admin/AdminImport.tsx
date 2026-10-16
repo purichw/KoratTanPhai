@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FileUp, ArrowLeft, ArrowRight, Download } from 'lucide-react';
+import { FileUp, ArrowLeft, ArrowRight, Download, CheckCircle2, Save } from 'lucide-react';
 import { AppSelect } from '../components/AppSelect';
 import { MonthSelect } from '../components/MonthSelect';
 import { WorkspaceDialog } from '../components/WorkspaceDialog';
@@ -20,6 +20,8 @@ import { ImportSheetReview } from './ImportSheetReview';
 import { activeImportSheet, importCellIssues, importEvidence, inspectRev3Import, type ImportArea } from './importReview';
 import { ImportPayloadReview } from './ImportPayloadReview';
 import { useImportValidation } from './useImportValidation';
+import { useImportAutosave } from './useImportAutosave';
+import { downloadImportObject, type ImportWork, type ImportSnapshot } from './importWork';
 
 export function emptyEnvelope(kind: DataKind): Payload {
   if (kind === 'archive') return { schemaVersion: 1, baseDatasetId: '', originMonth: '', scope: { subdistrictCodes: [] }, predictions: [] };
@@ -28,35 +30,49 @@ export function emptyEnvelope(kind: DataKind): Payload {
     : { schemaVersion: 1, sourceId: '', batchId: '', ...(kind === 'station' ? {} : { kind }), observations: [] };
 }
 
-export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeof createAdminClient>; onClose: () => void; onCreated: (draft: Draft) => void }) {
-  const [kind, setKind] = useState<DataKind>('archive');
-  const [title, setTitle] = useState('');
-  const [filename, setFilename] = useState('');
-  const [book, setBook] = useState<ImportFile | null>(null);
-  const [sheet, setSheet] = useState<ImportSheet | null>(null);
-  const [originalSheet, setOriginalSheet] = useState<ImportSheet | null>(null);
+export function AdminImport({ api, onClose, onCreated, initial }: { api: ReturnType<typeof createAdminClient>; onClose: () => void; onCreated: (draft: Draft) => void;
+  initial?: { work: ImportWork; snapshot: ImportSnapshot } }) {
+  const saved = initial?.snapshot;
+  const [kind, setKind] = useState<DataKind>(saved?.kind ?? 'archive');
+  const [title, setTitle] = useState(saved?.title ?? '');
+  const [filename, setFilename] = useState(saved?.filename ?? '');
+  const [book, setBook] = useState<ImportFile | null>(saved?.book ?? null);
+  const [sheet, setSheet] = useState<ImportSheet | null>(saved?.sheet ?? null);
+  const [originalSheet, setOriginalSheet] = useState<ImportSheet | null>(saved?.originalSheet ?? null);
   const [areas, setAreas] = useState<ImportArea[] | null>(null);
-  const [mapping, setMapping] = useState<Record<string, string>>({});
-  const [ignored, setIgnored] = useState<string[]>([]);
-  const [payload, setPayload] = useState<Payload | null>(null);
-  const [basePayload, setBasePayload] = useState<Payload | null>(null);
-  const [headerReviewed, setHeaderReviewed] = useState(false);
+  const [mapping, setMapping] = useState<Record<string, string>>(saved?.mapping ?? {});
+  const [ignored, setIgnored] = useState<string[]>(saved?.ignored ?? []);
+  const [payload, setPayload] = useState<Payload | null>(saved?.payload ?? null);
+  const [basePayload, setBasePayload] = useState<Payload | null>(saved?.basePayload ?? null);
+  const [headerReviewed, setHeaderReviewed] = useState(saved?.headerReviewed ?? false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [fileHash, setFileHash] = useState('');
-  const [origin, setOrigin] = useState('');
+  const [fileHash, setFileHash] = useState(saved?.fileHash ?? '');
+  const [origin, setOrigin] = useState(saved?.origin ?? '');
   const [catalog, setCatalog] = useState<{ revision: { datasetId: string }; periods: string[] } | null>(null);
-  const [rowStart, setRowStart] = useState(1);
+  const [rowStart, setRowStart] = useState(saved?.rowStart ?? 1);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [confirmBack, setConfirmBack] = useState(false);
-  const [csvEncoding, setCsvEncoding] = useState<CsvEncoding>('utf-8');
+  const [csvEncoding, setCsvEncoding] = useState<CsvEncoding>(saved?.csvEncoding ?? 'utf-8');
   const reading = useRef<AbortController | null>(null);
   const lastFile = useRef<File | undefined>(undefined);
   const input = useRef<HTMLInputElement>(null);
-  const editedSheets = useRef(new Map<string, ImportSheet>());
-  const preparedPayload = useRef<Payload | null>(null);
+  const editedSheets = useRef(new Map<string, ImportSheet>(saved?.editedSheets));
+  const preparedPayload = useRef<Payload | null>(saved?.preparedPayload ?? null);
   const showPreview = (next: Payload) => { preparedPayload.current = next; setPayload(next); };
-  const allowSavedNavigation = useUnsavedChanges(Boolean(payload || sheet) || busy, setError);
+  const snapshot: ImportSnapshot | null = filename && (sheet || payload) ? { version: 1, kind, title, filename, book, sheet, originalSheet,
+    editedSheets: [...editedSheets.current], mapping, ignored, payload, basePayload, preparedPayload: preparedPayload.current,
+    fileHash, origin, rowStart, headerReviewed, csvEncoding } : null;
+  const autosave = useImportAutosave(api, snapshot, lastFile.current, initial, busy);
+  const allowSavedNavigation = useUnsavedChanges(autosave.dirty || busy || autosave.status === 'saving', setError);
+  useEffect(() => {
+    if (!initial || kind !== 'archive') return;
+    let cancelled = false;
+    void Promise.all([api<NonNullable<typeof catalog>>('forecast-catalog'), api<ImportArea[]>('forecast-crosswalk')])
+      .then(([nextCatalog, nextAreas]) => { if (!cancelled) { setCatalog(nextCatalog); setAreas(nextAreas); } })
+      .catch(failure => { if (!cancelled) setError(failure instanceof Error ? failure.message : 'โหลดทะเบียนไม่สำเร็จ'); });
+    return () => { cancelled = true; };
+  }, [api, initial, kind]);
   useEffect(() => () => reading.current?.abort(), []);
   const rev3 = kind === 'archive' && !book?.metadata?.baseDatasetId;
   const validation = useImportValidation(api, kind, payload);
@@ -78,6 +94,10 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
   }
   async function read(file?: File, encoding = csvEncoding) {
     if (!file) return;
+    if (file !== lastFile.current && (sheet || payload)) {
+      try { await autosave.flush(); autosave.reset(); }
+      catch (failure) { setError(failure instanceof Error ? failure.message : 'บันทึกไฟล์เดิมก่อนเปลี่ยนไฟล์'); return; }
+    }
     lastFile.current = file;
     setBusy(true); setError(''); setPayload(null); setBasePayload(null); setBook(null); setSheet(null); setOriginalSheet(null); setCatalog(null); setAreas(null); editedSheets.current.clear();
     try {
@@ -120,9 +140,10 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
       if (sheet.headerWarnings?.length && !headerReviewed) throw new Error('ยืนยันการจับคู่หัวคอลัมน์ที่ว่างหรือซ้ำก่อน');
       if (rev3) {
         if (!parsed.sheet || !origin) throw new Error(parsed.error || 'ยังไม่มีแถวข้อมูล กรุณากรอกข้อมูลตามแม่แบบ');
-        if (!catalog?.revision || !catalog.periods.includes(origin)) throw new Error('รอบเดือนนี้ยังไม่มีในคลังที่เผยแพร่ การเพิ่มรอบใหม่ยังไม่เปิดใช้');
-        const base = await api<Payload>('forecast-source', { body: { datasetId: catalog.revision.datasetId, originMonth: origin } });
-        setBasePayload(base);
+        if (!catalog?.revision) throw new Error('ยังโหลดรุ่นที่เผยแพร่ไม่สำเร็จ');
+        const existing = catalog.periods.includes(origin);
+        const base = await api<Payload>(existing ? 'forecast-source' : 'forecast-template', { body: { datasetId: catalog.revision.datasetId, originMonth: origin } });
+        setBasePayload(existing ? base : null);
         if (!areas || !originalSheet) throw new Error('ยังโหลดทะเบียนพื้นที่ไม่สำเร็จ กรุณาลองใหม่');
         const next = importOriginalForecast(parsed.sheet, base, areas, origin);
         showPreview({ ...next, sourceImport: importEvidence(originalSheet, sheet, fileHash, mapping, origin) });
@@ -138,7 +159,9 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
   async function save() {
     setBusy(true); setError('');
     try {
-      const draft = await api<Draft>('create', { body: { title, kind, payload, sourceFilename: filename } });
+      const work = await autosave.flush();
+      if (!work) throw new Error('บันทึกงานตรวจไฟล์ก่อนสร้างฉบับร่าง');
+      const draft = await api<Draft>('work-convert', { body: { workId: work.id, revision: work.revision, draft: { title, kind, payload, sourceFilename: filename } } });
       allowSavedNavigation();
       onCreated(draft);
     }
@@ -147,13 +170,16 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
   }
   const close = () => {
     if (busy) { reading.current?.abort(); return; }
-    if (payload || sheet) { setConfirmDiscard(true); return; }
+    if (autosave.dirty || autosave.status === 'saving') { setConfirmDiscard(true); return; }
     onClose();
   };
   return <><WorkspaceDialog title="นำเข้าชุดข้อมูล" wide bounded closeLabel="ปิดการนำเข้าข้อมูล" onClose={close}>
     <fieldset className="cms-import" aria-busy={busy} disabled={busy}>
       <p className="cms-help">อัปโหลด CSV หรือ Excel รุ่นใหม่ (.xlsx) และรุ่นเก่า (.xls) ขนาดไม่เกิน 20 MB ตรวจข้อมูลก่อนบันทึกเป็นฉบับร่าง การนำเข้ายังไม่เปลี่ยนเว็บไซต์</p>
       {error && <p className="cms-error" role="alert">{error}</p>}
+      {snapshot && <div className="cms-validation-bar cms-autosave" role="status"><div><strong><CheckCircle2 size={18} aria-hidden="true" />{autosave.status === 'saving' ? 'กำลังบันทึกงานค้าง' : autosave.dirty ? 'มีการแก้ไขที่ยังไม่บันทึก' : 'บันทึกงานค้างแล้ว'}</strong>
+        <span>{autosave.error || 'เก็บไว้ในบัญชีผู้ดูแลนี้ ยังไม่เผยแพร่บนเว็บไซต์'}</span></div>
+        <button type="button" className="secondary-button" disabled={busy || autosave.status === 'saving'} onClick={() => { void autosave.flush().catch(() => {}); }}><Save size={16} />บันทึกงานค้าง</button></div>}
       {!payload ? <>
         <div className="cms-import-controls"><AppSelect label="ประเภทข้อมูล" ariaLabel="ประเภทข้อมูล" value={kind}
           options={Object.entries(kindLabels).filter(([value]) => value !== 'forecast').map(([value, label]) => ({ value, label }))}
@@ -166,13 +192,22 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
           <p>เตรียมรายชื่อ 289 ตำบลให้แล้ว กรอกปี–เดือนต้นทางและผลล่วงหน้า 1–6 เดือนในชีต “ข้อมูลพยากรณ์” ดูตัวอย่างและคำอธิบายได้ในชีตแยก</p>
           <div className="cms-actions cms-template-downloads"><a className="secondary-button" href={templateUrl} download="Korat_rev3_template.xlsx"><Download size={16} />แม่แบบ Excel พร้อมคำอธิบาย</a>
             <a className="secondary-button" href={csvTemplateUrl} download="Korat_rev3_template.csv"><Download size={16} />แม่แบบ CSV</a></div>
-          <p className="cms-help">CSV มีได้เพียงตารางเดียว ใช้คำอธิบายด้านล่างหรือในแม่แบบ Excel ประกอบ กรอกให้ครบ 289 ตำบลต่อรอบเดือน ระบบยังรับเฉพาะเดือนต้นทางที่มีอยู่ในคลัง</p>
+          <p className="cms-help">CSV มีได้เพียงตารางเดียว กรอกให้ครบ 289 ตำบลต่อรอบเดือน ใช้ได้ทั้งรอบใหม่และตรวจแก้รอบเดิม</p>
           <details className="cms-import-dictionary"><summary>ความหมายของ 12 คอลัมน์และตัวอย่าง</summary><p>{riskHelp}</p>
             <dl>{rev3Fields.map(field => <div key={field.key}><dt>{field.label}</dt><dd>{field.description}<small>ตัวอย่าง: {field.example}</small></dd></div>)}</dl></details>
         </section>}
         <details className="cms-technical"><summary>หากภาษาไทยใน CSV อ่านไม่ออก</summary><AppSelect label="ภาษาในไฟล์ CSV" value={csvEncoding}
           options={[{ value: 'utf-8', label: 'UTF-8 (ทั่วไป)' }, { value: 'windows-874', label: 'ภาษาไทยจาก Excel รุ่นเก่า' }]}
-          onChange={value => { setCsvEncoding(value as CsvEncoding); if (lastFile.current?.name.toLowerCase().endsWith('.csv')) void read(lastFile.current, value as CsvEncoding); }} /></details>
+          onChange={value => {
+            setCsvEncoding(value as CsvEncoding);
+            if (!filename.toLowerCase().endsWith('.csv')) return;
+            if (lastFile.current) void read(lastFile.current, value as CsvEncoding);
+            else if (initial?.work.source_id) {
+              setBusy(true); void downloadImportObject(api, initial.work.id, initial.work.source_id).then(bytes => {
+                lastFile.current = new File([bytes], filename); return read(lastFile.current, value as CsvEncoding);
+              }).catch(failure => setError(failure instanceof Error ? failure.message : 'โหลดต้นฉบับไม่ได้')).finally(() => setBusy(false));
+            }
+          }} /></details>
         {book && sheet && <>
           <AppSelect label="ชีต" ariaLabel="ชีตข้อมูล" value={sheet.name} options={book.sheets.map(item => ({ value: item.name, label: `${item.name} · ${item.rows.length} รายการ` }))}
             onChange={value => selectSheet(book.sheets.find(item => item.name === value)!)} />
@@ -186,7 +221,7 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
             {parsed.error && <p className="cms-warning" role="status">{parsed.error}</p>}
             {parsed.periods.length > 0 && <><MonthSelect ariaLabel="เดือนตั้งต้นในไฟล์นำเข้า" value={origin} onChange={setOrigin}
               options={parsed.periods.map(value => ({ value, label: monthLabel(value) }))} /><p>{sheet.rows.length.toLocaleString('th-TH')} แถวต้นฉบับ · นำเข้าเฉพาะ {monthLabel(origin)} ทีละรอบเดือน</p></>}
-            {catalog && origin && !catalog.periods.includes(origin) && <p className="cms-warning">รอบเดือนนี้ยังไม่มีในคลัง การเพิ่มรอบใหม่ยังไม่เปิดใช้</p>}
+            {catalog && origin && !catalog.periods.includes(origin) && <p className="cms-warning">รอบใหม่ {monthLabel(origin)} · ไม่มีค่ารอบเดิมมาเติมแทน ต้องตรวจข้อมูลให้ครบก่อนเผยแพร่</p>}
             <p className="cms-help">{riskHelp}</p>
           </> : <><h3>จับคู่คอลัมน์</h3><div className="cms-mapping">{DATA_FIELDS[kind].map(field => <div key={field.key}>
             <span>{field.label}{field.optional && <small>ไม่บังคับ</small>}</span>
@@ -205,7 +240,7 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
             setBusy(true); setError(''); void (async () => { try { setCatalog(await api<NonNullable<typeof catalog>>('forecast-catalog')); setAreas(await api<ImportArea[]>('forecast-crosswalk')); }
               catch (failure) { setError(failure instanceof Error ? failure.message : 'โหลดทะเบียนไม่สำเร็จ'); } finally { setBusy(false); } })();
           }}>ลองใหม่</button></p>}
-          <footer className="cms-actions"><button className="primary-button" type="button" disabled={busy || Boolean(sheet.headerWarnings?.length && !headerReviewed) || inspection?.issues.some(issue => issue.severity === 'error') || (rev3 && (!areas || !parsed.sheet || !catalog?.revision || !catalog.periods.includes(origin)))} onClick={() => { void prepare(); }}>ตรวจรายละเอียด<ArrowRight size={18} /></button></footer>
+          <footer className="cms-actions"><button className="primary-button" type="button" disabled={busy || Boolean(sheet.headerWarnings?.length && !headerReviewed) || inspection?.issues.some(issue => issue.severity === 'error') || (rev3 && (!areas || !parsed.sheet || !catalog?.revision || !origin))} onClick={() => { void prepare(); }}>ตรวจรายละเอียด<ArrowRight size={18} /></button></footer>
         </>}
       </> : <>
         <div className="cms-import-summary"><strong>{kindLabels[kind]}</strong><span>{(payload[rowsKey(kind)] as Payload[]).length} รายการ · {filename}</span></div>
@@ -219,8 +254,12 @@ export function AdminImport({ api, onClose, onCreated }: { api: ReturnType<typeo
         </footer>
       </>}
     </fieldset>
-  </WorkspaceDialog>{confirmDiscard && <ConfirmAction title="ยังไม่บันทึกฉบับร่าง" message="ไฟล์ที่เลือกยังไม่ถูกบันทึกเข้าระบบ"
-    confirmLabel="ปิดโดยไม่บันทึก" onCancel={() => setConfirmDiscard(false)} onConfirm={() => { allowSavedNavigation(); onClose(); }} />}
+  </WorkspaceDialog>{confirmDiscard && <WorkspaceDialog title="บันทึกงานค้างก่อนปิด" onClose={() => setConfirmDiscard(false)}>
+    <div className="cms-form"><p>กลับมาทำต่อได้จากรายการนำเข้า การบันทึกนี้ยังไม่เผยแพร่ข้อมูล</p>
+      {autosave.error && <p className="cms-error" role="alert">{autosave.error}</p>}
+      <div className="cms-actions"><button className="secondary-button" disabled={autosave.status === 'saving'} onClick={() => { allowSavedNavigation(); onClose(); }}>ปิดโดยไม่เก็บการแก้ไขล่าสุด</button>
+        <button className="primary-button" disabled={autosave.status === 'saving'} onClick={() => { void autosave.flush().then(() => { allowSavedNavigation(); onClose(); }).catch(() => {}); }}><Save size={16} />บันทึกแล้วปิด</button></div></div>
+  </WorkspaceDialog>}
     {confirmBack && <ConfirmAction title="ย้อนกลับไปตรวจไฟล์?" message="ค่าที่แก้ในขั้นตรวจรายละเอียดจะไม่ถูกเก็บไว้ แต่การแก้แถวในขั้นตรวจไฟล์ยังอยู่"
       confirmLabel="ย้อนกลับโดยไม่เก็บค่าขั้นนี้" onCancel={() => setConfirmBack(false)} onConfirm={() => { setConfirmBack(false); setPayload(null); }} />}</>;
 }

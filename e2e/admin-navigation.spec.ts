@@ -48,17 +48,20 @@ test('Admin navigation stays in CMS across views, history, upload and explicit d
     await expect(page).toHaveURL(/\/admin\?view=upload$/);
     await page.reload();
     await expect(dialog).toBeVisible();
+    // A failed checkpoint must still guard against losing the latest edit.
+    await page.route('**/api/admin-data?action=work-save', route => route.fulfill({ status: 503, json: { error: { code: 'cms_unavailable' } } }));
     await dialog.getByLabel('ไฟล์ข้อมูล', { exact: true }).setInputFiles({
       name: 'station.csv', mimeType: 'text/csv', buffer: Buffer.from('stationId,value\n001,12'),
     });
     await expect(dialog.getByRole('combobox', { name: /^ชีต/ })).toContainText('ข้อมูล CSV');
+    await expect(page.locator('.cms-autosave')).toContainText('เชื่อมต่อ CMS ไม่สำเร็จ');
     await page.goBack();
     await expect(dialog.getByRole('alert')).toContainText('ยังมีข้อมูลที่ไม่ได้บันทึก');
     await expect(page).toHaveURL(/\/admin\?view=upload$/);
     await page.getByRole('button', { name: 'ปิดการนำเข้าข้อมูล', exact: true }).click();
-    const discard = page.getByRole('dialog', { name: 'ยังไม่บันทึกฉบับร่าง', exact: true });
+    const discard = page.getByRole('dialog', { name: 'บันทึกงานค้างก่อนปิด', exact: true });
     await expect(discard).toBeVisible();
-    await discard.getByRole('button', { name: 'ปิดโดยไม่บันทึก', exact: true }).click();
+    await discard.getByRole('button', { name: 'ปิดโดยไม่เก็บการแก้ไขล่าสุด', exact: true }).click();
     await expect(dialog).toHaveCount(0);
     await expect(page).toHaveURL(/\/admin\?view=imports$/);
     expect((await database.operation('list', {})).total).toBe(0);

@@ -8,6 +8,13 @@ const makeSheet = (): ImportSheet => ({ name: 'Data', columns: rev3Fields.map(fi
   ...Object.fromEntries(Array.from({ length: 6 }, (_, i) => [`Pred_Risk_T+${i + 1}`, i % 3])),
 })) });
 describe('repairable import review', () => {
+  it('accepts a complete new origin and uses the same year bounds as the canonical importer', () => {
+    const sheet = makeSheet(); sheet.rows.forEach(row => { row.Year = 2199; row.Month = 6; });
+    const report = inspectRev3Import(sheet, matchRev3Columns(sheet), areas, ['2025-12'], '2199-06');
+    expect(report.issues.every(issue => issue.severity === 'warning')).toBe(true);
+    expect(report.missing).toEqual([]);
+    expect(report.periods).toContain('2199-06');
+  });
   it('collects every invalid period, ID and risk without erasing rows or source positions', () => {
     const sheet = makeSheet(); sheet.rows[0].Year = 2568; sheet.rows[0].Month = 13; sheet.rows[0].ID = 999;
     sheet.rows[0]['Pred_Risk_T+1'] = 'ยังไม่กรอก'; sheet.rows[1]['Pred_Risk_T+4'] = 5;

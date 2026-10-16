@@ -1,12 +1,16 @@
 import { readSmallJson, sendJson } from '../operations/http.mjs';
 import { DATA_FIELDS } from '../../shared/dataFields.mjs';
 import { handleResourceAction } from './resources.mjs';
+import { handleForecastLifecycle } from './forecast-lifecycle.mjs';
+import { handleImportWork } from './import-work.mjs';
 import { CMS_BODY_LIMIT, CmsError, requireCms, checkDraft, checkEditablePayload, contentHash,
   inspectCmsPayload, validateCmsPayload } from './contract.mjs';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const readActions = new Set(['list', 'get', 'original', 'audit', 'schema', 'forecast-catalog', 'forecast-crosswalk', 'resource-catalog']);
-const writeActions = new Set(['inspect', 'create', 'edit', 'validate', 'accept', 'clone-forecast', 'forecast-source', 'resource-get', 'resource-clone', 'resource-edit', 'resource-publish', 'resource-history']);
+const lifecycleActions = new Set(['forecast-new','forecast-template','forecast-history','forecast-restore','forecast-readiness','forecast-compare']);
+const workActions = new Set(['work-list','work-get','work-create','work-upload','work-read-part','work-save','work-convert']);
+const writeActions = new Set(['inspect', 'create', 'edit', 'validate', 'accept', 'clone-forecast', 'forecast-source', 'resource-get', 'resource-clone', 'resource-edit', 'resource-publish', 'resource-history', ...lifecycleActions, ...workActions]);
 
 export function createCmsHandler({ authenticate, operation }) {
   return async (request, response) => {
@@ -45,6 +49,8 @@ export function createCmsHandler({ authenticate, operation }) {
         throw new CmsError(403, 'cross_origin_denied');
       }
       const body = await readSmallJson(request, CMS_BODY_LIMIT, 10000);
+      if (lifecycleActions.has(action)) return sendJson(response, 200, await handleForecastLifecycle(actor, action.slice(9), body, operation));
+      if (workActions.has(action)) return sendJson(response, 200, await handleImportWork(actor, action.slice(5), body, operation));
       if (action === 'inspect') {
         requireCms(body && typeof body === 'object' && !Array.isArray(body) && Object.keys(body).length === 2 && Object.hasOwn(DATA_FIELDS, body.kind) && Object.hasOwn(body, 'payload'));
         return sendJson(response, 200, inspectCmsPayload(body.kind, body.payload));

@@ -12,6 +12,7 @@ const email = process.env.SMOKE_AUTH_EMAIL;
 const password = process.env.SMOKE_AUTH_PASSWORD;
 assert.ok(email && password, 'Provide the real smoke account through environment variables.');
 const output = path.resolve(process.env.SMOKE_OUTPUT_DIR ?? 'smoke-results/admin-navigation');
+const lifecycle = process.env.SMOKE_CMS_LIFECYCLE === '1';
 const expect = baseExpect.configure({ timeout: 30000 });
 await mkdir(output, { recursive: true });
 let cookie = process.env.SMOKE_VERCEL_COOKIE;
@@ -52,7 +53,7 @@ try {
       const auth = url.origin === 'https://dihchjflzhcekywarhxd.supabase.co' && /^\/auth\/v1\/(token|logout)$/.test(url.pathname);
       const readRpc = url.origin === 'https://dihchjflzhcekywarhxd.supabase.co' && /^\/rest\/v1\/rpc\/(ktp_cms_reference_(catalog|read|bundle)|ktp_latest_forecast_revision|ktp_load_forecast_slice)$/.test(url.pathname);
       const readResource = url.origin === base.origin && url.pathname === '/api/admin-data'
-        && ['resource-get', 'resource-history'].includes(url.searchParams.get('action'));
+        && ['resource-get', 'resource-history', ...(lifecycle ? ['forecast-readiness', 'forecast-history', 'work-list'] : [])].includes(url.searchParams.get('action'));
       if (!read && !(request.method() === 'POST' && (auth || readRpc || readResource))) {
         blockedWrites.push(`${request.method()} ${url.pathname}`);
         return route.abort('blockedbyclient');
@@ -112,7 +113,21 @@ try {
       await expect(page.locator('.cms-resource-group:visible')).toHaveCount(2);
       await expect(page.locator('.cms-reference')).not.toContainText('แหล่งข้อมูลอ้างอิง');
       await expect(page.getByRole('combobox', { name: 'เดือนตั้งต้นที่จะตรวจแก้', exact: true })).toBeVisible();
-      await expect(page.locator('.cms-forecast-metrics')).toContainText('เผยแพร่แล้ว');
+      if (lifecycle) {
+        await expect(page.getByRole('group', { name: 'ความพร้อมรอบล่าสุด', exact: true })).toContainText('1,734 / 1,734');
+        await expect(page.locator('.cms-lifecycle')).toContainText('ข้อมูลครบไม่เท่ากับข้อมูลปัจจุบัน');
+        await page.getByRole('button', { name: 'สร้างรอบใหม่', exact: true }).click();
+        const round = page.getByRole('dialog', { name: 'สร้างรอบพยากรณ์ใหม่', exact: true });
+        await expect(round.getByRole('button', { name: 'สร้างฉบับร่าง', exact: true })).toBeDisabled();
+        await page.screenshot({ path: path.join(output, `${device}-new-round.png`), fullPage: true });
+        await round.getByRole('button', { name: 'ปิดรอบพยากรณ์', exact: true }).click();
+        await page.getByRole('button', { name: 'ประวัติและกู้คืน', exact: true }).click();
+        const history = page.getByRole('dialog', { name: 'กู้คืนจากรุ่นที่เผยแพร่', exact: true });
+        await expect(history.getByRole('combobox', { name: 'รุ่นต้นทางที่จะกู้คืน', exact: true })).toBeVisible();
+        await expect(history.getByRole('alert')).toHaveCount(0);
+        await page.screenshot({ path: path.join(output, `${device}-recovery.png`), fullPage: true });
+        await history.getByRole('button', { name: 'ปิดรอบพยากรณ์', exact: true }).click();
+      } else await expect(page.locator('.cms-forecast-metrics')).toContainText('เผยแพร่แล้ว');
       await expect(page.locator('.cms-published [role="alert"]')).toHaveCount(0);
       await page.evaluate(() => document.fonts.ready);
       await page.locator('.brand-mark img').evaluate(image => image.decode());
@@ -179,6 +194,10 @@ try {
       await expect(page.getByRole('heading', { name: 'รายการนำเข้าและฉบับร่าง', exact: true })).toBeVisible();
       await page.reload();
       await expect(page.getByRole('heading', { name: 'รายการนำเข้าและฉบับร่าง', exact: true })).toBeVisible();
+      if (lifecycle) {
+        await expect(page.getByRole('heading', { name: 'งานตรวจไฟล์ที่บันทึกไว้', exact: true })).toBeVisible();
+        await expect(page.locator('.cms-import-work [role="alert"]')).toHaveCount(0);
+      }
       await openNavigation(page);
       await nav.getByRole('link', { name: 'นำเข้าข้อมูล', exact: true }).click();
       const dialog = page.getByRole('dialog', { name: 'นำเข้าชุดข้อมูล', exact: true });
@@ -212,7 +231,7 @@ try {
       report.checks.push({ device, navigation: 'passed', resourceSearch: 'passed', resourceGroupCount: 2, mapResourceCount: 2, retiredSourceCategory: 'absent',
         browserTabReturn: 'passed', manualRefresh: 'passed', warmNavigation: 'passed',
         resourceDetail: areaEvidence,
-        importTemplate: 'passed', independentSessions: 'passed', applicationWrites: 0 });
+        importTemplate: 'passed', independentSessions: 'passed', ...(lifecycle ? { lifecycleReadinessDialogsAndWorkList: 'passed' } : {}), applicationWrites: 0 });
     } finally { resumeReads(); await context.close(); }
   }
   await writeFile(path.join(output, 'report.json'), JSON.stringify(report, null, 2));

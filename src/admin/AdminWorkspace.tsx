@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, CalendarDays, ChartNoAxesCombined, CheckCircle2, ChevronRight, Database, Download, Eye, FileText, FileUp, History, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, X } from 'lucide-react';
-import { MetricGrid } from '../components/PageSummary';
+import { ArrowLeft, ArrowRight, CalendarDays, ChartNoAxesCombined, CheckCircle2, ChevronRight, Database, Download, FileText, FileUp, History, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, X } from 'lucide-react';
 import { AppSelect } from '../components/AppSelect';
 import { MonthSelect } from '../components/MonthSelect';
 import { WorkspaceDialog } from '../components/WorkspaceDialog';
@@ -9,6 +8,8 @@ import { Skeleton } from '../components/nakhon-ratchasima/ForecastLoadingPrimiti
 import { createAdminClient } from './client';
 import { useAdminRead } from './useAdminRead';
 import { AdminImport } from './AdminImport';
+import { ImportWorkList, ResumeImport } from './ImportWorkList';
+import { ForecastLifecycle, ForecastChangePreview, type ForecastComparison } from './ForecastLifecycle';
 import type { AdminView } from './AdminNavigation';
 import { ReferenceResources } from './ReferenceResources';
 import { ConfirmAction } from './ConfirmAction';
@@ -40,6 +41,7 @@ export default function AdminWorkspace({ userId, draftId, view, onNavigate }: { 
   const items = list?.items ?? [];
   const total = list?.total ?? 0;
   const resourceId = new URLSearchParams(window.location.search).get('resource');
+  const workId = new URLSearchParams(window.location.search).get('work');
   const visibleItems = items.filter(item => !isCutoverVerification(item));
   const openDraft = (next: Draft) => onNavigate(`/admin?draft=${encodeURIComponent(next.id)}`);
   const importsView = view === 'imports' || view === 'upload';
@@ -64,6 +66,7 @@ export default function AdminWorkspace({ userId, draftId, view, onNavigate }: { 
       : draft ? <DraftEditor key={draft.id} draft={draft} api={api} onSaved={read.setData} refreshing={read.refreshing} />
       : resourceId ? <ReferenceResources api={api} resourceId={resourceId} onNavigate={onNavigate} refreshVersion={refreshVersion} />
       : <>
+        {importsView && <ImportWorkList key={view} api={api} onNavigate={onNavigate} refreshVersion={refreshVersion} />}
         <section className="cms-drafts-panel" aria-label="รายการนำเข้าและฉบับร่าง">
         <div className="cms-list-heading"><div className="cms-section-heading"><span className="cms-section-icon"><FileText size={22} aria-hidden="true" /></span><div>{!importsView && <h2>รายการนำเข้าและฉบับร่าง</h2>}<p className="cms-help">ทำต่อจากที่บันทึกไว้ ข้อมูลจะเปลี่ยนบนเว็บไซต์เมื่อยืนยันเผยแพร่เท่านั้น</p></div></div>
           {!importsView && <button className="secondary-button cms-view-imports" onClick={() => onNavigate('/admin?view=imports')}>ดูทั้งหมด<ChevronRight size={16} /></button>}</div>
@@ -78,7 +81,8 @@ export default function AdminWorkspace({ userId, draftId, view, onNavigate }: { 
         </section>
       </>}
     {showCatalog && <ReferenceResources api={api} resourceId={null} onNavigate={onNavigate} refreshVersion={refreshVersion} />}
-    {view === 'upload' && !loading && !error && <AdminImport api={api} onClose={() => onNavigate('/admin?view=imports')} onCreated={openDraft} />}
+    {view === 'upload' && !loading && !error && (workId ? <ResumeImport key={workId} api={api} workId={workId} onClose={() => onNavigate('/admin?view=imports')} onCreated={openDraft} />
+      : <AdminImport api={api} onClose={() => onNavigate('/admin?view=imports')} onCreated={openDraft} />)}
   </section>;
 }
 
@@ -101,11 +105,7 @@ function PublishedForecasts({ api, onCreated, refreshVersion }: { api: ReturnTyp
         setBusy(true); setError(''); void api<Draft>('clone-forecast', { body: { datasetId: catalog.revision!.datasetId, originMonth: period } })
           .then(onCreated).catch(failure => setError(errorText(failure))).finally(() => setBusy(false));
       }}><Pencil size={16} />{busy ? 'กำลังสร้างฉบับร่าง' : 'ตรวจแก้รอบนี้'}</button></div></div>}</div>
-    {catalog?.revision && <MetricGrid className="cms-forecast-metrics" ariaLabel="สรุปชุดพยากรณ์ที่เผยแพร่" metrics={[
-      { value: catalog.periods.length.toLocaleString('th-TH'), label: 'รอบเดือนทั้งหมด', icon: <FileText size={22} /> },
-      { value: '6 เดือน', label: 'ล่วงหน้า 1–6 เดือน', icon: <CheckCircle2 size={23} /> },
-      { value: 'เผยแพร่แล้ว', label: 'ชุดข้อมูลที่เว็บไซต์ใช้อยู่', icon: <Eye size={23} />, className: 'cms-publication-metric' },
-    ]} />}
+    {catalog?.revision && <ForecastLifecycle api={api} periods={catalog.periods} onCreated={onCreated} refreshVersion={refreshVersion} />}
   </section>;
 }
 
@@ -121,6 +121,7 @@ function DraftEditor({ draft, api, onSaved, refreshing }: { draft: Draft; api: R
   const [edit, setEdit] = useState<{ index: number | null; value: Payload; metadata?: boolean } | null>(null);
   const [reason, setReason] = useState('');
   const [confirmAccept, setConfirmAccept] = useState(false);
+  const [comparison, setComparison] = useState<ForecastComparison | null>(null);
   const [audit, setAudit] = useState<AuditEntry[] | null>(null);
   const [notice, setNotice] = useState('');
   const [pendingAction, setPendingAction] = useState<'discard' | 'remove' | null>(null);
@@ -205,7 +206,9 @@ function DraftEditor({ draft, api, onSaved, refreshing }: { draft: Draft; api: R
       download(JSON.stringify(result.payload, null, 2), `Korat_original_${draft.id}.json`, 'application/json');
     }); }}><Download size={16} />ข้อมูลก่อนแก้ไข</button>
       {draft.kind !== 'forecast' && draft.state === 'draft' && <button className="primary-button" disabled={busy || !report?.valid || report.revision !== draft.revision}
-        onClick={() => { setReason(''); setConfirmAccept(true); }}><CheckCircle2 size={18} />{draft.kind === 'archive' ? 'เผยแพร่รุ่นใหม่' : 'ยืนยันรับเข้าระบบ'}</button>}
+        onClick={() => { setReason(''); setComparison(null); setConfirmAccept(true);
+          if (draft.kind === 'archive') void run(async () => setComparison(await api<ForecastComparison>('forecast-compare', { body: { draftId: draft.id, revision: draft.revision } })));
+        }}><CheckCircle2 size={18} />{draft.kind === 'archive' ? 'เผยแพร่รุ่นใหม่' : 'ยืนยันรับเข้าระบบ'}</button>}
     </footer>
     {edit && <WorkspaceDialog title={edit.metadata ? 'รายละเอียดชุดข้อมูล' : edit.index === null ? 'เพิ่มรายการ' : `แก้ไขแถว ${edit.index + 1}`} wide bounded onClose={closeEdit} closeLabel="ปิดการแก้ไข">
       <div className="cms-form" aria-busy={busy}>{error && <p className="cms-error" role="alert">{error}</p>}
@@ -228,8 +231,11 @@ function DraftEditor({ draft, api, onSaved, refreshing }: { draft: Draft; api: R
         : 'ชุดข้อมูลที่รับแล้วจะเป็นรุ่นถาวร การแก้ไขครั้งถัดไปต้องใช้รหัสชุดข้อมูลใหม่'}</p>
         {error && <p className="cms-error" role="alert">{error}</p>}
         <label className="cms-field">บันทึกการตรวจสอบ<textarea aria-label="บันทึกการตรวจสอบ" value={reason} maxLength={1000} disabled={busy} onChange={event => setReason(event.target.value)} /></label>
+        {draft.kind === 'archive' && (comparison ? <ForecastChangePreview comparison={comparison} /> : error && !busy
+          ? <button className="secondary-button" onClick={() => { void run(async () => setComparison(await api<ForecastComparison>('forecast-compare', { body: { draftId: draft.id, revision: draft.revision } }))); }}><RefreshCw size={16} />ลองเปรียบเทียบอีกครั้ง</button>
+          : <p role="status">กำลังเปรียบเทียบกับรุ่นที่เผยแพร่</p>)}
         <footer className="cms-actions"><button className="secondary-button" disabled={busy} onClick={() => setConfirmAccept(false)}>ยกเลิก</button>
-          <button className="primary-button" disabled={busy || !reason.trim()} onClick={() => { void run(async () => {
+          <button className="primary-button" disabled={busy || !reason.trim() || (draft.kind === 'archive' && (!comparison || comparison.stale || !comparison.validation.valid))} onClick={() => { void run(async () => {
             const saved = await api<Draft>('accept', { id: draft.id, body: { revision: draft.revision, reason } });
             onSaved(saved); setReport(null); setConfirmAccept(false); setNotice(draft.kind === 'archive' ? 'เผยแพร่พยากรณ์รุ่นใหม่แล้ว' : 'รับชุดข้อมูลเข้าระบบแล้ว');
           }); }}>{draft.kind === 'archive' ? 'ยืนยันเผยแพร่' : 'ยืนยันรับเข้าระบบ'}</button></footer></div>

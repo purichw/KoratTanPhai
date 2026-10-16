@@ -3,6 +3,7 @@ import { forecastScopeCodes } from './data/forecastScope';
 import { forecastTargetPeriod } from './forecastPeriod';
 import { irrigationStatusFromSource, type IrrigationCriterion } from './irrigation';
 import { forecastExportDictionary } from './forecastExportDictionary';
+import { forecastSourceForOrigin } from './forecastSource';
 
 export const exportHorizons = [1, 2, 3, 4, 5, 6] as const;
 export const exportRiskLabels = ['ไม่พบสัญญาณเสี่ยง', 'เสี่ยงปานกลาง', 'เสี่ยงสูง', 'นอกขอบเขตการศึกษา', 'ไม่มีข้อมูล'] as const;
@@ -143,6 +144,7 @@ export function buildForecastExport(archive: Archive, options: ExportOptions, ex
   });
   const targets = exportHorizons.map(horizon => forecastTargetPeriod(options.originPeriod, horizon));
   const meta = structuredClone(archive.meta);
+  const originSource = forecastSourceForOrigin(meta, options.originPeriod);
   const machineRows: ForecastExportMachineRow[] = rows.flatMap(row => exportHorizons.map((horizon, index) => {
     const risk = row.risks[index];
     return {
@@ -155,8 +157,8 @@ export function buildForecastExport(archive: Archive, options: ExportOptions, ex
       riskLabelTh: exportRiskLabel(risk), riskLabelEn: riskLabelsEn[risk === undefined ? 4 : risk === null ? 3 : risk],
       locationCount: 1, sourceVintageKey: `${row.sourceId}|${options.originPeriod}|T+${horizon}`,
       sourceAreaKey: row.sourceAreaKey, sourceAdminCorrectionApplied: row.sourceAdminCorrectionApplied,
-      sourceWorkbook: meta.sourceWorkbookOriginal, sourceSheet: meta.sourceSheet,
-      sourceWorkbookSha256: meta.sourceWorkbookSha256, normalizedManifestSha256: meta.normalizedManifestSha256,
+      sourceWorkbook: originSource.workbook, sourceSheet: originSource.sheet,
+      sourceWorkbookSha256: originSource.sha, normalizedManifestSha256: meta.normalizedManifestSha256,
       datasetId: meta.datasetId, datasetVersion: meta.datasetVersion, provenance: meta.provenance,
       exportVersion: forecastExportVersion, exportedAt: exportedAt.toISOString(),
     };

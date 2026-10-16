@@ -18,6 +18,7 @@ const messages: Record<string, string> = {
   archive_scope_locked: 'เดือนตั้งต้นและขอบเขตของฉบับตรวจแก้ต้องตรงกับต้นฉบับ',
   api_batch_too_large: 'ข้อมูลเกินขนาด 1 MB ตาม contract API กรุณาแบ่งชุดข้อมูล',
   invalid_resource_url: 'URL ต้องเป็น http หรือ https ที่ถูกต้อง ไม่มีช่องว่างหรือข้อมูลเข้าสู่ระบบ',
+  work_limit: 'พื้นที่บันทึกงานค้างเต็ม กรุณาดำเนินการรายการเดิมให้เสร็จก่อน',
 };
 export class AdminRequestError extends Error {
   constructor(public code: string) { super(messages[code] ?? 'ดำเนินการไม่สำเร็จ กรุณาตรวจข้อมูลแล้วลองใหม่'); }
@@ -25,8 +26,9 @@ export class AdminRequestError extends Error {
 export type AdminReadOptions = { id?: string; offset?: number; body?: unknown };
 export const adminReadKey = (action: string, options: AdminReadOptions = {}) =>
   JSON.stringify([action, options.id ?? null, options.offset ?? null, options.body ?? null]);
-const cachedReads = new Set(['list', 'get', 'forecast-catalog', 'resource-catalog', 'resource-get']);
-const otherReads = new Set(['inspect', 'audit', 'validate', 'resource-history', 'original', 'schema', 'forecast-crosswalk', 'forecast-source']);
+const cachedReads = new Set(['list', 'get', 'forecast-catalog', 'resource-catalog', 'resource-get', 'forecast-readiness', 'work-list']);
+const otherReads = new Set(['inspect', 'audit', 'validate', 'resource-history', 'original', 'schema', 'forecast-crosswalk', 'forecast-source',
+  'forecast-history','forecast-template','forecast-compare','work-get','work-read-part']);
 
 export function createAdminClient(userId: string) {
   // Owned by one mounted, account-keyed Admin workspace. Never persist drafts

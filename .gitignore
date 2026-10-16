@@ -21,3 +21,4 @@ supabase/.temp/
 .local/backups/
 .local/restore-drills/
 .local/policies/
+.tools/playwright/

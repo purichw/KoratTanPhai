@@ -6,6 +6,17 @@ passed with the original data unchanged. This is the scoped CMS foundation,
 not complete no-code ownership of every data family; see remaining gates below.
 See `docs/CMS_CUTOVER_20260928.md` for the checkpoint and final outcome.
 
+## Forecast Lifecycle Candidate (2026-10-15)
+
+The current implementation branch adds new forecast origins, computed readiness,
+server-owned import checkpoints/original downloads, comparison before publish,
+and recovery into a new reviewed draft. See
+[CMS_FORECAST_LIFECYCLE.md](CMS_FORECAST_LIFECYCLE.md) for contracts, limits,
+migration order and evidence. **Not deployed; neither new migration has been
+applied to production.** Earlier sections below describe their dated releases;
+their new-origin/raw-autosave/restore exclusions are superseded only in this
+candidate. Model-result publication and geometry changes remain gated.
+
 ## Repairable File Import (2026-10-08)
 
 Released in runtime `3742db7` after full Quality Gate `37776954891` and
@@ -431,16 +442,17 @@ bookmark client. Database publication/run constraints remain authoritative.
 
 Do not describe this as complete no-code ownership of every dataset yet:
 
-- New forecast origins and model-result publication are not enabled. Existing
-  origins can be reviewed/imported; unsupported publication is visibly blocked.
+- New forecast origins are implemented in the 2026-10-15 candidate, awaiting
+  migration and release. Arbitrary model-result publication remains disabled.
 - Geometry replacement, structural reference changes, new canonical areas and
   derived resource regeneration need domain-specific validation and coordinated
   publication. Those resources are inspect/export-only in the generic editor.
 - The reference editor preserves array cardinality; it is not a generic schema
   migration tool. Pending/retained data cannot be promoted to real by changing a
   status field.
-- Full original XLSX binary retention and a UI restore workflow are not yet
-  implemented. Structured originals and previous publications are preserved.
+- Original XLSX/CSV bytes, durable raw-review checkpoints and UI restore are
+  implemented in the 2026-10-15 candidate, not activated on production yet.
+  Structured originals and previous publications remain preserved.
 - The existing model-input validator still uses the canonical area allowlist
   as a validation contract. Moving/change-managing that registry across all API
   services needs a coordinated migration, not a browser-only edit.

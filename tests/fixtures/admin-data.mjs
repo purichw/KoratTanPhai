@@ -19,8 +19,10 @@ export async function cmsTestDatabase(context, { forecasts = false, references =
   }
   if (forecasts) {
     await db.exec(await readFile(new URL('../../supabase/migrations/20260927020000_cms_forecast_review.sql', import.meta.url), 'utf8'));
+    await db.exec(await readFile(new URL('../../supabase/migrations/20261015010000_cms_forecast_lifecycle.sql', import.meta.url), 'utf8'));
     await seedCmsForecast(db);
   }
+  await db.exec(await readFile(new URL('../../supabase/migrations/20261015020000_cms_import_work.sql', import.meta.url), 'utf8'));
   await db.exec(await readFile(new URL('../../supabase/migrations/20260927030000_cms_reference_resources.sql', import.meta.url), 'utf8'));
   if (references) await db.exec((await prepareReferenceSeed()).sql);
   if (references) await context.route('https://ktp-auth-test.supabase.co/rest/v1/rpc/ktp_cms_reference_*', async route => {
@@ -35,13 +37,28 @@ export async function cmsTestDatabase(context, { forecasts = false, references =
     await route.fulfill({ json: result });
   });
   await db.exec('set role service_role');
+  if (forecasts) await context.route('https://ktp-auth-test.supabase.co/rest/v1/rpc/ktp_*forecast*', async route => {
+    const name = new URL(route.request().url()).pathname.split('/').pop();
+    const args = route.request().postDataJSON() ?? {};
+    const result = await db.transaction(async tx => {
+      await tx.exec(`set local role authenticated;select set_config('request.jwt.claim.sub','${authTestUser.id}',true)`);
+      if (name === 'ktp_latest_forecast_revision') return (await tx.query('select public.ktp_latest_forecast_revision() result')).rows[0].result;
+      if (name === 'ktp_load_forecast_slice') return (await tx.query('select public.ktp_load_forecast_slice($1,$2,$3,$4) result',
+        [args.p_version, args.p_origin_period, args.p_area_code, args.p_horizon_count])).rows[0].result;
+      if (name === 'ktp_load_forecast_archive') return (await tx.query('select public.ktp_load_forecast_archive($1,$2) result',
+        [args.p_version, args.p_horizon_count])).rows[0].result;
+      throw new Error('Unexpected public forecast RPC');
+    });
+    await route.fulfill({ json: result });
+  });
   const operation = async (actor, operation, args) => {
     try {
       if (!forecasts && operation === 'forecast:catalog') return { revision: null, periods: [] };
       const forecast = operation.startsWith('forecast:');
       const resource = operation.startsWith('resource:');
-      return (await db.query(`select public.${resource ? 'ktp_cms_resource_operation' : forecast ? 'ktp_cms_forecast' : 'ktp_cms_operation'}($1::uuid,$2::text,$3::jsonb) result`,
-        [actor, resource ? operation.slice(9) : forecast ? operation.slice('forecast:'.length) : operation, JSON.stringify(args)])).rows[0].result;
+      const work = operation.startsWith('work:');
+      return (await db.query(`select public.${work ? 'ktp_cms_import_work_operation' : resource ? 'ktp_cms_resource_operation' : forecast ? 'ktp_cms_forecast' : 'ktp_cms_operation'}($1::uuid,$2::text,$3::jsonb) result`,
+        [actor, work ? operation.slice(5) : resource ? operation.slice(9) : forecast ? operation.slice('forecast:'.length) : operation, JSON.stringify(args)])).rows[0].result;
     } catch (error) {
       if (error.code === '40001') { error.status = 409; error.code = 'revision_conflict'; }
       throw error;
@@ -63,7 +80,9 @@ export async function cmsTestDatabase(context, { forecasts = false, references =
   return {
     db, operation: (action, args) => operation(authTestUser.id, action, args),
     async close() {
-      try { await context.unroute('**/api/admin-data**'); if (references) await context.unroute('https://ktp-auth-test.supabase.co/rest/v1/rpc/ktp_cms_reference_*'); }
+      try { await context.unroute('**/api/admin-data**');
+        if (references) await context.unroute('https://ktp-auth-test.supabase.co/rest/v1/rpc/ktp_cms_reference_*');
+        if (forecasts) await context.unroute('https://ktp-auth-test.supabase.co/rest/v1/rpc/ktp_*forecast*'); }
       finally { server.close(); await once(server, 'close'); await db.close(); }
     },
   };

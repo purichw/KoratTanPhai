@@ -16,7 +16,7 @@ test('Admin cards preserve draft review and searchable resource access at each v
     const draftId = new URL(page.url()).searchParams.get('draft')!;
     await page.goto('/admin');
     await expect(page.locator('.cms-draft-list tbody tr')).toHaveCount(1);
-    await expect(page.locator('.cms-forecast-metrics')).toContainText('เผยแพร่แล้ว');
+    await expect(page.getByRole('group', { name: 'ความพร้อมรอบล่าสุด', exact: true })).toContainText('1,734 / 1,734');
     await page.evaluate(() => document.fonts.ready);
     await page.locator('.brand-mark img').evaluate((image: HTMLImageElement) => image.decode());
     await page.screenshot({ path: info.outputPath('admin-data-full.png'), fullPage: true });

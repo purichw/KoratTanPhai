@@ -31,13 +31,13 @@ export function inspectRev3Import(sheet: ImportSheet, mapping: Record<string, st
   };
   normalized.rows.forEach((value, index) => {
     if (excluded.has(index)) return;
-    const validYear = Number.isInteger(value.Year) && Number(value.Year) >= 1900 && Number(value.Year) <= 2100;
+    const validYear = Number.isInteger(value.Year) && Number(value.Year) >= 1900 && Number(value.Year) <= 2199;
     const validMonth = Number.isInteger(value.Month) && Number(value.Month) >= 1 && Number(value.Month) <= 12;
-    if (!validYear) add(index, 'Year', 'year', 'ปีต้นทางไม่ถูกต้อง', 'ใช้ปี ค.ศ. 1900–2100 เช่น 2025 ไม่ใช่ปี พ.ศ.');
+    if (!validYear) add(index, 'Year', 'year', 'ปีต้นทางไม่ถูกต้อง', 'ใช้ปี ค.ศ. 1900–2199 เช่น 2025 ไม่ใช่ปี พ.ศ.');
     if (!validMonth) add(index, 'Month', 'month', 'เดือนต้นทางไม่ถูกต้อง', 'ระบุเลขเดือน 1–12');
     const period = validYear && validMonth ? `${value.Year}-${String(value.Month).padStart(2, '0')}` : '';
     if (period) origins.add(period);
-    if (period && periods && !periods.includes(period)) add(index, 'Year', 'unsupported_origin', `รอบ ${period} ยังไม่มีในคลัง`, 'ตรวจปีและเดือน การเพิ่มรอบใหม่ยังไม่เปิดใช้');
+    if (period && periods && !periods.includes(period)) add(index, 'Year', 'new_origin', `รอบใหม่ ${period}`, 'ตรวจปีและเดือนต้นทางก่อนสร้างรอบพยากรณ์ใหม่', 'warning');
     if (areas && !ids.has(String(value.ID))) add(index, 'ID', 'unknown_id', `ไม่พบ ID ${String(value.ID ?? '')} ในทะเบียน`, 'เลือกพื้นที่จากทะเบียน ห้ามเดาจากชื่อหรือเติมรหัสใหม่');
     if (period === origin && ids.has(String(value.ID))) found.add(String(value.ID));
     workbookRiskColumns.forEach(column => {

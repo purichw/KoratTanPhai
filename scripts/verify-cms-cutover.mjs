@@ -10,6 +10,7 @@ const key = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 assert.equal(url, 'https://dihchjflzhcekywarhxd.supabase.co');
 assert.ok(key?.startsWith('sb_publishable_'));
 const options = { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } };
+const lifecycle = process.env.CMS_VERIFY_LIFECYCLE === '1';
 const client = createClient(url, key, options);
 const anonymous = createClient(url, key, options);
 const report = { checkedAt: new Date().toISOString(), references: [], denied: [] };
@@ -48,11 +49,11 @@ try {
     assert.ok((await anonymous.rpc(name, args)).error, `Anonymous access allowed: ${name}`);
     report.denied.push(`anonymous:${name}`);
   }
-  for (const name of ['ktp_cms_operation', 'ktp_cms_forecast', 'ktp_cms_resource_operation']) {
+  for (const name of ['ktp_cms_operation', 'ktp_cms_forecast', 'ktp_cms_resource_operation', ...(lifecycle ? ['ktp_cms_forecast_legacy', 'ktp_cms_import_work_operation'] : [])]) {
     assert.ok((await client.rpc(name, { p_actor: data.user.id, p_operation: 'access', p_args: {} })).error, `Browser bypass allowed: ${name}`);
     report.denied.push(`browser:${name}`);
   }
-  for (const table of ['ktp_cms_operators', 'ktp_cms_drafts', 'ktp_cms_audit', 'ktp_cms_forecast_publications', 'ktp_cms_resources', 'ktp_cms_resource_audit', 'model_input_batches']) {
+  for (const table of ['ktp_cms_operators', 'ktp_cms_drafts', 'ktp_cms_audit', 'ktp_cms_forecast_publications', 'ktp_cms_resources', 'ktp_cms_resource_audit', 'model_input_batches', ...(lifecycle ? ['ktp_cms_import_work', 'ktp_cms_import_objects', 'ktp_cms_import_parts'] : [])]) {
     assert.ok((await client.from(table).select('*').limit(1)).error, `Private table exposed: ${table}`);
     report.denied.push(`table:${table}`);
   }

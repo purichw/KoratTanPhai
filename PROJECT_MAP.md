@@ -64,7 +64,7 @@ Actual/operational components are not mounted by current public workspace routes
 | `src/useForecastArchive.ts`, `src/data/supabaseForecastArchive.ts` | Revision-aware scoped database loading |
 | `src/data/cmsReferences.ts`, `shared/cmsResources.mjs` | Five-resource active catalog and pinned reference loading |
 | `src/data/localMapGeometry.ts` | Shared bounded loading for three map geometries |
-| `src/admin`, `server/admin-data` | No-code CMS forms/import, validation, drafts, publication/history and membership |
+| `src/admin`, `server/admin-data` | No-code CMS forms/import, validation, drafts, publication/history and membership; new-round/readiness/checkpoint candidate in `docs/CMS_FORECAST_LIFECYCLE.md` (not deployed) |
 | `src/authScope.ts`, `src/useAuth.ts`, `src/supabase.ts` | Separate account session scopes and shared lazy client |
 | `src/access` | Parked officer-role scaffold; visitor compatibility mode remains explicit |
 | `src/styles.css`, `src/admin/admin.css` | Existing brand tokens, layout, responsive component styles |

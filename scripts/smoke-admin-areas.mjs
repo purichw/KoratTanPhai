@@ -15,6 +15,8 @@ export async function smokeAdminAreas({ page, expect, device, viewport, output }
     const select = page.getByRole('combobox', { name: new RegExp(`^${label}`) });
     if (!await select.isVisible()) await page.getByRole('button', { name: /^ตัวกรอง/ }).click();
     await select.click(); await page.getByRole('option', { name: value, exact: true }).click();
+    // AppSelect restores focus on the next frame; do not race its callback.
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await expect(select).toBeFocused();
   };
   const download = async button => {

@@ -6,6 +6,7 @@ import {
   Minus,
   Plus
 } from "lucide-react";
+import { forecastSourceForOrigin } from '../../forecastSource';
 import {
   type CSSProperties,
   useEffect,
@@ -1253,7 +1254,7 @@ export function NakhonRatchasimaLocalMap({
                   ...(activeAnalysis ? [activeAnalysis.label] : []),
                   ...(pin ? [`พิกัด ${pin.point[1].toFixed(5)}, ${pin.point[0].toFixed(5)} · ตำบล ${pin.code}`] : []),
                 ],
-                source: { workbook: forecastArchive.meta.sourceWorkbookOriginal, sheet: forecastArchive.meta.sourceSheet, version: forecastArchive.meta.datasetVersion, sha: forecastArchive.meta.sourceWorkbookSha256 },
+                source: { ...forecastSourceForOrigin(forecastArchive.meta, forecastArchiveMonth.period), version: forecastArchive.meta.datasetVersion },
                 timestamp: new Date().toLocaleString("th-TH"),
                 scopeFrame: (() => {
                   const groups = new globalThis.Map<string, NakhonRatchasimaGeoFeature[]>();

@@ -1,4 +1,5 @@
 import ExcelJS from '@protobi/exceljs';
+import { forecastSourceForOrigin } from './forecastSource';
 import JSZip from 'jszip';
 import { DOMParser, XMLSerializer, onWarningStopParsing } from '@xmldom/xmldom';
 import templateUrl from './assets/forecast-export-template.xlsx?url';
@@ -345,20 +346,22 @@ export async function createForecastWorkbook(report: ForecastExport, templateByt
   pivot.getCell('A46').value = 'จำนวนที่รวมข้าม T+ คือจำนวนตำบล-เดือน ตำบลเดิมนับซ้ำได้ ไม่ใช่จำนวนตำบลไม่ซ้ำ';
 
   setup(notes, [32, 105]);
-  heading(notes, 'แหล่งข้อมูลและนิยาม', 'รายงานพยากรณ์ย้อนหลัง ไม่ใช่สถานการณ์ตรวจวัดปัจจุบัน');
+  heading(notes, 'แหล่งข้อมูลและนิยาม', 'รายงานพยากรณ์ ไม่ใช่สถานการณ์ตรวจวัดจริง');
+  const source = forecastSourceForOrigin(report.meta, report.options.originPeriod);
+  const baselineSource = report.comparison ? forecastSourceForOrigin(report.comparison.baselineMeta, report.comparison.baselineOriginPeriod) : null;
   const metadata: CellValue[][] = [
     ['เดือนตั้งต้น (T)', report.options.originPeriod], ['ขอบเขตพื้นที่', area], ['ตัวกรองชลประทาน', irrigationLabels[report.options.irrigation]],
     ['ขอบเขตความเสี่ยง', 'ทุกระดับ ตลอด T+1–T+6'], ['เวลาส่งออก (Asia/Bangkok)', new Intl.DateTimeFormat('th-TH', { dateStyle: 'long', timeStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(report.exportedAt)],
-    ['ต้นทาง', 'Supabase: ข้อมูลที่ตรวจสอบรุ่นล่าสุดก่อนส่งออก'], ['ไฟล์ต้นฉบับ', report.meta.sourceWorkbookOriginal], ['ชีตพยากรณ์', report.meta.sourceSheet],
-    ['Dataset ID', report.meta.datasetId], ['Dataset version', report.meta.datasetVersion], ['SHA-256 ต้นฉบับ', report.meta.sourceWorkbookSha256], ['SHA-256 normalized manifest', report.meta.normalizedManifestSha256],
+    ['ต้นทาง', 'Supabase: ข้อมูลที่ตรวจสอบรุ่นล่าสุดก่อนส่งออก'], ['ไฟล์ต้นฉบับ / ที่มารอบนี้', source.workbook], ['ชีตพยากรณ์', source.sheet],
+    ['Dataset ID', report.meta.datasetId], ['Dataset version', report.meta.datasetVersion], ['SHA-256 ต้นฉบับ', source.sha || 'ไม่มีไฟล์ต้นฉบับ: ตรวจแก้ใน CMS'], ['SHA-256 normalized manifest', report.meta.normalizedManifestSha256],
     ['รุ่นรูปแบบส่งออก / Export format version', report.exportVersion], ['รุ่นแม่แบบ / Template version', FORECAST_TEMPLATE_VERSION],
     ['ข้อมูลสำหรับระบบ / Machine-readable data', 'ชีตข้อมูลสำหรับระบบมีค่าตัวเลขความเสี่ยงแยกจากสถานะ; คำอธิบายทุกฟิลด์อยู่ในพจนานุกรมข้อมูล / The machine sheet separates numeric risk from data status; every field is documented in the data dictionary.'],
     ...(report.comparison ? [
       ['รอบที่เทียบ / Compared origins', `${report.comparison.baselineOriginPeriod} → ${report.comparison.currentOriginPeriod}`],
       ['เดือนเป้าหมายร่วม / Shared target months', report.comparison.targets.join(', ')],
       ['รุ่นข้อมูลรอบอ้างอิง / Baseline dataset', `${report.comparison.baselineMeta.datasetId} | ${report.comparison.baselineMeta.datasetVersion}`],
-      ['ต้นฉบับรอบอ้างอิง / Baseline workbook and sheet', `${report.comparison.baselineMeta.sourceWorkbookOriginal} | ${report.comparison.baselineMeta.sourceSheet}`],
-      ['SHA-256 รอบอ้างอิง / Baseline source SHA-256', report.comparison.baselineMeta.sourceWorkbookSha256],
+      ['ต้นฉบับรอบอ้างอิง / Baseline workbook and sheet', `${baselineSource!.workbook} | ${baselineSource!.sheet}`],
+      ['SHA-256 รอบอ้างอิง / Baseline source SHA-256', baselineSource!.sha || 'ไม่มีไฟล์ต้นฉบับ: ตรวจแก้ใน CMS'],
       ['นิยามการเปรียบเทียบ / Comparison meaning', 'จับคู่รหัสตำบลและเดือนเป้าหมายเดียวกันเท่านั้น ผลต่างเป็นรหัสรอบที่เลือกลบรอบอ้างอิง ไม่ใช่เปอร์เซ็นต์ / Matches subdistrict code and identical target month only; delta is current minus baseline class code, not a percentage.'],
     ] : []),
     ['วิธีตรวจย้อนกลับ', 'Source ID + เดือนตั้งต้น (Source_YearMonth) + T+ ของคอลัมน์ เทียบกับไฟล์และชีตต้นฉบับที่ระบุ'],

@@ -149,6 +149,7 @@ export interface NakhonRatchasimaDroughtForecastArchive {
     sourceOfTruth: string;
     sourceWorkbook: string;
     sourceWorkbookOriginal: string;
+    originSources?: Record<string, { filename: string; sha256: string | null; sheet: string; method: string }>;
     sourceWorkbookSha256: string;
     normalizedManifestSha256: string;
     datasetId: string;

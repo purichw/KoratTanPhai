@@ -9,5 +9,5 @@ export type ValidationIssue = { row: number | null; message: string; field?: str
 export type ValidationReport = { revision: number; valid: boolean; rowCount: number; contentHash: string | null; issues: ValidationIssue[] };
 export type AuditEntry = { id: number; action: string; revision: number; reason: string; occurred_at: string; actor_id: string };
 export const kindLabels: Record<DataKind, string> = { station: 'ข้อมูลสถานีตรวจวัด', satellite: 'ข้อมูลดาวเทียม',
-  crop: 'ข้อมูลพื้นที่และผลผลิตพืช', forecast: 'ผลพยากรณ์จากแบบจำลอง', archive: 'แก้ไขพยากรณ์ที่เผยแพร่' };
+  crop: 'ข้อมูลพื้นที่และผลผลิตพืช', forecast: 'ผลพยากรณ์จากแบบจำลอง', archive: 'พยากรณ์รายเดือน' };
 export const rowsKey = (kind: DataKind) => kind === 'forecast' || kind === 'archive' ? 'predictions' : 'observations';

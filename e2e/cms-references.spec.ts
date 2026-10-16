@@ -57,7 +57,7 @@ test('Admin starts both catalogs before the draft list finishes and does not pre
     await expect(page.locator('.app-startup')).toBeVisible();
     release();
     await expect(page.locator('.app-startup')).toHaveCount(0);
-    await expect(page.locator('.cms-forecast-metrics')).toContainText('เผยแพร่แล้ว');
+    await expect(page.getByRole('group', { name: 'ความพร้อมรอบล่าสุด', exact: true })).toContainText('1,734 / 1,734');
     await expect(page.locator('.cms-resource-group')).toHaveCount(2);
     expect(actions.filter(action => action === 'list')).toHaveLength(1);
     expect(actions.filter(action => action === 'forecast-catalog')).toHaveLength(1);

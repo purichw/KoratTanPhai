@@ -19,8 +19,9 @@ export function configuredCmsHandler(env = process.env) {
     async operation(actor, operation, args) {
       const forecast = operation.startsWith('forecast:');
       const resource = operation.startsWith('resource:');
-      const { data, error } = await withDeadline(signal => client.rpc(resource ? 'ktp_cms_resource_operation' : forecast ? 'ktp_cms_forecast' : 'ktp_cms_operation', {
-        p_actor: actor, p_operation: resource ? operation.slice(9) : forecast ? operation.slice('forecast:'.length) : operation, p_args: args,
+      const work = operation.startsWith('work:');
+      const { data, error } = await withDeadline(signal => client.rpc(work ? 'ktp_cms_import_work_operation' : resource ? 'ktp_cms_resource_operation' : forecast ? 'ktp_cms_forecast' : 'ktp_cms_operation', {
+        p_actor: actor, p_operation: work ? operation.slice(5) : resource ? operation.slice(9) : forecast ? operation.slice('forecast:'.length) : operation, p_args: args,
       }).abortSignal(signal), forecast && operation.endsWith('publish') ? 60000 : 15000);
       if (error) {
         if (error.code === '42501') throw new CmsError(403, 'cms_forbidden');
@@ -28,6 +29,7 @@ export function configuredCmsHandler(env = process.env) {
         if (error.code === '23505') throw new CmsError(409, 'batch_already_exists');
         if (error.code === 'P0002') throw new CmsError(404, 'draft_not_found');
         if (error.code === '55000') throw new CmsError(409, 'immutable_revision');
+        if (error.code === '54000') throw new CmsError(413, 'work_limit');
         throw new CmsError(503, 'cms_unavailable');
       }
       return data;

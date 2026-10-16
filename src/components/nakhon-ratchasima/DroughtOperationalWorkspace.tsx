@@ -21,7 +21,7 @@ export function DroughtWorkspaceHeader({ target, archiveLabel, onNavigate }: {
     </button>}
     <h1>ภัยแล้ง{target.level !== "province" && <span> · {scope}</span>}</h1>
     <p>ติดตามสถานการณ์และคาดการณ์พื้นที่เสี่ยงภัยแล้งของ{scope}</p>
-    <small>{archiveLabel && <>เดือนตั้งต้นล่าสุดในคลัง {archiveLabel} · </>}ข้อมูลพยากรณ์ย้อนหลัง ไม่ใช่สถานการณ์ปัจจุบัน</small>
+    <small>{archiveLabel && <>เดือนตั้งต้นล่าสุดในคลัง {archiveLabel} · </>}ผลพยากรณ์ตามรอบข้อมูล ไม่ใช่สถานการณ์ตรวจวัดจริง</small>
   </header>;
 }
 

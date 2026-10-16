@@ -3,7 +3,7 @@ import { cmsTestDatabase } from '../tests/fixtures/admin-data.mjs';
 
 test('Admin login is separate and signout synchronizes only tabs in the same scope', async ({ page, context }, testInfo) => {
   test.setTimeout(120000);
-  const database = await cmsTestDatabase(context, { references: process.env.PLAYWRIGHT_REFERENCE_BACKEND === 'cms' });
+  const database = await cmsTestDatabase(context, { forecasts: process.env.PLAYWRIGHT_DATA_BACKEND === 'supabase', references: process.env.PLAYWRIGHT_REFERENCE_BACKEND === 'cms' });
   try {
     await seedAuthSession(page);
     const cmsReads: string[] = [];
@@ -79,7 +79,7 @@ test('Admin login is separate and signout synchronizes only tabs in the same sco
 
 test('admin login rejects unsafe return paths and shares password/error interaction', async ({ page, context }) => {
   test.setTimeout(60000);
-  const database = await cmsTestDatabase(context, { references: process.env.PLAYWRIGHT_REFERENCE_BACKEND === 'cms' });
+  const database = await cmsTestDatabase(context, { forecasts: process.env.PLAYWRIGHT_DATA_BACKEND === 'supabase', references: process.env.PLAYWRIGHT_REFERENCE_BACKEND === 'cms' });
   try {
     await page.goto('/admin/login?next=https%3A%2F%2Fevil.test%2F');
     await fillAuthForm(page, 'wrong password');
