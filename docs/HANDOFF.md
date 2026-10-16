@@ -9,9 +9,9 @@ per-account followed areas/saved filters. The site brand is Korat Tan Phai /
 
 - Repo: `/Users/point/korattanphai`
 - Production: `https://korattanphai.vercel.app`
-- Current release branch: `fix/forecast-touch-pan-20261006`
-- Verified runtime Quality Gate: `38156665900`, attempt 2 (all seven jobs passed)
-- Deployed runtime: `8b05a25bbaa24ffafb2bf92fee0d47ff4614a190`
+- Current release branch: `feat/cms-forecast-lifecycle-20261015`
+- Verified runtime Quality Gate: `38869935304`, attempt 1 (all seven jobs passed)
+- Deployed runtime: `2d2d7cb0f7922090801643e1e4d5648a4546393c`
 - Source snapshot: copied from Kaset Tan Phai commit
   `0f16794bb57d5dec93b7c6312de7d9362bb97013`.
 
@@ -21,6 +21,56 @@ Recent changes below are chronological checkpoints;
 the newest release supersedes earlier statements about production state.
 
 ## Recent Changes
+
+CMS forecast lifecycle (implemented 2026-10-15, released 2026-10-16):
+
+- Admin can create a new forecast origin through an empty draft or the existing
+  normalized Excel/CSV importer, inspect completeness and date coverage, resume
+  server-saved import reviews, download the exact original, and recover a prior
+  forecast round into a new reviewable draft. Empty cells are insufficient data,
+  never risk 0. Explicit validation/publication, immutable history, per-account
+  work ownership and separate Visitor/Admin sessions remain enforced.
+- Reused the existing Admin shell, metric groups, dialogs, selectors, empty
+  states and forecast/API envelope. Existing-origin correction still works;
+  recovery preserves other origins. The parked Actual routes remain disabled.
+  See [CMS_FORECAST_LIFECYCLE.md](CMS_FORECAST_LIFECYCLE.md) for contracts/limits.
+- Pushed only this chat's changes as `0028ebb` and `2d2d7cb` from the isolated
+  `.tools/cms-forecast-lifecycle-20261015` worktree. Unrelated primary-checkout
+  changes were not staged or overwritten. No native-app changes are included.
+- Captured 442,918 original rows in a private 71-part recovery snapshot and
+  rehearsed both migrations locally. Applied only `20261015010000` and
+  `20261015020000` in one transaction guarded by the prior migration ledger and
+  published revision. Post-migration comparison proved every original field
+  unchanged. Five reference-resource checks and 18 real PostgREST private-access
+  denial checks passed. Post-promotion publication identity is still
+  `a3be4448-6c8e-4039-b574-4674e261ee9b`; new private import tables remain empty.
+- All seven jobs passed in full [Quality Gate 38869935304](https://github.com/purichw/KoratTanPhai/actions/runs/38869935304)
+  on exact `2d2d7cb`. The first run on `0028ebb` failed two built loading cases
+  because their route fixture did not answer the new `work-list` read. The fix
+  explicitly exercises that loading dependency; no timeout/assertion or auth
+  boundary was relaxed, and the second commit changes only tests, smoke and docs.
+- Promoted the verified production-configured candidate
+  `dpl_DHKiNas9gA1jwBQhXrrWuMf9kcmP`
+  (`https://korattanphai-mxq2y8yia-purich-w.vercel.app`). Rechecked the main alias
+  against `8b05a25` immediately before promotion and exact `2d2d7cb` afterward.
+  Supabase/CMS markers, `fallback: false`, and no-store process health passed.
+- Real-account, read-only candidate and production smoke passed: 39 Visitor
+  checks plus Admin navigation, grouped areas, templates, readiness/new-round/
+  recovery dialogs and saved-work lists on desktop/mobile. Separate auth,
+  warm-return behavior, no horizontal overflow and zero application-data writes
+  were verified. Actual publication, autosave/reopen/retry and recovery writes
+  were tested in isolated browser/database fixtures, not with synthetic live
+  forecasts. No physical-iPhone or native Excel rendering certification is made.
+- Hosted [Deployment Smoke 38871707192](https://github.com/purichw/KoratTanPhai/actions/runs/38871707192)
+  also passed on exact `2d2d7cb` against the promoted production alias, including
+  real authentication. CLI promotion did not emit a new GitHub production smoke
+  run, so this single workflow dispatch supplied the hosted post-release check.
+- Evidence is in `artifacts/lifecycle-release-20261016/` in the isolated
+  worktree: `recovery/`, `permissions/`, `candidate-2-admin/`,
+  `candidate-2-visitor/`, `production-admin/` and `production-visitor/`.
+  Recovery deployment is `dpl_F39b2Mi6SE1owJWJJ52xBQwBPFKG` (`8b05a25`). Keep
+  new private tables and original files when rolling back the app; do not drop
+  data. The backup and smoke artifacts are private/ignored, not deploy assets.
 
 Loading waterfall reduction (implemented 2026-10-11, released 2026-10-12):
 

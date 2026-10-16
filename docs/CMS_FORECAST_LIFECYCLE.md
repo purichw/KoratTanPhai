@@ -1,10 +1,11 @@
 # Forecast Operations: New Rounds, Readiness And Recovery
 
-Status: release in progress in `feat/cms-forecast-lifecycle-20261015`, explicitly
-authorized on 2026-10-16. Both migrations are applied to production; existing
-rows and the published dataset are unchanged. Runtime promotion still requires
-the completed CI and authenticated candidate gates. Publication/recovery write
-tests use isolated PGlite databases, never synthetic live forecasts.
+Status: released on 2026-10-16 from `feat/cms-forecast-lifecycle-20261015` at
+`2d2d7cb0f7922090801643e1e4d5648a4546393c`, with explicit owner authorization.
+Both migrations and the compatible app/API are live. Existing rows and the
+published dataset are unchanged. Full CI and authenticated read-only candidate
+and production checks passed. Publication/recovery write tests use isolated
+PGlite databases, never synthetic live forecasts.
 
 ## Operator Journey
 
@@ -154,11 +155,12 @@ all 289 map shapes render, and the page has no horizontal overflow or page error
   `b40647c213dbc8887a0681d42e9e97f34655530b70a99f4cea162d21a564992f`.
   Source is the uncommitted candidate on base `9075f27`; this is not a release SHA.
 
-Scope verdict: **VERIFIED locally**, **PARTIAL for production readiness**.
+Historical scope verdict on 2026-10-15: **VERIFIED locally**, **PARTIAL for production readiness**.
 Real Supabase/PostgREST migration rehearsal, production backup and before/after
 dataset checks, real-account smoke and deployment remain separate release gates.
 No live database changes, production publication, push, deploy or iOS changes
 were performed. No whole-site accessibility or Safari certification is claimed.
+The following release evidence supersedes that local-only status.
 
 ### Release Preparation, 2026-10-16
 
@@ -192,3 +194,37 @@ were performed. No whole-site accessibility or Safari certification is claimed.
   response. Smoke selectors use the shared select's visible accessible name and
   measure warm return only after the new work-list route's initial read settles.
   No product code, assertion budget or authentication boundary was relaxed.
+
+### Production Verification, 2026-10-16
+
+- Final source `2d2d7cb` passed all seven jobs in full
+  [Quality Gate 38869935304](https://github.com/purichw/KoratTanPhai/actions/runs/38869935304),
+  attempt 1. The protected candidate used explicit Supabase/CMS build flags.
+- Verified candidate `dpl_DHKiNas9gA1jwBQhXrrWuMf9kcmP` was promoted to
+  `https://korattanphai.vercel.app` only after CI and real-account read-only
+  candidate checks passed. The main alias was still the expected `8b05a25`
+  immediately before promotion and matched exact `2d2d7cb` afterward.
+- Candidate and production each passed 39 Visitor checks: province/district/
+  subdistrict routes, 289 map geometries, graph units/counts, irrigation,
+  missing/out-of-scope semantics, 1,734 province and 36 district Excel values,
+  native chart/pivot presence and no static fallback. The CMS marker reports
+  `{"backend":"cms","fallback":false}`; process health is HTTP 200/no-store.
+- Hosted [Deployment Smoke 38871707192](https://github.com/purichw/KoratTanPhai/actions/runs/38871707192)
+  passed with exact `2d2d7cb` harness source and real authentication against the
+  promoted production alias.
+- Admin desktop/mobile checks passed readiness, new-round/history dialogs,
+  saved-work lists, templates, grouped areas/map/export, independent sessions,
+  manual refresh and warm navigation. The harness blocks mutations and reported
+  zero application-data writes. Live new import tables remain empty and the
+  published revision is unchanged from the backup. Isolated lifecycle tests,
+  not a live publication experiment, prove write/recovery behavior.
+- Inspected the deployed desktop readiness viewport and mobile new-round dialog:
+  existing branded shell/components, centered metric groups and bounded dialog
+  controls remain intact. Captures and reports are under
+  `artifacts/lifecycle-release-20261016/production-admin/` and
+  `production-visitor/`; candidate equivalents use `candidate-2-*`.
+- Recovery app: `dpl_F39b2Mi6SE1owJWJJ52xBQwBPFKG` (`8b05a25`). Preserve new
+  private storage and original uploads during any application rollback. Private
+  snapshot/permission receipts remain ignored and must not be deployed.
+- Scope verdict: **VERIFIED for this release**. No synthetic production writes,
+  physical-device/native-app tests or whole-site accessibility certification.
