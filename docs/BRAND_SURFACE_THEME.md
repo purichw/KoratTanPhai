@@ -79,9 +79,9 @@ image; it is a palette reference, not permission to adopt its composition.
   legacy native base-token/font/logo checks pass. Original asset files and
   data/auth/publication logic are unchanged. Existing large-chunk build warnings
   remain; no budget or assertion was weakened.
-- Full release/CI, live production smoke, Safari/physical devices, native UI
-  migration and deployment are outside this local theme task. No remote data
-  writes. Keep this distinction when reporting readiness for a future release.
+- This initial local checkpoint preceded the production release recorded below.
+  Physical-device and native UI migration checks remain outside scope. No remote
+  application-data writes were needed for the theme.
 
 Initial comparison images: `comparison-desktop.png` (Reference/Before/After),
 `comparison-mobile.png` and `comparison-admin.png`; detailed states and metrics
@@ -108,8 +108,39 @@ Output was encoded with `cwebp -q 84 -m 6`.
 Focused post-correction evidence is in `artwork/`: five matched Chromium scenes
 (desktop/mobile overview and Admin login, plus the mobile menu) have identical
 component rectangles, no horizontal overflow and no page errors. These current
-captures supersede the earlier artwork appearance. Full build/release and
-whole-site tests were not repeated for this paint-only correction.
+captures supersede the earlier artwork appearance. The correction was subsequently
+included in the full release checks below.
+
+## November production release (2026-11-03)
+
+Runtime `1746981` on `feat/navy-theme-20261103` is deployed at
+`https://korattanphai.vercel.app`, from immutable candidate
+`dpl_Gj4ntMUf56sjzWkrerSjVA52oNQZ`. Theme commit `5afdfbe` includes the corrected
+artwork; `1746981` repairs the existing export dependency audit gate without
+changing UI composition. See [dependency details](THEME_RELEASE_DEPENDENCIES_20261103.md).
+
+[Quality Gate 41625056640](https://github.com/purichw/KoratTanPhai/actions/runs/41625056640)
+passed all seven required jobs on exact runtime source, including protected
+builds, 491 unit tests and the built/database/CMS/compatibility browser suites.
+Real-account, read-only Visitor/Admin candidate smoke passed before promotion.
+Production then passed Admin desktop/mobile smoke and the hosted authenticated
+[Deployment Smoke 41627125447](https://github.com/purichw/KoratTanPhai/actions/runs/41627125447).
+
+Current deployed artwork evidence is under
+`artifacts/navy-theme-20261103/production-final-artwork/theme-hosted-smoke/`:
+desktop/mobile Visitor, Admin and login captures plus `report.json`. The new WebP
+is HTTP 200 with the correct MIME, dimensions and SHA-256; visible images,
+console/network checks, page overflow and the CMS/no-fallback marker pass. The
+mobile Admin header intentionally retains its existing solid surface; the main
+panel carries its landscape. Existing local comparisons establish preserved
+geometry; hosted captures establish the actually served release. They do not
+certify physical-device rendering or native iOS parity.
+
+The alias was verified against prior runtime `2d2d7cb` immediately before
+promotion and exact `1746981` afterward. Recovery deployment is
+`dpl_DHKiNas9gA1jwBQhXrrWuMf9kcmP`. No migration, production application-data
+mutation, unrelated checkout edit or native-app change was included. Further
+release receipts are recorded in [HANDOFF.md](HANDOFF.md).
 
 ## Illustration provenance
 

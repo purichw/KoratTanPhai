@@ -30,5 +30,8 @@ PNG/PDF downloads passed; a full province Excel worker download preserved all
 1,734 source values. The Excel check was rerun on an isolated warmed server with
 HMR disabled after the old dev server reoptimized dependencies and reloaded
 mid-download. No product assertion or timeout changed. The final normal build
-passes. Local exhaustive coverage assertions can time out under concurrent CPU
-load; the unchanged assertions remain required in the exact-commit CI gate.
+and protected builds pass. Local exhaustive coverage assertions timed out under
+concurrent CPU load. The exact `1746981` CI contracts job subsequently passed all
+491 unit tests in 56 files and the production audit with zero vulnerabilities;
+the original assertions and timeouts remain unchanged. See the release record
+in [HANDOFF.md](HANDOFF.md) for the final full gate and deployed target.

@@ -9,9 +9,9 @@ per-account followed areas/saved filters. The site brand is Korat Tan Phai /
 
 - Repo: `/Users/point/korattanphai`
 - Production: `https://korattanphai.vercel.app`
-- Current release branch: `feat/cms-forecast-lifecycle-20261015`
-- Verified runtime Quality Gate: `38869935304`, attempt 1 (all seven jobs passed)
-- Deployed runtime: `2d2d7cb0f7922090801643e1e4d5648a4546393c`
+- Current release branch: `feat/navy-theme-20261103`
+- Verified runtime Quality Gate: `41625056640`, attempt 1 (all seven jobs passed)
+- Deployed runtime: `1746981dcc818a791702da28572e078070f4a758`
 - Source snapshot: copied from Kaset Tan Phai commit
   `0f16794bb57d5dec93b7c6312de7d9362bb97013`.
 
@@ -22,7 +22,7 @@ the newest release supersedes earlier statements about production state.
 
 ## Recent Changes
 
-Navy / Powder / Amber theme (local implementation 2026-11-03, not deployed):
+Navy / Powder / Amber theme (implemented and released 2026-11-03):
 
 - Isolated branch `feat/navy-theme-20261103`, based on `8186896` (the docs
   checkpoint after runtime `2d2d7cb`). Unrelated main-checkout work is untouched.
@@ -36,8 +36,39 @@ Navy / Powder / Amber theme (local implementation 2026-11-03, not deployed):
   dedicated imagegen color derivative and lighter overlays. Original artwork,
   logo, UI geometry and existing CSS crops remain intact; luminosity blending
   is no longer used. See the current `artwork/` evidence under the theme artifacts.
-- See [surface theme](BRAND_SURFACE_THEME.md) for ownership and verification.
-  No push/deploy, remote data write or native palette change in this task.
+- Pushed theme `5afdfbe` and scoped export-dependency repair `1746981`. The
+  first gate found existing production dependency advisories; the repair keeps
+  the ExcelJS/jsPDF versions and removes the vulnerable transitive paths.
+  See [dependency evidence](THEME_RELEASE_DEPENDENCIES_20261103.md). No audit
+  threshold, timeout, assertion or required workflow coverage was relaxed.
+- Full [Quality Gate 41625056640](https://github.com/purichw/KoratTanPhai/actions/runs/41625056640)
+  passed all seven jobs on exact `1746981`: 491 unit tests, 226 built-browser,
+  150 database-browser, 65 CMS-browser and six compatibility cases, retaining
+  intentional backend/viewport skips. Production dependency audit reports zero
+  vulnerabilities. Normal/protected build, exposure and bundle budgets passed.
+- Promoted only the verified candidate `dpl_Gj4ntMUf56sjzWkrerSjVA52oNQZ`
+  (`https://korattanphai-ksgpq4zlq-purich-w.vercel.app`). The production alias was
+  checked immediately before promotion against `2d2d7cb`, then verified against
+  exact `1746981`. Both Supabase/CMS build flags were explicit; the hosted CMS
+  marker is `{"backend":"cms","fallback":false}` and real geometry reads pass.
+- Real-account candidate smoke passed 39 Visitor checks and Admin navigation,
+  grouped areas, templates, readiness/recovery dialogs and work lists on
+  desktop/mobile. Post-promotion Admin smoke and the authenticated production
+  [Deployment Smoke 41627125447](https://github.com/purichw/KoratTanPhai/actions/runs/41627125447)
+  passed on exact `1746981`. No application-data writes occurred in Admin smoke.
+- Production artwork checks passed on Visitor/Admin desktop/mobile: the WebP
+  has the expected dimensions and byte hash, no broken images, page errors or
+  horizontal overflow. The existing compact Admin mobile header remains a solid
+  surface; its illustration is on the main panel. A local-only visual harness
+  was corrected for layered CSS blend values, existing readiness timing and
+  that mobile surface contract; no runtime change was needed.
+- Evidence lives in `artifacts/navy-theme-20261103/` in the isolated worktree:
+  `ci-final.json`, `candidate-final/`, `candidate-final-artwork-verified/`,
+  `production/`, `production-final-artwork/` and `production-smoke-ci.json`.
+  Recovery target remains `dpl_DHKiNas9gA1jwBQhXrrWuMf9kcmP` (`2d2d7cb`).
+  See [surface theme](BRAND_SURFACE_THEME.md) for visual ownership and limits.
+  No migration, remote application-data write or native palette change. No
+  physical-iPhone or native Excel rendering certification is made.
 
 CMS forecast lifecycle (implemented 2026-10-15, released 2026-10-16):
 
