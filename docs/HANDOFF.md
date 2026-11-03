@@ -10,8 +10,8 @@ per-account followed areas/saved filters. The site brand is Korat Tan Phai /
 - Repo: `/Users/point/korattanphai`
 - Production: `https://korattanphai.vercel.app`
 - Current release branch: `feat/loading-scene-20261103`
-- Verified runtime Quality Gate: `41649902370`, attempt 1 (all seven jobs passed)
-- Deployed runtime: `25bed0a9a2baa03d3a5b851c2550b138374b32d5`
+- Verified runtime Quality Gate: `41662827031`, attempt 1 (all seven jobs passed)
+- Deployed runtime: `9f7c80739fc56170ac2145cbf7a0476dc69c05a5`
 - Source snapshot: copied from Kaset Tan Phai commit
   `0f16794bb57d5dec93b7c6312de7d9362bb97013`.
 
@@ -22,7 +22,7 @@ the newest release supersedes earlier statements about production state.
 
 ## Recent Changes
 
-Loading motion continuity and real progress (local follow-up after `781f913`, not deployed):
+Loading motion continuity and real progress (released 2026-11-03 as `9f7c807`):
 
 - Normal-motion measurement reproduced animation restarts as pre-JS, auth,
   lazy-module and page-read screens replace one another. `startupMotion.ts`
@@ -38,13 +38,34 @@ Loading motion continuity and real progress (local follow-up after `781f913`, no
   Reduced motion skips interpolation/fade. See `docs/LOADING_SCREEN.md`.
 - Browser regressions cover orbit continuity, real progress, normal rotation and
   reduced motion. Evidence: `artifacts/loading-motion-20261103/` and
-  `artifacts/loading-progress-20261103/`. Production remains `25bed0a`.
+  `artifacts/loading-progress-20261103/`. Production now serves `9f7c807`.
 - Local verification: TypeScript, 22 focused unit tests and all 36 affected
   desktop/mobile browser cases pass. The initial browser run hit disk `ENOSPC`
   while saving a trace; remaining/repeated cases passed with tracing disabled,
   retaining screenshots and all assertions. A real browser recording samples
-  0 → 33 → 67 → 100 and zero backward orbit-time jumps across mounts. No full
-  build, full CI, deploy or physical-device performance certification this pass.
+  0 → 33 → 67 → 100 and zero backward orbit-time jumps across mounts. These
+  local checks preceded the authorized release below; physical-device FPS is
+  not certified.
+- [Quality Gate 41662827031](https://github.com/purichw/KoratTanPhai/actions/runs/41662827031)
+  passed all seven jobs on exact `9f7c807`: 493 unit tests, 228 built-browser,
+  150 database-browser, 65 CMS-browser and six compatibility checks. Existing
+  backend/viewport skips remain intentional. Normal/protected builds, exposure,
+  bundle budgets and production dependency audit passed.
+- Promoted tracked-source candidate `dpl_FpG2VP3PMYC1Cjf5a1dEYNtzu66f`
+  (`https://korattanphai-qnm3bsf47-purich-w.vercel.app`) with both production
+  backend flags explicit after authenticated candidate smoke passed: 39 Visitor
+  checks, desktop/mobile Admin navigation/areas/lifecycle and eight loading
+  captures. The hosted CMS marker reports `{"backend":"cms","fallback":false}`.
+- Rechecked production immediately before promotion and verified the new alias
+  afterward. Recovery target: `dpl_9L32JjRwCmkvhxg1v5gQZhwtRTji` (`25bed0a`).
+  Production Visitor smoke [41665661116](https://github.com/purichw/KoratTanPhai/actions/runs/41665661116)
+  passed on exact `9f7c807`. Separate read-only Admin and loading checks also
+  passed on desktop/mobile after promotion: real held reads, milestone values,
+  rotating orbit, reduced motion, ready content and exact asset hashes; no
+  broken media, horizontal overflow or page/request errors were observed.
+- Release evidence: `artifacts/loading-progress-20261103/release/` and
+  `artifacts/progress-*.json`. No migration, application-data write or native
+  release. Untracked local tooling was excluded from the source candidate.
 
 Illustrated loading screen (implemented and released 2026-11-03):
 

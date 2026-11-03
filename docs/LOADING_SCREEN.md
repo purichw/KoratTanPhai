@@ -1,9 +1,9 @@
 # Shared illustrated loading screen
 
-Implemented and released on 2026-11-03 on `feat/loading-scene-20261103` as runtime
-`25bed0a9a2baa03d3a5b851c2550b138374b32d5` at `https://korattanphai.vercel.app`.
-The subsequent local follow-up below adds continuous ring motion and real
-readiness milestones; it is not yet deployed. Visitor/Admin data, authentication,
+Current runtime `9f7c80739fc56170ac2145cbf7a0476dc69c05a5` was released on
+2026-11-03 from `feat/loading-scene-20261103` at `https://korattanphai.vercel.app`.
+It adds continuous ring motion and real readiness milestones to the original
+illustration release `25bed0a`. Visitor/Admin data, authentication,
 map/chart behavior and publication contracts are unchanged.
 
 ## Reference and implementation ownership
@@ -33,7 +33,7 @@ illustrated reference. Typography uses the product's existing Google Sans.
 
 ## Honest progress and recovery
 
-Local motion follow-up after `781f913` (not yet deployed): `startupMotion.ts`
+The motion follow-up released as `9f7c807` uses `startupMotion.ts`, which
 captures the orbit's CSS animation start time from the pre-JavaScript screen in `main.tsx`.
 Each `AppStartup` mount aligns its orbit to that same
 document timeline in a layout effect. This prevents auth/module/page-read handoffs
@@ -48,7 +48,7 @@ startup browser regression asserts continuous orbit phase across replacement
 DOM nodes, visible rotation, real readiness values and reduced-motion feedback. Evidence is local at
 `artifacts/loading-motion-20261103/`; this does not certify physical-device FPS.
 
-The local follow-up replaces the released indeterminate bar with **page-readiness
+The current runtime replaces the original indeterminate bar with **page-readiness
 progress**, explicitly labeled `ความพร้อมของหน้า · N/3 ขั้นตอน`. The denominator
 counts three actual lifecycle milestones, not downloaded bytes, individual
 requests or estimated remaining time:
@@ -124,8 +124,8 @@ passed with tracing disabled, without relaxing assertions. A real browser
 recording samples 0/33/67/100 with zero backward orbit-time jumps across mounts;
 its frames were visually inspected. Evidence:
 `artifacts/loading-progress-20261103/` and
-`artifacts/loading-motion-20261103/progress/`. No full build/CI/deploy or physical
-device FPS certification was performed for this local follow-up.
+`artifacts/loading-motion-20261103/progress/`. The subsequent authorized release
+added full CI and hosted verification below. Physical-device FPS is not certified.
 
 Original released illustration verification:
 
@@ -154,6 +154,30 @@ The original local design pass did not certify production or a physical iPhone.
 The subsequent authorized release used the normal gate, as recorded below.
 
 ## Production release evidence
+
+Motion and real progress — runtime `9f7c807` (2026-11-03):
+
+- [Quality Gate 41662827031](https://github.com/purichw/KoratTanPhai/actions/runs/41662827031),
+  attempt 1, passed all seven jobs: 493 unit, 228 built-browser, 150 database,
+  65 CMS and six compatibility cases, retaining intentional backend/viewport
+  skips. Protected builds, exposure, bundle budgets and dependency audit pass.
+- Candidate `https://korattanphai-qnm3bsf47-purich-w.vercel.app`, deployment
+  `dpl_FpG2VP3PMYC1Cjf5a1dEYNtzu66f`, came from a tracked-source Git archive with
+  both production backend flags explicit. Authenticated candidate checks passed
+  for 39 Visitor checks, desktop/mobile Admin workflows and eight loading states.
+- The production alias was rechecked before promotion and verified afterward.
+  Recovery target is `dpl_9L32JjRwCmkvhxg1v5gQZhwtRTji` (`25bed0a`). Authenticated
+  production [Deployment Smoke 41665661116](https://github.com/purichw/KoratTanPhai/actions/runs/41665661116)
+  passed using exact runtime `9f7c807`; separate Admin and loading checks passed
+  after promotion on desktop/mobile. Observed 0% pre-JS, 33% held bootstrap,
+  67% held page reads, normal orbit rotation, reduced-motion feedback and release
+  to ready content. Requests were continued unchanged; no API data was mocked.
+- CMS backend marker, exact loading-asset hashes and decoded media pass. No
+  horizontal overflow or page/request errors were observed. Current candidate
+  and production captures were visually inspected. Evidence:
+  `artifacts/loading-progress-20261103/release/` and `artifacts/progress-*.json`.
+
+Original illustration — runtime `25bed0a` (2026-11-03):
 
 - [Quality Gate 41649902370](https://github.com/purichw/KoratTanPhai/actions/runs/41649902370),
   attempt 1, passed all seven jobs on exact `25bed0a`. Unit tests: 491;
