@@ -8,9 +8,20 @@ test('the branded startup is painted before JavaScript, on Visitor and Admin ent
   try {
     for (const path of ['/', '/admin']) {
       await page.goto(`${baseURL}${path}`);
-      await expect(page.locator('.app-startup')).toHaveCSS('background-color', 'rgb(238, 244, 252)');
-      await expect(page.locator('.app-startup')).toHaveCSS('color', 'rgb(15, 46, 94)');
+      await expect(page.locator('.app-startup')).toHaveCSS('background-color', 'rgb(220, 236, 255)');
+      await expect(page.locator('.app-startup')).toHaveCSS('color', 'rgb(16, 54, 109)');
       await expect(page.locator('.app-startup img')).toBeVisible();
+      const portrait = (info.project.use.viewport?.width ?? 1440) <= 720;
+      await expect(page.locator('.app-startup-scene')).toHaveCSS('background-image', portrait ? /korat-loading-portrait.webp/ : /korat-loading-landscape.webp/);
+      await expect(page.getByRole('progressbar')).toBeVisible();
+      await expect(page.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow');
+      expect(await page.locator('.app-startup').innerText()).not.toMatch(/\d+\s*%/);
+      const scene = await page.locator('.app-startup-scene').evaluate(async element => {
+        const image = new Image(); image.src = getComputedStyle(element).backgroundImage.slice(5, -2); await image.decode();
+        return { width: image.naturalWidth, height: image.naturalHeight, overflow: document.documentElement.scrollWidth > innerWidth };
+      });
+      expect(scene).toEqual(portrait ? { width: 934, height: 1684, overflow: false } : { width: 1536, height: 1024, overflow: false });
+      await page.screenshot({ path: info.outputPath(path === '/' ? 'visitor-pre-js.png' : 'admin-pre-js.png') });
     }
   } finally { await context.close(); }
 });

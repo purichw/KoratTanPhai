@@ -22,6 +22,24 @@ the newest release supersedes earlier statements about production state.
 
 ## Recent Changes
 
+Illustrated loading screen (implemented locally 2026-11-03, not deployed):
+
+- Branch `feat/loading-scene-20261103` starts at documentation checkpoint
+  `889c315`. Production remains the verified `1746981` release below.
+- Applied the owner's desktop and annotated tablet/mobile references to shared
+  `AppStartup` and the pre-JavaScript entry. Native text, official emblem and
+  icons sit above responsive WebP scenery; blue/amber rings and the loading bar
+  animate with reduced-motion support. No unrelated page composition changed.
+- Progress remains indeterminate because current reads expose no reliable
+  total. There is no invented percentage, timed step completion or minimum wait.
+  Readiness, independent auth, failures/retry and the existing 20-second reload
+  recovery remain with their current owners.
+- Twelve targeted desktop/mobile loading/theme checks, TypeScript and the final
+  Vite build pass. Reference/Before/After evidence plus tablet portrait, compact
+  mobile and landscape/recovery captures live in
+  `artifacts/loading-scene-20261103/`. No physical-device, production or full
+  release-suite certification is claimed. See [LOADING_SCREEN.md](LOADING_SCREEN.md).
+
 Navy / Powder / Amber theme (implemented and released 2026-11-03):
 
 - Isolated branch `feat/navy-theme-20261103`, based on `8186896` (the docs

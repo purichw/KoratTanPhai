@@ -117,7 +117,7 @@ test("leaving a pending archive load keeps overview usable and reuses its result
   const held = new Promise<void>((resolve) => { release = resolve; });
   await page.route(archiveRequest, async (route) => { requests += 1; await held; await route.continue(); });
   await page.goto("/drought?mapLayer=forecast-archive&target=2025-12&horizon=6");
-  await expect(page.locator('.app-startup').getByRole("status")).toHaveText("กำลังเตรียมข้อมูลให้คุณ");
+  await expect(page.locator('.app-startup').getByRole("status")).toHaveText("กำลังเตรียมข้อมูลให้คุณ...");
   await expect.poll(() => [...geometryRequests].sort()).toEqual(expectedGeometryPaths);
   await expect(page.locator(".nr-drought-compact-workspace")).toHaveCount(0);
   // Full-page loading makes underlying navigation inert; browser navigation

@@ -217,6 +217,8 @@ with test fixtures. Source cleanup alone does not authorize remote data deletion
   [OPERATIONS](docs/OPERATIONS.md), [API](docs/API.md): access and backend scope.
 - [DESIGN_SYSTEM](docs/DESIGN_SYSTEM.md), [SHARED_COMPONENTS](docs/SHARED_COMPONENTS.md):
   visual direction and component interaction contracts.
+- [LOADING_SCREEN](docs/LOADING_SCREEN.md): shared illustrated startup, responsive
+  assets, real readiness and recovery behavior, and reference comparison evidence.
 - [HANDOFF](docs/HANDOFF.md): release checkpoint, evidence and outstanding risks.
 
 Historical specifications preserve provenance but do not override current code,

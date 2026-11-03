@@ -1,38 +1,154 @@
+/* Shared by the pre-JavaScript entry and Visitor/Admin AppStartup. */
 .app-startup {
+  --startup-ink: #10366d;
+  --startup-muted: #496791;
+  --startup-halo: min(69svh, 700px);
   position: fixed;
   inset: 0;
   z-index: 1200;
-  display: grid;
-  place-items: center;
+  isolation: isolate;
   overflow: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
   box-sizing: border-box;
-  padding: max(32px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
-  background: var(--ktp-page);
-  color: var(--ktp-navy-950);
+  background: #dcecff;
+  color: var(--startup-ink);
   font-family: 'Google Sans', sans-serif;
   text-align: center;
   letter-spacing: 0;
 }
-.app-startup-brand { width: min(100%, 360px); margin: auto; }
-.app-startup-brand > img { display: block; width: 176px; height: 176px; object-fit: contain; margin: 0 auto 16px; }
-.app-startup-brand h1 { margin: 0; font-size: 28px; line-height: 1.4; font-weight: 700; }
-.app-startup-caption { margin: 6px 0 0; font-size: 14px; line-height: 1.6; color: var(--ktp-text-secondary); }
-.app-startup-track { height: 3px; width: min(100%, 240px); margin: 36px auto 18px; overflow: hidden; border-radius: 3px; background: var(--ktp-blue-100); }
-.app-startup-track > span { display: block; width: 42%; height: 100%; background: var(--brand-primary, var(--ktp-navy-950)); border-radius: inherit; animation: app-startup-progress 1.6s ease-in-out infinite; }
-.app-startup-message { margin: 0; font-size: 15px; line-height: 1.7; color: var(--ktp-text-secondary); }
-.app-startup-recovery { margin-top: 20px; font-size: 14px; line-height: 1.6; color: var(--ktp-text-secondary); }
-.app-startup-recovery p { margin: 0 0 12px; }
+.app-startup-scene {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background: url('/brand/korat-loading-landscape.webp') center bottom / cover no-repeat;
+}
+.app-startup-halo {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  width: var(--startup-halo);
+  aspect-ratio: 1;
+  left: 50%;
+  top: calc(44svh - var(--startup-halo) / 2);
+  transform: translateX(-50%);
+  border: 1px solid rgb(255 255 255 / 76%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, rgb(255 255 255 / 90%) 5%, rgb(245 249 255 / 76%) 72%);
+  box-shadow: 0 0 75px 26px rgb(246 249 255 / 40%);
+}
+.app-startup-halo::before,
+.app-startup-halo::after {
+  content: '';
+  position: absolute;
+  inset: -34px;
+  border: 1px solid rgb(255 255 255 / 55%);
+  border-radius: inherit;
+  background: rgb(255 255 255 / 5%);
+}
+.app-startup-halo::after { inset: -68px; border-color: rgb(255 255 255 / 35%); }
+.app-startup-orbit {
+  position: absolute;
+  inset: -10%;
+  border-radius: inherit;
+  background: url('/brand/korat-loading-orbit.svg') center / contain no-repeat;
+  animation: app-startup-orbit 18s linear infinite;
+}
+.app-startup-brand {
+  box-sizing: border-box;
+  width: min(560px, calc(100% - 48px));
+  margin: max(32px, 14.5svh, env(safe-area-inset-top)) auto max(36px, env(safe-area-inset-bottom));
+}
+.app-startup-brand > img { display: block; width: 230px; height: 230px; object-fit: contain; margin: 0 auto; }
+.app-startup-brand h1 { margin: -12px 0 0; font-size: 56px; line-height: 1.2; font-weight: 700; color: var(--startup-ink); }
+.app-startup-caption { margin: 6px 0 0; font-size: 26px; line-height: 1.2; font-weight: 600; color: var(--startup-muted); }
+.app-startup-steps { display: grid; grid-template-columns: repeat(3, 1fr); width: min(460px, 100%); margin: 24px auto 0; padding: 0; list-style: none; }
+.app-startup-steps li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; color: var(--startup-muted); font-size: 18px; line-height: 1.5; font-weight: 600; }
+.app-startup-steps li:not(:last-child)::after { content: ''; position: absolute; height: 3px; top: 25px; left: calc(50% + 36px); width: calc(100% - 72px); border-radius: 3px; background: #c6d6eb; }
+.app-startup-steps li[aria-current] { color: var(--startup-ink); }
+.app-startup-steps li[aria-current]::after { background: linear-gradient(90deg, #169dff 12%, #c6d6eb 12%); }
+.app-startup-step-icon { display: grid; place-items: center; box-sizing: border-box; width: 52px; height: 52px; border: 3px solid #bfd0e9; border-radius: 50%; background: rgb(241 247 255 / 62%); }
+.app-startup-step-icon svg { display: block; width: 28px; height: 28px; stroke-width: 2; }
+.app-startup-steps li[aria-current] .app-startup-step-icon { color: #fff; border-color: #f7fbff; background: linear-gradient(145deg, #079cff, #0661c2); box-shadow: 0 1px 5px rgb(16 83 169 / 10%); }
+.app-startup-progress { display: flex; align-items: center; gap: 16px; box-sizing: border-box; width: min(510px, 100%); margin: 36px auto 0; padding: 7px 12px 7px 7px; border-radius: 999px; background: rgb(255 255 255 / 94%); box-shadow: 0 5px 15px rgb(27 83 151 / 16%), 0 0 25px rgb(255 255 255 / 70%); }
+.app-startup-track { height: 24px; flex: 1; min-width: 0; overflow: hidden; border-radius: 999px; background: #cddbf0; }
+.app-startup-track > span { display: block; width: 64%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #008cff 5%, #1db2ff 80%, #8be4ff); box-shadow: 0 0 10px 4px #fff; animation: app-startup-progress 2.4s ease-in-out infinite; }
+.app-startup-activity { display: flex; align-items: center; justify-content: center; gap: 5px; width: 44px; flex: 0 0 44px; }
+.app-startup-activity i { width: 5px; height: 5px; border-radius: 50%; background: var(--startup-ink); animation: app-startup-dot 1.5s ease-in-out infinite; }
+.app-startup-activity i:nth-child(2) { animation-delay: .15s; }
+.app-startup-activity i:nth-child(3) { animation-delay: .3s; }
+.app-startup-message { margin: 24px 0 0; color: var(--startup-muted); font-size: 24px; font-weight: 600; line-height: 1.5; }
+.app-startup-recovery { margin: 18px auto 0; padding: 16px 20px; width: fit-content; max-width: 100%; box-sizing: border-box; border: 1px solid #c6d7ee; border-radius: 16px; background: rgb(255 255 255 / 94%); box-shadow: 0 4px 16px rgb(16 54 109 / 8%); color: var(--startup-muted); font-size: 15px; line-height: 1.6; }
+.app-startup-recovery p { margin: 0 0 12px; text-wrap: balance; }
 .app-startup-recovery button { margin: auto; }
+.app-startup noscript { display: block; margin-top: 20px; font-size: 16px; color: var(--startup-ink); }
 .page-load-content { display: contents; }
 .page-load-content[inert] { visibility: hidden; }
-@keyframes app-startup-progress {
-  0% { transform: translateX(-105%); }
-  100% { transform: translateX(345%); }
+@keyframes app-startup-progress { 0% { transform: translateX(-105%); } 100% { transform: translateX(165%); } }
+@keyframes app-startup-orbit { to { transform: rotate(360deg); } }
+@keyframes app-startup-dot { 0%, 80%, 100% { opacity: .35; } 40% { opacity: 1; } }
+@media (min-width: 721px) and (orientation: portrait) {
+  .app-startup-scene { background-color: #89c6ff; background-size: 100% auto; }
+  .app-startup-scene::before { content: ''; position: absolute; inset: 0 0 auto; height: max(64px, calc(100svh - 66.667vw + 64px)); background: linear-gradient(#89c6ff calc(100% - 64px), rgb(137 198 255 / 0%)); }
+  .app-startup { --startup-halo: min(80vw, 700px); }
 }
-@media (max-width: 720px) {
-  .app-startup-brand > img { width: 148px; height: 148px; }
+@media (max-width: 720px) and (orientation: portrait) {
+  .app-startup { --startup-halo: min(83vw, 420px); }
+  .app-startup-scene { background-color: #89c6ff; background-image: url('/brand/korat-loading-portrait.webp'); background-size: 100% auto; }
+  .app-startup-scene::before { content: ''; position: absolute; inset: 0 0 auto; height: max(64px, calc(100svh - 180.3vw + 64px)); background: linear-gradient(#89c6ff calc(100% - 64px), rgb(137 198 255 / 0%)); }
+  .app-startup-halo { top: calc(31svh - var(--startup-halo) / 2); box-shadow: 0 80px 85px 60px rgb(245 249 255 / 70%); }
+  .app-startup-halo::before { inset: -24px; }
+  .app-startup-halo::after { inset: -48px; }
+  .app-startup-brand { width: min(360px, calc(100% - 40px)); margin-top: max(36px, 15svh, env(safe-area-inset-top)); }
+  .app-startup-brand > img { width: 140px; height: 140px; }
+  .app-startup-brand h1 { margin-top: -8px; font-size: 34px; line-height: 1.25; }
+  .app-startup-caption { margin-top: 4px; font-size: 17px; line-height: 1.4; }
+  .app-startup-steps { width: 310px; max-width: 100%; margin-top: 24px; }
+  .app-startup-steps li { gap: 6px; font-size: 13px; line-height: 1.5; }
+  .app-startup-step-icon { width: 40px; height: 40px; border-width: 2px; }
+  .app-startup-step-icon svg { width: 23px; height: 23px; }
+  .app-startup-steps li:not(:last-child)::after { top: 19px; left: calc(50% + 27px); width: calc(100% - 54px); height: 2px; }
+  .app-startup-progress { width: 320px; max-width: 100%; margin-top: 28px; padding: 6px 9px 6px 6px; gap: 10px; }
+  .app-startup-track { height: 19px; }
+  .app-startup-activity { width: 32px; flex-basis: 32px; gap: 4px; }
+  .app-startup-activity i { width: 4px; height: 4px; }
+  .app-startup-message { margin-top: 22px; font-size: 18px; }
+  .app-startup-recovery { padding: 12px; font-size: 14px; }
+}
+@media (max-height: 740px) {
+  .app-startup { --startup-halo: min(78svh, 550px); }
+  .app-startup-halo { top: calc(43svh - var(--startup-halo) / 2); }
+  .app-startup-brand { margin-top: max(20px, 4svh, env(safe-area-inset-top)); }
+  .app-startup-brand > img { width: 128px; height: 128px; }
+  .app-startup-brand h1 { margin-top: -8px; font-size: 32px; }
+  .app-startup-caption { margin-top: 4px; font-size: 17px; }
+  .app-startup-steps { margin-top: 18px; }
+  .app-startup-step-icon { width: 40px; height: 40px; }
+  .app-startup-step-icon svg { width: 23px; height: 23px; }
+  .app-startup-steps li { font-size: 14px; gap: 6px; }
+  .app-startup-steps li:not(:last-child)::after { top: 19px; }
+  .app-startup-progress { margin-top: 24px; }
+  .app-startup-message { margin-top: 18px; font-size: 18px; }
+}
+@media (max-height: 480px) {
+  .app-startup-brand { margin-top: max(12px, env(safe-area-inset-top)); }
+  .app-startup-brand > img { width: 84px; height: 84px; }
   .app-startup-brand h1 { font-size: 26px; }
+  .app-startup-caption { font-size: 14px; }
+  .app-startup-steps { width: 320px; margin-top: 14px; }
+  .app-startup-step-icon { width: 32px; height: 32px; border-width: 2px; }
+  .app-startup-step-icon svg { width: 20px; height: 20px; }
+  .app-startup-steps li { font-size: 12px; }
+  .app-startup-steps li:not(:last-child)::after { top: 15px; left: calc(50% + 24px); width: calc(100% - 48px); }
+  .app-startup-progress { width: 360px; margin-top: 18px; }
+  .app-startup-track { height: 18px; }
+  .app-startup-message { margin-top: 14px; font-size: 16px; }
+  .app-startup-recovery { display: flex; align-items: center; gap: 12px; margin-top: 10px; padding: 10px 16px; font-size: 14px; }
+  .app-startup-recovery p { margin: 0; }
+  .app-startup-recovery button { flex: 0 0 auto; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .app-startup-track > span { animation: none; transform: translateX(70%); }
+  .app-startup-orbit, .app-startup-track > span, .app-startup-activity i { animation: none; }
+  .app-startup-track > span { transform: none; }
 }

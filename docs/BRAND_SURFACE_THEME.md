@@ -40,6 +40,11 @@ sizes, radii and spacing are not instructions to change the existing product.
 
 ## Palette and state roles
 
+The subsequent loading-screen request explicitly authorizes its own illustrated
+composition. [LOADING_SCREEN.md](LOADING_SCREEN.md) owns that scoped exception:
+sky blue, navy text, blue/amber orbit and colorful agricultural scenery. It does
+not change the shell, forecast/Admin layouts or semantic risk palette below.
+
 Primary/sidebar `#173A6A`; strong `#0F2E5E`; hover `#204777`; active/focus
 `#2E6BDE`; selection `#E7F0FF`; page `#EEF4FC`; card white; map `#E2EBF5`.
 Text `#182B4C`, secondary `#5D6E88`, border `#D7E2F1`, strong border `#B9CBE3`.

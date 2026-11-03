@@ -24,7 +24,7 @@ it('waits for all readers, including a newly mounted waterfall, without resettin
     </PageLoadBoundary></StrictMode>;
   }
   const { container, rerender } = render(<Content stage={0} />);
-  expect(screen.getByRole('status')).toHaveTextContent('กำลังเตรียมข้อมูลให้คุณ');
+  expect(screen.getByRole('status')).toHaveTextContent('กำลังเตรียมข้อมูลสำหรับผู้ดูแล...');
   expect(container.querySelector('.page-load-content')).toHaveAttribute('inert');
   expect(screen.queryByRole('textbox')).toBeNull();
   rerender(<Content stage={1} />);
@@ -53,7 +53,8 @@ it('offers recovery for an unusually slow startup without pretending loading has
   vi.useFakeTimers();
   const { container } = render(<AppStartup path="/admin" />);
   expect(screen.queryByRole('button')).toBeNull();
-  expect(screen.getByText('จัดการข้อมูล · นครราชสีมา')).toBeInTheDocument();
+  expect(screen.getByText('Korat Tan Phai')).toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('กำลังเตรียมข้อมูลสำหรับผู้ดูแล...');
   act(() => vi.advanceTimersByTime(20_000));
   expect(screen.getByRole('button', { name: 'โหลดหน้าใหม่' })).toBeInTheDocument();
   expect(screen.getByRole('status')).toBeInTheDocument();

@@ -51,7 +51,7 @@ test('a stalled forecast times out and recovers the same source month and horizo
   });
   try {
     await page.goto('/drought?mapLayer=forecast-archive&target=2025-11&horizon=3');
-    await expect(page.locator('.app-startup').getByRole('status')).toHaveText('กำลังเตรียมข้อมูลให้คุณ');
+    await expect(page.locator('.app-startup').getByRole('status')).toHaveText('กำลังเตรียมข้อมูลให้คุณ...');
     await expect(page.locator('.page-load-content')).toHaveAttribute('inert', '');
     await expect.poll(() => attempts).toBe(1);
     await page.clock.fastForward(30_001);

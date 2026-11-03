@@ -28,8 +28,8 @@ geographic level. `OperationalDroughtWorkspace` and its neutral-map variant rema
 parked, not live routes. `DataProvenanceChip.FORECAST_ARCHIVE` labels predictions
 accurately without changing forecast values or calling them actual observations.
 The page and map month controls share selection; the page horizon dropdown and
-six-horizon strip stay synchronized. `AppStartup` uses overview placeholders on
-the default route. `WorkspaceBookmarks` accepts both plain and explicit archive
+six-horizon strip stay synchronized. `AppStartup` covers the initial page reads;
+overview placeholders remain mounted but hidden behind it. `WorkspaceBookmarks` accepts both plain and explicit archive
 forecast links; geographic following remains independent. Overview T+2..T+6 saves
 use the existing drought-view contract and preserve horizon and district scope.
 
@@ -59,7 +59,7 @@ files.
 | --- | --- | --- | --- |
 | `LoginFrame` / `LoginPage` | `src/components/LoginScreen.tsx` | Visitor and Admin sign-in | Same brand, fields, password visibility, Enter submission, busy/error behavior. `scope` changes title/return link only; `App`/Auth own routing and independent sessions. |
 | `WorkspaceEmptyState` | `src/components/WorkspaceEmptyState.tsx` | Shared empty/error presentation in CMS and irrigation | Icon, heading level, description and optional action; owner retains filtering/retry events and state. `IrrigationEmptyState` is the domain adapter, not a duplicate layout. |
-| `AppStartup` | `src/components/AppStartup.tsx` | Branded full-screen loading for Visitor and Admin | Public emblem, centered brand, indeterminate bar and one live status. `path` changes the Admin caption; optional `message` names the startup phase. No session/data imports or fake progress. Offers page reload after 20 seconds; never dismisses itself on a timer. `index.html` uses the same CSS/brand for pre-JavaScript entry. |
+| `AppStartup` | `src/components/AppStartup.tsx` | Branded full-screen loading for Visitor and Admin | Official emblem, responsive Korat landscape, native text/icons, circular animation, three-step visual sequence and indeterminate bar. `path` selects the default Admin status; optional `message` names the startup phase. No session/data imports, fake percentage or timed step completion. Offers page reload after 20 seconds; never dismisses itself on a timer. `index.html` uses matching markup and shared CSS for pre-JavaScript entry. See [LOADING_SCREEN.md](LOADING_SCREEN.md). |
 | `PageLoadBoundary` / `usePageLoading` | `src/components/PageLoadBoundary.tsx` | Coordinate blocking page reads behind `AppStartup` | Readers register in layout effects; release on readiness, failure or unmount. Children stay mounted/measurable but hidden, inert and removed from the accessibility tree while pending. Covers nested load waterfalls without a skeleton flash. Cached refreshes, criteria changes and mutations stay local. `PageLoadPending` covers the lazy CMS chunk. |
 | `useAdminRead` | `src/admin/useAdminRead.ts` | Admin lists, drafts, forecast catalogue and reference resources | Uses the account-owned in-memory `createAdminClient` cache for warm rendering; revalidates on entry/retry, blocks the page only for uncached reads, clears denied results and ignores cancelled responses. `refreshVersion` coordinates manual reload across panels; owners keep forms/mutations and disable writes while details revalidate. No public forecast cache or auth policy change. |
 | `SidebarBrand` | `src/components/SidebarBrand.tsx` | Logo in the live sidebar | Receives accessible `label` and `compactMobileLogo`; owns the existing responsive picture markup with unchanged image sizes/paths. |
@@ -243,7 +243,9 @@ the page. Pending page skeletons remain hidden/inert; failed reads release the
 gate into the existing error/retry presentation. No fabricated values or percent
 complete appear. The same boundary waits for the CMS list/draft, forecast catalog
 and reference catalog/resource; CMS write operations never register as page reads.
-Reduced motion stops the loading-bar animation. Browser Back still abandons a
+Reduced motion stops the loading bar, orbit and activity dots. The illustrated
+screen never adds a minimum wait or makes decorative assets a readiness gate.
+Browser Back still abandons a
 pending route. Cached month changes and background publication checks retain the
 current content and existing inline month-control feedback.
 Request ownership, authentication, cache, retry, and source validation stay in

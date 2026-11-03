@@ -7,6 +7,7 @@ function gate() {
 }
 
 test('Visitor waits for essential map geometry, but not optional context', async ({ page }, testInfo) => {
+  await page.clock.install();
   const geometry = gate();
   const context = gate();
   await seedAuthSession(page);
@@ -18,9 +19,17 @@ test('Visitor waits for essential map geometry, but not optional context', async
     await expect(page.locator('.app-startup')).toBeVisible();
     await expect(page.locator('.nr-forecast-overview-summary')).not.toBeVisible();
     await expect(page.locator('.nr-skeleton:visible')).toHaveCount(0);
+    await expect(page.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow');
+    await expect(page.getByRole('button', { name: 'โหลดหน้าใหม่' })).toHaveCount(0);
     await page.keyboard.press('Tab');
     expect(await page.evaluate(() => Boolean(document.activeElement?.closest('.page-load-content')))).toBe(false);
     await page.screenshot({ path: testInfo.outputPath('visitor-loading.png') });
+    await page.clock.fastForward(20_001);
+    await expect(page.getByRole('button', { name: 'โหลดหน้าใหม่' })).toBeVisible();
+    await expect(page.locator('.app-startup')).toBeVisible();
+    await page.getByRole('button', { name: 'โหลดหน้าใหม่' }).focus();
+    await expect(page.getByRole('button', { name: 'โหลดหน้าใหม่' })).toBeFocused();
+    await page.screenshot({ path: testInfo.outputPath('visitor-loading-slow.png') });
     geometry.release();
     await expect(page.locator('.app-startup')).toHaveCount(0);
     await expect(page.locator('.nr-map-shape')).toHaveCount(289);
@@ -70,6 +79,7 @@ test('Admin keeps one splash through list, forecast catalogue and reference read
     await expect(page.locator('.cms-published')).toContainText('ยังไม่มีชุดพยากรณ์ที่เผยแพร่');
     await expect(page.locator('.app-startup')).toBeVisible();
     await expect(page.locator('.app-startup-track > span')).toHaveCSS('animation-name', 'none');
+    await expect(page.locator('.app-startup-orbit')).toHaveCSS('animation-name', 'none');
     await page.screenshot({ path: testInfo.outputPath('admin-loading.png') });
     references.release();
     await expect(page.locator('.app-startup')).toHaveCount(0);
