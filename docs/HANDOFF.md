@@ -9,9 +9,9 @@ per-account followed areas/saved filters. The site brand is Korat Tan Phai /
 
 - Repo: `/Users/point/korattanphai`
 - Production: `https://korattanphai.vercel.app`
-- Current release branch: `feat/navy-theme-20261103`
-- Verified runtime Quality Gate: `41625056640`, attempt 1 (all seven jobs passed)
-- Deployed runtime: `1746981dcc818a791702da28572e078070f4a758`
+- Current release branch: `feat/loading-scene-20261103`
+- Verified runtime Quality Gate: `41649902370`, attempt 1 (all seven jobs passed)
+- Deployed runtime: `25bed0a9a2baa03d3a5b851c2550b138374b32d5`
 - Source snapshot: copied from Kaset Tan Phai commit
   `0f16794bb57d5dec93b7c6312de7d9362bb97013`.
 
@@ -22,10 +22,11 @@ the newest release supersedes earlier statements about production state.
 
 ## Recent Changes
 
-Illustrated loading screen (implemented locally 2026-11-03, not deployed):
+Illustrated loading screen (implemented and released 2026-11-03):
 
 - Branch `feat/loading-scene-20261103` starts at documentation checkpoint
-  `889c315`. Production remains the verified `1746981` release below.
+  `889c315`. Runtime `25bed0a` contains only this loading-screen work and its
+  documentation/tests; unrelated checkout work remains untouched.
 - Applied the owner's desktop and annotated tablet/mobile references to shared
   `AppStartup` and the pre-JavaScript entry. Native text, official emblem and
   icons sit above responsive WebP scenery; blue/amber rings and the loading bar
@@ -37,8 +38,33 @@ Illustrated loading screen (implemented locally 2026-11-03, not deployed):
 - Twelve targeted desktop/mobile loading/theme checks, TypeScript and the final
   Vite build pass. Reference/Before/After evidence plus tablet portrait, compact
   mobile and landscape/recovery captures live in
-  `artifacts/loading-scene-20261103/`. No physical-device, production or full
-  release-suite certification is claimed. See [LOADING_SCREEN.md](LOADING_SCREEN.md).
+  `artifacts/loading-scene-20261103/`. Release preparation also updated three
+  existing test consumers for the new status copy. All 491 local unit tests pass
+  with one worker; the initial concurrent run timed out in an unchanged Excel
+  dependency test. That test passes in isolation and in the full hosted gate;
+  no timeout, assertion or production dependency was changed.
+- [Quality Gate 41649902370](https://github.com/purichw/KoratTanPhai/actions/runs/41649902370)
+  passed all seven jobs on exact `25bed0a`: 491 unit tests, 226 built-browser,
+  150 database-browser, 65 CMS-browser and six compatibility checks, preserving
+  intentional backend/viewport skips. Protected builds, production exposure,
+  bundle budgets and the production dependency audit pass.
+- Promoted exact candidate `dpl_9L32JjRwCmkvhxg1v5gQZhwtRTji`
+  (`https://korattanphai-qpgf5yfgc-purich-w.vercel.app`) after authenticated
+  candidate checks: 39 Visitor checks, Admin navigation/areas/lifecycle and eight
+  desktop/mobile pre-JS/pending loading captures. Both backend build flags were
+  explicit; the hosted CMS marker is `{"backend":"cms","fallback":false}`.
+- Production was rechecked against `dpl_Gj4ntMUf56sjzWkrerSjVA52oNQZ` immediately
+  before promotion and verified as the new deployment afterward. Recovery target
+  is that previous `1746981` deployment. Production loading assets match local
+  hashes, decode correctly and release to ready content in Visitor/Admin; no
+  horizontal overflow or browser/request errors were observed.
+- Authenticated production [Deployment Smoke 41652225999](https://github.com/purichw/KoratTanPhai/actions/runs/41652225999)
+  passed on exact `25bed0a`; the separate read-only Admin navigation/areas/
+  lifecycle smoke also passed on both desktop/mobile after promotion.
+- Local release evidence: `artifacts/loading-scene-20261103/release/` plus the
+  `artifacts/loading-*.json` deployment/gate records. No application-data writes,
+  migration, physical-device certification or native-app update. See
+  [LOADING_SCREEN.md](LOADING_SCREEN.md).
 
 Navy / Powder / Amber theme (implemented and released 2026-11-03):
 

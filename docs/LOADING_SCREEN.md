@@ -1,6 +1,7 @@
 # Shared illustrated loading screen
 
-Implemented locally on 2026-11-03 on `feat/loading-scene-20261103`; not deployed.
+Implemented and released on 2026-11-03 on `feat/loading-scene-20261103` as runtime
+`25bed0a9a2baa03d3a5b851c2550b138374b32d5` at `https://korattanphai.vercel.app`.
 This follow-up changes loading composition only. Visitor/Admin pages, data,
 authentication, map/chart behavior and publication contracts are unchanged.
 
@@ -98,6 +99,38 @@ production backend. Before was captured before the implementation edits.
 - Final compact/landscape recovery captures pass without lost controls. No
   horizontal page overflow or page errors were observed in the capture matrix.
 
-No full release suite, remote writes, production promotion or physical iPhone
-certification was performed for this local UI request. Before deployment, use
-the project's normal release gate for the exact intended commit.
+The original local design pass did not certify production or a physical iPhone.
+The subsequent authorized release used the normal gate, as recorded below.
+
+## Production release evidence
+
+- [Quality Gate 41649902370](https://github.com/purichw/KoratTanPhai/actions/runs/41649902370),
+  attempt 1, passed all seven jobs on exact `25bed0a`. Unit tests: 491;
+  built-browser: 226; database-browser: 150; CMS-browser: 65; compatibility: six.
+  Existing intentional skips remain. Protected build, exposure, bundle budget
+  and production dependency checks passed without weakened thresholds.
+- Candidate `https://korattanphai-qpgf5yfgc-purich-w.vercel.app`, deployment
+  `dpl_9L32JjRwCmkvhxg1v5gQZhwtRTji`, was built from a tracked-source Git archive
+  with explicit Supabase/CMS flags, then promoted only after the gate and
+  authenticated read-only candidate checks passed. The production alias was
+  verified before and after promotion. Prior recovery deployment:
+  `dpl_Gj4ntMUf56sjzWkrerSjVA52oNQZ` (`1746981`).
+- Candidate Visitor smoke passed 39 checks; Admin navigation, grouped areas,
+  templates, readiness and recovery checks passed on desktop/mobile.
+- After promotion, authenticated [Deployment Smoke 41652225999](https://github.com/purichw/KoratTanPhai/actions/runs/41652225999)
+  passed on exact `25bed0a`. The separate production Admin navigation/areas/
+  lifecycle checks also passed on desktop/mobile, with no application-data writes.
+- Eight loading captures on each of candidate and production cover Visitor/Admin
+  pre-JavaScript entry and authenticated pending state on desktop/mobile. The
+  harness briefly holds real reads, captures, then continues them unchanged and
+  verifies ready content; it does not substitute API responses or modify data.
+- All three new asset hashes/MIME types match, both WebPs decode, the CMS marker
+  confirms no fallback, and no broken images, horizontal overflow, page errors
+  or failed requests were observed. Current production screenshots were visually
+  inspected. Evidence: `artifacts/loading-scene-20261103/release/`.
+- The initial concurrent local unit run timed out in an unchanged Excel archive
+  test. Focused checks and all 491 tests with a single worker passed; the hosted
+  full gate also passed. No runtime repair or timeout increase was required.
+
+No physical-device test, native-app change, application-data write or migration
+is part of this release.
