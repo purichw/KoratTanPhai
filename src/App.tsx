@@ -82,14 +82,14 @@ export function App() {
     content = <LoginFrame scope={scope}><p role="alert">ตรวจสอบการเข้าสู่ระบบไม่ได้ กรุณาตรวจการเชื่อมต่อแล้วลองใหม่</p>
       <button type="button" className="primary-button" onClick={auth.retrySession}>ลองใหม่</button></LoginFrame>;
   } else if (auth.status === "checking" || (auth.status === "signedIn" && isLoginPath)) {
-    content = <AppStartup path={path} message="กำลังตรวจสอบการเข้าสู่ระบบ..." />;
+    content = <AppStartup path={path} phase="auth" message="กำลังตรวจสอบการเข้าสู่ระบบ..." />;
   } else if (auth.status === "signedOut") {
     content = <LoginPage scope={scope} pending={auth.signingIn || auth.signingOut} error={auth.signInError || auth.signOutError}
       onLogin={(email, password) => { explicitLogout.current = false; return auth.signIn(email, password); }} />;
   } else if (auth.status === "signedIn") {
     content = <>
       {auth.signOutError && <div className="auth-session-error" role="alert">{auth.signOutError}</div>}
-      <Suspense fallback={<AppStartup path={path} message="กำลังเปิดโคราชทันภัย..." />}>
+      <Suspense fallback={<AppStartup path={path} phase="module" message="กำลังเปิดโคราชทันภัย..." />}>
         <AuthenticatedApp key={auth.user.id} loginUser={auth.user} onLogout={() => { void handleLogout(); }}
           signingOut={auth.signingOut} path={path} onNavigate={navigate} />
       </Suspense>

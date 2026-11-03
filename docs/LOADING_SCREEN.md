@@ -2,8 +2,9 @@
 
 Implemented and released on 2026-11-03 on `feat/loading-scene-20261103` as runtime
 `25bed0a9a2baa03d3a5b851c2550b138374b32d5` at `https://korattanphai.vercel.app`.
-This follow-up changes loading composition only. Visitor/Admin pages, data,
-authentication, map/chart behavior and publication contracts are unchanged.
+The subsequent local follow-up below adds continuous ring motion and real
+readiness milestones; it is not yet deployed. Visitor/Admin data, authentication,
+map/chart behavior and publication contracts are unchanged.
 
 ## Reference and implementation ownership
 
@@ -13,15 +14,17 @@ scene, gold rice, Phimai temple, wall, Ya Mo statue, circular frosted halo,
 blue/amber arcs, process icons and glowing loading bar.
 
 - `src/components/AppStartup.tsx`: single presentational React component for
-  Visitor/Admin/auth/module startup; keeps its existing `path` and `message` API.
+  Visitor/Admin/auth/module startup; `path` and `message` retain their existing
+  meaning. `phase` is supplied by the real auth/module/page owner.
 - `src/app-startup.css`: scoped layout, native text, halo, motion, responsive
   artwork and recovery. No global font or product layout overrides.
 - `index.html`: pre-JavaScript companion markup, inline versions of the same
   Lucide icons, shared CSS and viewport-matched image preloads. Keep its anatomy
   synchronized with `AppStartup`; no runtime bundle is needed for first paint.
 - `PageLoadBoundary`, readers and auth retain readiness/error ownership.
-  The screen disappears when their real pending state settles, with no forced
-  minimum delay. Failed reads expose the existing error/retry UI.
+  Pending content becomes interactive immediately when its reads settle. A
+  non-interactive 220ms completion fade shows the final progress, without a
+  minimum loading delay. Failed reads expose the existing error/retry UI.
 
 Text, logo, icons, status, bar and arcs are separate DOM/SVG/CSS elements. The
 reference was not flattened into a full-screen UI image. The logo remains the
@@ -30,12 +33,46 @@ illustrated reference. Typography uses the product's existing Google Sans.
 
 ## Honest progress and recovery
 
-The current readers do not expose a reliable completion total. The reference's
-67% is therefore replaced by animated dots and an **indeterminate** progress bar
-without `aria-valuenow`. Never advance a fabricated percentage on a timer.
-The three icons describe the preparation sequence; only the first is current
-while pending. They do not claim measured sub-stage completion. A future live
-stepper needs real phase signals from the owners before it may advance.
+Local motion follow-up after `781f913` (not yet deployed): `startupMotion.ts`
+captures the orbit's CSS animation start time from the pre-JavaScript screen in `main.tsx`.
+Each `AppStartup` mount aligns its orbit to that same
+document timeline in a layout effect. This prevents auth/module/page-read handoffs
+from visibly restarting the loader. CSS owns frame-by-frame movement; there is
+no JavaScript animation loop or readiness delay. The orbit now takes eight
+seconds per revolution, with a compositor hint and a tiny SVG preload. Reduced
+motion still stops movement and releases the compositor hints.
+
+Normal-motion browser sampling reproduced backward animation-time jumps in the
+old implementation and zero in the corrected entry-to-page handoff. The new
+startup browser regression asserts continuous orbit phase across replacement
+DOM nodes, visible rotation, real readiness values and reduced-motion feedback. Evidence is local at
+`artifacts/loading-motion-20261103/`; this does not certify physical-device FPS.
+
+The local follow-up replaces the released indeterminate bar with **page-readiness
+progress**, explicitly labeled `ความพร้อมของหน้า · N/3 ขั้นตอน`. The denominator
+counts three actual lifecycle milestones, not downloaded bytes, individual
+requests or estimated remaining time:
+
+| Owner state | Completed | Display |
+| --- | --- | --- |
+| Pre-JavaScript / auth checking | 0/3 | 0%; ตรวจสอบสิทธิ์ |
+| Authenticated module/bootstrap pending | 1/3 | 33%; โหลดระบบ |
+| Module ready, blocking page reads pending | 2/3 | 67%; เตรียมหน้า |
+| All blocking page readers have settled | 3/3 | 100%; พร้อมแสดงหน้า |
+
+Values stop while their owner is pending, including after the 20-second recovery
+threshold. Completion means the page can present its result **or existing
+error/retry**, not that failed data requests succeeded. Signed-out/auth failure
+and chunk failure keep their own routing/recovery without fabricated completion.
+Cached route entry can skip completed milestones. Decorative images never block.
+
+The fill interpolates once toward each real value (220ms, 80ms at completion),
+never loops or advances from elapsed time. Fast successive updates cancel the
+old interpolation and continue from the visible fill. Page completion releases
+inert content, scroll lock and focus immediately; only the aria-hidden, inert,
+pointer-transparent splash fades for 220ms. A new pending read cancels that exit.
+Reduced motion stops the orbit, applies progress directly and hides completion
+immediately. There is no added minimum request wait.
 
 The optional `message` remains the single live status. Without it, `/admin`
 uses the Admin preparation message; Visitor uses the public preparation message.
@@ -77,6 +114,20 @@ scroll vertically for larger text; decoration cannot cause horizontal overflow.
 Only the matching scenery is preloaded. Art loading is never a readiness gate.
 
 ## Verification and evidence
+
+Local motion/progress follow-up: TypeScript, 22 focused unit tests and 36 affected
+desktop/mobile browser cases pass. These include auth/module failure, map and
+Admin failure/retry, pending waterfalls, unchanged progress after 20 seconds,
+all lifecycle values, reduced motion and completion cleanup. Initial browser
+trace capture hit local disk `ENOSPC`; the remaining cases and affected repeat
+passed with tracing disabled, without relaxing assertions. A real browser
+recording samples 0/33/67/100 with zero backward orbit-time jumps across mounts;
+its frames were visually inspected. Evidence:
+`artifacts/loading-progress-20261103/` and
+`artifacts/loading-motion-20261103/progress/`. No full build/CI/deploy or physical
+device FPS certification was performed for this local follow-up.
+
+Original released illustration verification:
 
 Evidence is local and gitignored at `artifacts/loading-scene-20261103/` in the
 isolated worktree. Captures use real routes and the existing deterministic auth/

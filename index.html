@@ -15,6 +15,7 @@
     />
     <link rel="apple-touch-icon" sizes="180x180" href="/brand/korat-tan-phai-apple-touch-icon.png?v=3" />
     <link rel="preload" as="image" href="/brand/korat-tan-phai-emblem.webp" />
+    <link rel="preload" as="image" href="/brand/korat-loading-orbit.svg" />
     <link rel="preload" as="image" href="/brand/korat-loading-landscape.webp" media="(min-width: 721px), (orientation: landscape)" />
     <link rel="preload" as="image" href="/brand/korat-loading-portrait.webp" media="(max-width: 720px) and (orientation: portrait)" />
     <link rel="stylesheet" href="/src/theme-tokens.css" />
@@ -38,14 +39,15 @@
           <p class="app-startup-caption">Korat Tan Phai</p>
           <!-- Public pre-JavaScript companion of AppStartup; same shared CSS. -->
           <ol class="app-startup-steps" aria-label="ขั้นตอนเตรียมใช้งาน">
-            <li aria-current="step"><span class="app-startup-step-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>กำลังโหลดข้อมูล</span></li>
-            <li><span class="app-startup-step-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 17V9"/><path d="M18 17V5"/><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-3"/></svg></span><span>ประมวลผล</span></li>
-            <li><span class="app-startup-step-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><span>เตรียมใช้งาน</span></li>
+            <li aria-current="step"><span class="app-startup-step-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span><span>ตรวจสอบสิทธิ์</span></li>
+            <li><span class="app-startup-step-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>โหลดระบบ</span></li>
+            <li><span class="app-startup-step-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 17V9"/><path d="M18 17V5"/><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-3"/></svg></span><span>เตรียมหน้า</span></li>
           </ol>
-          <div class="app-startup-progress" role="progressbar" aria-label="กำลังเตรียมข้อมูล">
-            <div class="app-startup-track" aria-hidden="true"><span></span></div>
-            <span class="app-startup-activity" aria-hidden="true"><i></i><i></i><i></i></span>
+          <div class="app-startup-progress" role="progressbar" aria-label="ความพร้อมของหน้า" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="0 จาก 3 ขั้นตอน">
+            <div class="app-startup-track" aria-hidden="true"><span style="transform: scaleX(0)"></span></div>
+            <strong class="app-startup-percent" aria-hidden="true">0%</strong>
           </div>
+          <p class="app-startup-progress-note">ความพร้อมของหน้า · 0/3 ขั้นตอน</p>
           <p class="app-startup-message" role="status">กำลังเปิดโคราชทันภัย...</p>
           <noscript>กรุณาเปิดใช้งาน JavaScript เพื่อใช้งานเว็บไซต์</noscript>
         </div>

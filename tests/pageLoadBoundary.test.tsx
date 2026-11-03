@@ -51,12 +51,47 @@ it('releases an abandoned route and restores scrolling when the boundary unmount
 
 it('offers recovery for an unusually slow startup without pretending loading has finished', () => {
   vi.useFakeTimers();
-  const { container } = render(<AppStartup path="/admin" />);
+  render(<AppStartup path="/admin" />);
   expect(screen.queryByRole('button')).toBeNull();
   expect(screen.getByText('Korat Tan Phai')).toBeInTheDocument();
   expect(screen.getByRole('status')).toHaveTextContent('กำลังเตรียมข้อมูลสำหรับผู้ดูแล...');
   act(() => vi.advanceTimersByTime(20_000));
   expect(screen.getByRole('button', { name: 'โหลดหน้าใหม่' })).toBeInTheDocument();
   expect(screen.getByRole('status')).toBeInTheDocument();
-  expect(container.textContent).not.toMatch(/\d+%/);
+  expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '67');
+  expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuetext', '2 จาก 3 ขั้นตอน');
+});
+
+it('reports completed owner phases without advancing with elapsed time', () => {
+  vi.useFakeTimers();
+  const { rerender } = render(<AppStartup path="/" phase="auth" />);
+  expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
+  rerender(<AppStartup path="/" phase="module" />);
+  expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '33');
+  act(() => vi.advanceTimersByTime(60_000));
+  expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '33');
+  rerender(<AppStartup path="/" phase="page" />);
+  expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '67');
+});
+
+it('finishes only after all reads settle, releases content immediately and cancels an interrupted exit', () => {
+  vi.useFakeTimers();
+  const content = (pending: boolean) => <PageLoadBoundary path="/admin"><Read pending={pending} name="result" /><button>ready action</button></PageLoadBoundary>;
+  const { container, rerender } = render(content(true));
+  act(() => vi.advanceTimersByTime(60_000));
+  expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '67');
+  rerender(content(false));
+  expect(container.querySelector('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '100');
+  expect(container.querySelector('.app-startup')).toHaveAttribute('inert');
+  expect(container.querySelector('.app-startup')).toHaveAttribute('aria-hidden', 'true');
+  expect(screen.getByRole('button', { name: 'ready action' })).toBeInTheDocument();
+  expect(container.querySelector('.page-load-content')).not.toHaveAttribute('inert');
+  expect(document.body.style.overflow).not.toBe('hidden');
+  act(() => vi.advanceTimersByTime(100));
+  rerender(content(true));
+  act(() => vi.advanceTimersByTime(220));
+  expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '67');
+  rerender(content(false));
+  act(() => vi.advanceTimersByTime(220));
+  expect(container.querySelector('.app-startup')).toBeNull();
 });

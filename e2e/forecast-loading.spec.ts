@@ -23,7 +23,8 @@ for (const [name, path, request, title] of [
       await expect(page.getByRole("heading", { name: new RegExp(title), level: 1 })).toHaveCount(0);
       await expect(loading.getByRole("button")).toHaveCount(0);
       await expect(page.locator('.nr-skeleton:visible')).toHaveCount(0);
-      expect(await loading.innerText()).not.toMatch(/0 ตำบล|\d+%/);
+      expect(await loading.innerText()).not.toMatch(/0 ตำบล/);
+      await expect(loading.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '67');
       await expect(loading.locator('.app-startup-track > span')).toHaveCSS('animation-name', 'none');
       expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)).toBe(false);
       await page.evaluate(() => scrollTo({ top: 0, left: 0, behavior: "instant" }));

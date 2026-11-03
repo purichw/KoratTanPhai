@@ -22,6 +22,30 @@ the newest release supersedes earlier statements about production state.
 
 ## Recent Changes
 
+Loading motion continuity and real progress (local follow-up after `781f913`, not deployed):
+
+- Normal-motion measurement reproduced animation restarts as pre-JS, auth,
+  lazy-module and page-read screens replace one another. `startupMotion.ts`
+  preserves the orbit's CSS animation origin across those mounts; request,
+  authentication, retry and page-layout ownership remain unchanged.
+- Blue/amber orbit now rotates once in eight seconds, with a compositor hint
+  and SVG preload. Reduced motion remains supported. CSS performs all frame
+  animation; there is no forced loading time or per-frame JavaScript in runtime.
+- The owner requested real progress: auth/module/page-read milestones now drive
+  0/33/67/100%, explicitly labeled page readiness (N/3), not download percentage.
+  Pending work never advances with time. Completion exposes the ready result or
+  existing error/retry immediately, with a non-blocking 220ms visual fade.
+  Reduced motion skips interpolation/fade. See `docs/LOADING_SCREEN.md`.
+- Browser regressions cover orbit continuity, real progress, normal rotation and
+  reduced motion. Evidence: `artifacts/loading-motion-20261103/` and
+  `artifacts/loading-progress-20261103/`. Production remains `25bed0a`.
+- Local verification: TypeScript, 22 focused unit tests and all 36 affected
+  desktop/mobile browser cases pass. The initial browser run hit disk `ENOSPC`
+  while saving a trace; remaining/repeated cases passed with tracing disabled,
+  retaining screenshots and all assertions. A real browser recording samples
+  0 → 33 → 67 → 100 and zero backward orbit-time jumps across mounts. No full
+  build, full CI, deploy or physical-device performance certification this pass.
+
 Illustrated loading screen (implemented and released 2026-11-03):
 
 - Branch `feat/loading-scene-20261103` starts at documentation checkpoint

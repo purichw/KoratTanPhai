@@ -28,6 +28,14 @@ export function PageLoadBoundary({ path, children }: { path: string; children: R
     });
   }, []);
   const pending = tasks.size > 0;
+  const [present, setPresent] = useState(false);
+  useLayoutEffect(() => {
+    if (pending) { setPresent(true); return; }
+    if (!present) return;
+    // Visual completion only: content/focus are released immediately below.
+    const timer = window.setTimeout(() => setPresent(false), 220);
+    return () => window.clearTimeout(timer);
+  }, [pending, present]);
   useLayoutEffect(() => {
     if (!pending) return;
     const overflow = document.body.style.overflow;
@@ -43,6 +51,6 @@ export function PageLoadBoundary({ path, children }: { path: string; children: R
   // Layout-effect registration covers waterfalls before the browser paints.
   return <PageLoadContext.Provider value={begin}>
     <div className="page-load-content" inert={pending} aria-hidden={pending || undefined}>{children}</div>
-    {pending && <AppStartup path={path} />}
+    {(pending || present) && <AppStartup path={path} phase={pending ? 'page' : 'complete'} />}
   </PageLoadContext.Provider>;
 }

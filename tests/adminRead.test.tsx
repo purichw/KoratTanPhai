@@ -46,7 +46,9 @@ const renderRead = (api: ReturnType<typeof createAdminClient>) => render(
 );
 const expectReady = async () => {
   await waitFor(() => expect(screen.getByTestId('refreshing')).toHaveTextContent('false'));
-  expect(document.querySelector('.app-startup')).toBeNull();
+  // Readiness releases content immediately; its non-interactive completion fades out.
+  expect(document.querySelector('.page-load-content')).not.toHaveAttribute('inert');
+  await waitFor(() => expect(document.querySelector('.app-startup')).toBeNull());
 };
 
 describe('account-owned Admin read cache', () => {

@@ -26,7 +26,9 @@ async function expectStartup(page: Page, testInfo: TestInfo, screenshot: string,
   await expect(startup).not.toContainText(authTestEmail);
   await expect(startup).not.toContainText(authTestUser.user_metadata.full_name);
   await expect(page.getByRole('button', { name: /บัญชีผู้ใช้/ })).toHaveCount(0);
-  expect(await startup.innerText()).not.toMatch(/\d+\s*ตำบล|\d+\s*%/);
+  expect(await startup.innerText()).not.toMatch(/\d+\s*ตำบล/);
+  await expect(startup.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '33');
+  await expect(startup.locator('[aria-current="step"]')).toHaveText('โหลดระบบ');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   await expect(page).toHaveURL(new URL(expectedPath, page.url()).href);
   await page.evaluate(() => document.fonts.ready);
@@ -72,6 +74,62 @@ test('cold entry and uncached refresh keep branded loading until the authenticat
   } finally {
     held.release();
   }
+});
+
+test('orbit stays continuous while real readiness advances from module to page to complete', async ({ page }) => {
+  await seedAuthSession(page);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const chunk = gate();
+  const geometry = gate();
+  let chunkRequests = 0;
+  await page.route(appChunk, async route => { chunkRequests++; await chunk.promise; await route.continue(); });
+  await page.route('**/geodata/nakhon-ratchasima-subdistricts.geojson', async route => {
+    await geometry.promise; await route.continue();
+  });
+  const timing = () => page.locator('.app-startup').evaluate(root => root.getAnimations({ subtree: true })
+    .filter(animation => animation instanceof CSSAnimation)
+    .map(animation => ({ name: (animation as CSSAnimation).animationName, start: animation.startTime,
+      time: Number(animation.currentTime), duration: animation.effect?.getComputedTiming().duration })));
+  try {
+    await page.goto(requestedOverview);
+    await expect.poll(() => chunkRequests).toBe(1);
+    await expect.poll(async () => (await timing()).find(a => a.name === 'app-startup-orbit')?.time ?? 0).toBeGreaterThan(600);
+    const before = await timing();
+    await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '33');
+    const original = await page.locator('.app-startup').elementHandle();
+    chunk.release();
+    await expect.poll(() => original!.evaluate(node => node.isConnected)).toBe(false);
+    await expect(page.locator('.nr-map-loading')).toBeAttached();
+    const after = await timing();
+    for (const name of ['app-startup-orbit']) {
+      const first = before.find(a => a.name === name)!;
+      const next = after.find(a => a.name === name)!;
+      expect(next.start).toBe(first.start);
+      expect(next.time).toBeGreaterThanOrEqual(first.time);
+    }
+    expect(after.find(a => a.name === 'app-startup-orbit')?.duration).toBe(8000);
+    await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '67');
+    await expect(page.locator('.app-startup-track > span')).toHaveCSS('animation-name', 'none');
+    const transform = await page.locator('.app-startup-orbit').evaluate(node => getComputedStyle(node).transform);
+    await expect.poll(() => page.locator('.app-startup-orbit').evaluate(node => getComputedStyle(node).transform)).not.toBe(transform);
+    // Switching the OS preference stops movement without hiding loading feedback.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(page.locator('.app-startup-orbit')).toHaveCSS('animation-name', 'none');
+    await expect(page.getByRole('progressbar')).toBeVisible();
+    // Observe the real release, including the brief non-blocking 100% state.
+    await page.evaluate(() => {
+      const values: string[] = [];
+      (window as unknown as { readinessValues: string[] }).readinessValues = values;
+      new MutationObserver(() => {
+        const value = document.querySelector('.app-startup-progress')?.getAttribute('aria-valuenow');
+        if (value && values.at(-1) !== value) values.push(value);
+      }).observe(document.querySelector('.app-startup')!, { attributes: true, subtree: true });
+    });
+    geometry.release();
+    await expect(page.locator('.app-startup')).toHaveCount(0);
+    await expect(page.locator('.nr-map-shape')).toHaveCount(289);
+    expect(await page.evaluate(() => (window as unknown as { readinessValues: string[] }).readinessValues)).toContain('100');
+  } finally { chunk.release(); geometry.release(); }
 });
 
 test('signed-out deep entry preserves the login return URL without requesting protected code or data', async ({ page }) => {

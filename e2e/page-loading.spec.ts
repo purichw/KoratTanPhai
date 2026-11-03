@@ -19,12 +19,13 @@ test('Visitor waits for essential map geometry, but not optional context', async
     await expect(page.locator('.app-startup')).toBeVisible();
     await expect(page.locator('.nr-forecast-overview-summary')).not.toBeVisible();
     await expect(page.locator('.nr-skeleton:visible')).toHaveCount(0);
-    await expect(page.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow');
+    await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '67');
     await expect(page.getByRole('button', { name: 'โหลดหน้าใหม่' })).toHaveCount(0);
     await page.keyboard.press('Tab');
     expect(await page.evaluate(() => Boolean(document.activeElement?.closest('.page-load-content')))).toBe(false);
     await page.screenshot({ path: testInfo.outputPath('visitor-loading.png') });
     await page.clock.fastForward(20_001);
+    await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '67');
     await expect(page.getByRole('button', { name: 'โหลดหน้าใหม่' })).toBeVisible();
     await expect(page.locator('.app-startup')).toBeVisible();
     await page.getByRole('button', { name: 'โหลดหน้าใหม่' }).focus();
@@ -75,6 +76,7 @@ test('Admin keeps one splash through list, forecast catalogue and reference read
     await expect.poll(() => reads.includes('forecast-catalog') && reads.includes('resource-catalog')).toBe(true);
     await expect(page.locator('.app-startup')).toBeVisible();
     await expect(page.locator('.cms-workspace')).not.toBeVisible();
+    await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '67');
     forecast.release();
     await expect(page.locator('.cms-published')).toContainText('ยังไม่มีชุดพยากรณ์ที่เผยแพร่');
     await expect(page.locator('.app-startup')).toBeVisible();

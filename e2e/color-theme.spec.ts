@@ -14,8 +14,8 @@ test('the branded startup is painted before JavaScript, on Visitor and Admin ent
       const portrait = (info.project.use.viewport?.width ?? 1440) <= 720;
       await expect(page.locator('.app-startup-scene')).toHaveCSS('background-image', portrait ? /korat-loading-portrait.webp/ : /korat-loading-landscape.webp/);
       await expect(page.getByRole('progressbar')).toBeVisible();
-      await expect(page.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow');
-      expect(await page.locator('.app-startup').innerText()).not.toMatch(/\d+\s*%/);
+      await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
+      await expect(page.locator('.app-startup-percent')).toHaveText('0%');
       const scene = await page.locator('.app-startup-scene').evaluate(async element => {
         const image = new Image(); image.src = getComputedStyle(element).backgroundImage.slice(5, -2); await image.decode();
         return { width: image.naturalWidth, height: image.naturalHeight, overflow: document.documentElement.scrollWidth > innerWidth };
