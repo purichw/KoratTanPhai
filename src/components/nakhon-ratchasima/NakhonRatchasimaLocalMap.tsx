@@ -1439,8 +1439,8 @@ export function NakhonRatchasimaLocalMap({
                 patternUnits="userSpaceOnUse"
                 patternTransform="rotate(45)"
               >
-                <rect width="7" height="7" fill="#e2e8e4" />
-                <path d="M 0 0 L 0 7" stroke="#b8c4bd" strokeWidth="2" />
+                <rect width="7" height="7" fill="var(--ktp-risk-outside)" />
+                <path d="M 0 0 L 0 7" stroke="var(--ktp-risk-hatch)" strokeWidth="2" />
               </pattern>
             )}
             {showProvinceSilhouette && (
@@ -1589,7 +1589,7 @@ export function NakhonRatchasimaLocalMap({
             </g>
           )}
           {pin && <g className="nr-coordinate-pin" transform={`translate(${projection.x(pin.point[0])},${projection.y(pin.point[1])}) scale(${1 / transform.k})`} role="img" aria-label={`พิกัด ${pin.point[1]}, ${pin.point[0]}`} pointerEvents="none">
-            <MapPin x={-12} y={-24} width={24} height={24} fill="#fff" color="#086794" strokeWidth={2.5} />
+            <MapPin x={-12} y={-24} width={24} height={24} fill="#fff" color="var(--ktp-link)" strokeWidth={2.5} />
           </g>}
           {localLabels.length > 0 && (
             <g className="map-label-layer nr-map-label-layer" aria-hidden="true">
@@ -1613,7 +1613,7 @@ export function NakhonRatchasimaLocalMap({
         </g>
         {scale && <g className="nr-map-distance-scale" transform={`translate(${localMapWidth - scale.width - 26},${localMapHeight - 62})`} aria-label={`ระยะทางโดยประมาณ ${scale.distanceKm} กิโลเมตร`}>
           <rect x="-8" y="-23" width={scale.width + 38} height="34" rx="3" fill="white" fillOpacity=".88" />
-          <path d={`M0 -3V3H${scale.width}V-3M${scale.width / 2} 0V3`} fill="none" stroke="#31584b" strokeWidth="3" />
+          <path d={`M0 -3V3H${scale.width}V-3M${scale.width / 2} 0V3`} fill="none" stroke="var(--ktp-navy-900)" strokeWidth="3" />
           <text x="0" y="-9">0</text><text x={scale.width} y="-9" textAnchor="end">{scale.distanceKm} กม.</text>
         </g>}
       </svg>

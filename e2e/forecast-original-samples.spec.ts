@@ -18,7 +18,7 @@ test('random original Excel cells match actual map colors and forward dates', as
     const expected = sample.risk_value === null ? { status: 'out-of-scope', color: null }
       : [
         { status: 'no-risk', color: 'rgb(93, 174, 121)' },
-        { status: 'moderate', color: 'rgb(241, 184, 75)' },
+        { status: 'moderate', color: 'rgb(246, 174, 45)' },
         { status: 'high', color: 'rgb(217, 93, 89)' },
       ][sample.risk_value];
     await expect(polygon).toHaveClass(new RegExp(`is-forecast-${expected.status}(?:\\s|$)`));
@@ -26,15 +26,17 @@ test('random original Excel cells match actual map colors and forward dates', as
       const fill = getComputedStyle(element).fill;
       const fragment = (element as SVGElement).style.fill.match(/#([^)"]+)/)?.[1];
       const pattern = fragment ? document.getElementById(fragment) : null;
-      return { fill, patternBackground: pattern?.querySelector('rect')?.getAttribute('fill'),
-        patternStroke: pattern?.querySelector('path')?.getAttribute('stroke'),
+      const background = pattern?.querySelector('rect');
+      const stroke = pattern?.querySelector('path');
+      return { fill, patternBackground: background ? getComputedStyle(background).fill : null,
+        patternStroke: stroke ? getComputedStyle(stroke).stroke : null,
         status: element.getAttribute('class') };
     });
     if (expected.color) expect(painted.fill).toBe(expected.color);
     else {
       expect(painted.fill).toContain('url(');
-      expect(painted.patternBackground).toBe('#e2e8e4');
-      expect(painted.patternStroke).toBeTruthy();
+      expect(painted.patternBackground).toBe('rgb(203, 213, 225)');
+      expect(painted.patternStroke).toBe('rgb(149, 164, 181)');
     }
     const [year, month] = sample.target_month.split('-').map(Number);
     const labels = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];

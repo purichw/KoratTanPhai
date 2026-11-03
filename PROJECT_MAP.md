@@ -55,6 +55,7 @@ Actual/operational components are not mounted by current public workspace routes
 | Files/directories | Owns |
 | --- | --- |
 | `src/main.tsx`, `src/App.tsx` | Root, lightweight login/startup, history, lazy loading |
+| `src/theme-tokens.css`, `src/brand-theme.css` | Navy / Powder / Amber web paint; shared Visitor/Admin palette, no layout changes |
 | `src/AuthenticatedApp.tsx` | Visitor shell, account controls, export and saved actions |
 | `src/store.tsx`, `src/persistedState.ts`, `src/browserStorage.ts` | Supported language/month preferences and storage recovery |
 | `src/domain.ts`, `src/data/catalog.ts` | Real hierarchy-derived locations, code/slug lookup and routing |

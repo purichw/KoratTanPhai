@@ -156,7 +156,7 @@ test('an open page checks publication on focus and periodically, updating the vi
   await seedAuthSession(page);
   await page.goto('/dan-khun-thot/t-300806?mapLayer=forecast-archive&target=2025-12&horizon=1');
   const shape = page.locator('.nr-map-shape[data-nr-subdistrict-code="300806"]');
-  await expect(shape).toHaveCSS('fill', 'rgb(241, 184, 75)');
+  await expect(shape).toHaveCSS('fill', 'rgb(246, 174, 45)');
   const initialReads = revisionReads;
   holdRevision = true;
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));

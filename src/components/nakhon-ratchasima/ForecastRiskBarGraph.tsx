@@ -86,12 +86,12 @@ export function DroughtForecastTrendGraph({ months, unit = "percent", activeHori
         <desc>{months.map(descriptionFor).join("; ")}</desc>
         <defs>
           <linearGradient id={`${paintId}-moderate`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ffcf69" />
-            <stop offset="100%" stopColor="#f1b84b" />
+            <stop offset="0%" stopColor="var(--ktp-risk-moderate-light)" />
+            <stop offset="100%" stopColor="var(--ktp-risk-moderate)" />
           </linearGradient>
           <linearGradient id={`${paintId}-high`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#e97772" />
-            <stop offset="100%" stopColor="#d95d59" />
+            <stop offset="0%" stopColor="var(--ktp-risk-high-light)" />
+            <stop offset="100%" stopColor="var(--ktp-risk-high)" />
           </linearGradient>
         </defs>
         {months.map((month, index) => activeHorizon === month.monthIndex && <rect key={month.period}

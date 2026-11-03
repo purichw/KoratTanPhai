@@ -41,7 +41,11 @@ it('keeps all source values and irrigation metadata intact through administrativ
   expect(mismatches).toEqual([]);
   expect(localMapStatusForForecastRecord(undefined)).toBe('forecast-missing');
   const css = readFileSync('src/styles.css', 'utf8');
-  expect(css).toMatch(/\.nr-map-shape\.is-forecast-no-risk\s*\{\s*fill: #5dae79/);
-  expect(css).toMatch(/\.nr-map-shape\.is-forecast-moderate\s*\{\s*fill: #f1b84b/);
-  expect(css).toMatch(/\.nr-map-shape\.is-forecast-high\s*\{\s*fill: #d95d59/);
+  const tokens = readFileSync('src/theme-tokens.css', 'utf8');
+  for (const [status, token, color] of [
+    ['no-risk', 'none', '#5dae79'], ['moderate', 'moderate', '#f6ae2d'], ['high', 'high', '#d95d59'],
+  ]) {
+    expect(css).toContain(`.nr-map-shape.is-forecast-${status} {\n  fill: var(--ktp-risk-${token})`);
+    expect(tokens).toContain(`--ktp-risk-${token}: ${color};`);
+  }
 });

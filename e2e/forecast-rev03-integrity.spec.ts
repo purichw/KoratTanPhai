@@ -5,7 +5,7 @@ import { forecastSlice } from '../tests/fixtures/forecast-slice.mjs';
 const source = JSON.parse(readFileSync('data/normalized/drought-rev03/forecast_archive.json', 'utf8'));
 const runtime = JSON.parse(readFileSync('src/data/canonical/nakhon_ratchasima/drought_forecast_archive_rev03.json', 'utf8'));
 const overview = JSON.parse(readFileSync('src/data/generated/forecast-overview-t1.json', 'utf8'));
-const colors: Record<string, string> = { '0': 'rgb(93, 174, 121)', '1': 'rgb(241, 184, 75)', '2': 'rgb(217, 93, 89)' };
+const colors: Record<string, string> = { '0': 'rgb(93, 174, 121)', '1': 'rgb(246, 174, 45)', '2': 'rgb(217, 93, 89)' };
 const statuses: Record<string, string> = { '0': 'no-risk', '1': 'moderate', '2': 'high', null: 'out-of-scope' };
 
 test.beforeEach(async ({ page }) => {

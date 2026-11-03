@@ -167,7 +167,7 @@ export default function ForecastAnalysisDialog({ archive, originPeriod, horizon,
             const s = d.horizons[horizon - 1];
             const max = unit === 'percent' ? s.valid : Math.max(1, ...districts.map(item => item.horizons[horizon - 1].counts[1] + item.horizons[horizon - 1].counts[2]));
             return <div key={d.code} role="listitem"><button className="nr-tool-link" type="button" onClick={() => focused(d.code)}>อ.{d.name}</button>
-              <div className="nr-district-bar" role="img" aria-label={`ปานกลาง ${s.counts[1]} สูง ${s.counts[2]} มีค่าพยากรณ์ ${s.valid}/${s.total} ตำบล`}><i style={{ width: `${max ? 100 * s.counts[1] / max : 0}%`, background: '#f1b84b' }} /><i style={{ width: `${max ? 100 * s.counts[2] / max : 0}%`, background: '#d95d59' }} /></div>
+              <div className="nr-district-bar" role="img" aria-label={`ปานกลาง ${s.counts[1]} สูง ${s.counts[2]} มีค่าพยากรณ์ ${s.valid}/${s.total} ตำบล`}><i style={{ width: `${max ? 100 * s.counts[1] / max : 0}%`, background: 'var(--ktp-risk-moderate)' }} /><i style={{ width: `${max ? 100 * s.counts[2] / max : 0}%`, background: 'var(--ktp-risk-high)' }} /></div>
               <strong>{s.riskShare === null ? 'ไม่มีค่า' : unit === 'percent' ? `${(s.riskShare * 100).toFixed(1)}%` : `${s.counts[1] + s.counts[2]} ตำบล`}</strong><small>มีค่า {s.valid}/{s.total} · ปานกลาง {s.counts[1]} · สูง {s.counts[2]}</small>
             </div>;
           })}

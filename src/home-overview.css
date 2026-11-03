@@ -1,5 +1,5 @@
 /* Home v4 shares primitives with the archive; only its composition is scoped. */
-.is-home-overview { --shadow: 0 2px 8px rgb(26 49 41 / 4%); --radius: 8px; background: #edf3f1; }
+.is-home-overview { --shadow: 0 2px 8px color-mix(in srgb, var(--ktp-navy-900) 4%, transparent); --radius: 8px; background: var(--ktp-blue-50); }
 .is-home-overview .main-panel { padding: 18px 22px; position: relative; }
 .is-home-overview .content-area { margin-top: 0; }
 .is-home-overview .nr-workspace, .nr-forecast-overview { gap: 12px; }
@@ -9,30 +9,30 @@
 .nr-forecast-overview-heading > div > p:last-child { font-size: 12px; margin: 0; }
 .is-home-overview .nr-forecast-overview-heading > p { margin: 0 0 5px; font-size: 11px; }
 .is-home-overview .nr-forecast-overview-context { margin: -4px 0 0; gap: 4px 12px; font-size: 11px; }
-.is-overview-filter.control-band { margin: 0; padding: 8px; border: 1px solid #dce5e2; border-radius: 8px; box-shadow: none; }
+.is-overview-filter.control-band { margin: 0; padding: 8px; border: 1px solid var(--ktp-border); border-radius: 8px; box-shadow: none; }
 .is-overview-filter .operational-filter-fields { gap: 10px; align-items: stretch; }
 .is-overview-filter .operational-filter-fields > .app-select-field { row-gap: 0; }
 .is-overview-filter .operational-filter-fields > .app-select-field,
-.operational-fixed-field { min-width: 0; min-height: 46px; padding: 4px 10px; border: 1px solid #d5e1dd; border-radius: 6px; background: white; display: grid; grid-template-columns: 22px minmax(0,1fr); column-gap: 8px; align-content: center; }
+.operational-fixed-field { min-width: 0; min-height: 46px; padding: 4px 10px; border: 1px solid var(--ktp-border); border-radius: 6px; background: white; display: grid; grid-template-columns: 22px minmax(0,1fr); column-gap: 8px; align-content: center; }
 .is-overview-filter .operational-filter-fields .app-select-label { grid-column: 2; margin: 0; padding: 0; position: static; font-size: 11px; text-align: center; }
-.is-overview-filter .operational-filter-fields .app-select-icon { position: static; grid-column: 1; grid-row: 1 / 3; align-self: center; color: #08724f; }
+.is-overview-filter .operational-filter-fields .app-select-icon { position: static; grid-column: 1; grid-row: 1 / 3; align-self: center; color: var(--ktp-navy-900); }
 .is-overview-filter .operational-filter-fields .app-select-trigger { grid-column: 2; min-height: 24px; padding: 0 20px; border: 0; background: transparent; box-shadow: none; font-size: 14px; }
 .is-overview-filter .operational-filter-fields .app-select-value { white-space: normal; line-height: 1.35; }
-.operational-fixed-field { align-items: center; color: #08724f; }
+.operational-fixed-field { align-items: center; color: var(--ktp-navy-900); }
 .operational-fixed-field > span { display: grid; font-size: 11px; color: var(--muted); text-align: center; }
 .operational-fixed-field strong { font-size: 14px; color: var(--ink); }
 .is-home-overview .app-select-option-copy > span { text-align: center; }
 .is-home-overview .app-select-option-copy > small { text-align: left; }
-.nr-home-situation.metric-grid { grid-template-columns: 1.2fr .7fr 1fr 1fr; margin: 0; padding: 10px 0; border: 0; border-block: 1px solid #d8e3df; border-radius: 0; background: white; }
+.nr-home-situation.metric-grid { grid-template-columns: 1.2fr .7fr 1fr 1fr; margin: 0; padding: 10px 0; border: 0; border-block: 1px solid var(--ktp-border); border-radius: 0; background: white; }
 .nr-home-situation.is-forecast-only { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .nr-home-situation .metric-card { min-height: 64px; padding: 4px 16px; background: transparent; border: 0; border-radius: 0; grid-template-columns: 42px minmax(0,1fr); column-gap: 10px; justify-items: center; align-content: center; }
-.nr-home-situation .metric-card + .metric-card { border-left: 1px solid #dfe7e4; }
-.nr-home-situation .metric-card-icon { grid-row: 1 / 3; grid-column: 1; width: 42px; height: 42px; border-radius: 50%; color: #08724f; background: #e9f4ef; }
+.nr-home-situation .metric-card + .metric-card { border-left: 1px solid var(--ktp-border); }
+.nr-home-situation .metric-card-icon { grid-row: 1 / 3; grid-column: 1; width: 42px; height: 42px; border-radius: 50%; color: var(--ktp-navy-900); background: var(--ktp-blue-50); }
 .nr-home-situation .metric-card-label, .nr-home-situation .metric-card-value { grid-column: 2; justify-self: stretch; text-align: center; }
 .nr-forecast-overview .nr-home-situation .metric-card-label { font-size: 12px; line-height: 1.45; }
 .nr-forecast-overview .nr-home-situation .metric-card-value { font-size: 21px; line-height: 1.4; }
-.nr-home-situation .is-watch .metric-card-value { color: #ba6c00; }
-.nr-home-situation .is-watch .metric-card-icon { color: #d47c00; background: #fff0d5; }
+.nr-home-situation .is-watch .metric-card-value { color: var(--ktp-risk-moderate-text); }
+.nr-home-situation .is-watch .metric-card-icon { color: var(--ktp-risk-moderate-text); background: var(--ktp-risk-moderate-surface); }
 .is-home-overview .nr-forecast-overview-grid { position: relative; grid-template-columns: minmax(0,1.63fr) minmax(330px,1fr); grid-template-rows: auto minmax(0,1fr); gap: 0 12px; align-items: stretch; }
 .is-home-overview .nr-forecast-overview-summary { padding: 14px 16px 0; background: white; border-radius: 8px 8px 0 0; }
 .is-home-overview .nr-forecast-overview-summary-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 10px; }
@@ -44,10 +44,10 @@
 .is-home-overview .nr-forecast-overview-summary .metric-card-label,
 .is-home-overview .nr-forecast-overview-summary .metric-card-value { grid-column: 2; text-align: center; justify-self: stretch; }
 .is-home-overview .nr-forecast-overview-summary .metric-card-value { font-size: 22px; }
-.is-home-overview .nr-forecast-overview-summary .is-danger .metric-card-icon { background: #ffe4e7; color: #ed3046; }
-.is-home-overview .nr-forecast-overview-summary .is-watch .metric-card-icon { background: #fff0d7; color: #a27115; }
-.is-home-overview .nr-forecast-overview-summary .is-good .metric-card-icon { background: #e7f3ee; color: #0b7958; }
-.is-home-overview .nr-forecast-overview-summary .is-muted .metric-card-icon { background: #eaf0ef; color: #3a5c54; }
+.is-home-overview .nr-forecast-overview-summary .is-danger .metric-card-icon { background: var(--ktp-risk-high-surface); color: var(--ktp-risk-high-text); }
+.is-home-overview .nr-forecast-overview-summary .is-watch .metric-card-icon { background: var(--ktp-risk-moderate-surface); color: var(--ktp-risk-moderate-text); }
+.is-home-overview .nr-forecast-overview-summary .is-good .metric-card-icon { background: var(--ktp-risk-none-surface); color: var(--ktp-risk-none-text); }
+.is-home-overview .nr-forecast-overview-summary .is-muted .metric-card-icon { background: var(--ktp-blue-50); color: var(--ktp-text-secondary); }
 .is-home-overview .nr-forecast-overview-scope-note { display: none; }
 .is-home-overview .nr-forecast-overview-attention { display: flex; flex-direction: column; gap: 8px; align-self: start; height: 360px; min-height: 0; padding: 6px 16px 12px; background: white; border-radius: 0 0 8px 8px; }
 @media (min-width: 721px) {
@@ -57,12 +57,12 @@
 .nr-home-attention-heading { border-top: 1px solid var(--line); padding-top: 12px; }
 .nr-home-risk-toggle { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; flex: none; }
 .nr-home-risk-toggle button { min-height: 40px; padding: 6px 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-size: 12px; line-height: 1.5; text-align: center; }
-.nr-home-risk-toggle button[aria-pressed=true][data-risk="2"] { color: #b22235; border-color: #d95d59; background: #fff0ef; }
-.nr-home-risk-toggle button[aria-pressed=true][data-risk="1"] { color: #875000; border-color: #d79d30; background: #fff5dc; }
+.nr-home-risk-toggle button[aria-pressed=true][data-risk="2"] { color: var(--ktp-risk-high-text); border-color: var(--ktp-risk-high); background: var(--ktp-risk-moderate-surface); }
+.nr-home-risk-toggle button[aria-pressed=true][data-risk="1"] { color: var(--ktp-risk-moderate-text); border-color: #d79d30; background: var(--ktp-risk-moderate-surface); }
 .nr-home-risk-toggle button:focus-visible, .nr-home-attention-scroll:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.nr-home-attention-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: #9caea5 transparent; }
+.nr-home-attention-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: var(--ktp-text-secondary) transparent; }
 .nr-home-attention-empty { display: grid; align-content: center; justify-items: center; gap: 6px; min-height: 100%; padding: 16px 12px; text-align: center; }
-.nr-home-attention-empty-icon { display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: 6px; border-radius: 50%; background: #edf3f1; color: #3a5c54; }
+.nr-home-attention-empty-icon { display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: 6px; border-radius: 50%; background: var(--ktp-blue-50); color: var(--ktp-text-secondary); }
 .nr-home-attention-empty strong { font-size: 15px; line-height: 1.5; }
 .nr-home-attention-empty p, .nr-home-attention-empty small { margin: 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
 .nr-home-attention-empty small { color: var(--ink); }
@@ -70,14 +70,14 @@
 .nr-home-attention-heading h3 { font-size: 15px; }
 .is-home-overview .nr-forecast-overview-attention > p { margin: 1px 0 4px; font-size: 11px; }
 .is-home-overview .nr-forecast-overview-attention li a { min-height: 54px; padding: 6px 0; gap: 10px; }
-.is-home-overview .nr-forecast-overview-attention .nr-home-area-marker { display: grid; place-items: center; flex: 0 0 26px; height: 26px; color: #d8283f; }
+.is-home-overview .nr-forecast-overview-attention .nr-home-area-marker { display: grid; place-items: center; flex: 0 0 26px; height: 26px; color: var(--ktp-risk-high-text); }
 .nr-home-area-name { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .is-home-overview .nr-forecast-overview-attention li strong { font-size: 14px; }
-.is-home-overview .nr-forecast-overview-attention .status-pill { background: transparent; color: #d8283f; padding: 0; font-size: 12px; white-space: nowrap; }
-.is-home-overview .nr-forecast-overview-attention[data-risk="1"] :is(.nr-home-area-marker, .status-pill) { color: #875000; }
+.is-home-overview .nr-forecast-overview-attention .status-pill { background: transparent; color: var(--ktp-risk-high-text); padding: 0; font-size: 12px; white-space: nowrap; }
+.is-home-overview .nr-forecast-overview-attention[data-risk="1"] :is(.nr-home-area-marker, .status-pill) { color: var(--ktp-risk-moderate-text); }
 .is-home-overview .nr-forecast-overview-details { width: auto; max-width: 100%; min-height: 40px; padding: 8px 12px; margin: 0; font-size: 12px; border: 1px solid var(--primary); border-radius: 6px; }
 .is-home-overview .nr-forecast-overview-details:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
-.is-home-overview .nr-overview-cockpit-map .nr-dashboard-map-card { height: 530px; min-height: 0; position: relative; border: 1px solid #dce5e2; border-radius: 8px; box-shadow: none; grid-template-rows: auto minmax(0,1fr); overflow: visible; }
+.is-home-overview .nr-overview-cockpit-map .nr-dashboard-map-card { height: 530px; min-height: 0; position: relative; border: 1px solid var(--ktp-border); border-radius: 8px; box-shadow: none; grid-template-rows: auto minmax(0,1fr); overflow: visible; }
 .is-home-overview .nr-dashboard-map-header { display: grid; grid-row: 1; align-content: start; align-items: start; padding: 10px 14px; background: white; border: 0; }
 .is-home-overview .nr-dashboard-map-header > div { max-width: none; }
 .is-home-overview .nr-dashboard-map-header .eyebrow { display: none; }
@@ -97,7 +97,7 @@
 .is-home-overview .nr-map-panel .nr-map-legend span { font-size: 11px; }
 .is-home-overview .nr-map-panel .nr-map-legend i { width: 11px; height: 11px; }
 .is-home-overview .nr-map-preview-card dl { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
-.nr-map-distance-scale { pointer-events: none; font-size: 12px; fill: #31584b; }
+.nr-map-distance-scale { pointer-events: none; font-size: 12px; fill: var(--ktp-navy-900); }
 .nr-map-recovery-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .is-home-overview .nr-dashboard-map-card:has(.nr-return-forecast) { grid-template-rows: 66px minmax(0,1fr); }
 .is-home-overview .nr-return-forecast { position: absolute; right: 12px; top: 13px; min-height: 38px; font-size: 12px; }
@@ -106,13 +106,13 @@
 .is-home-overview .nr-map-panel:fullscreen .nr-map-svg { height: 100%; }
 .nr-home-support { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
 .nr-home-support > * { min-width: 0; }
-.nr-detail-panel { position: relative; min-width: 0; border-block: 1px solid #d8e3df; background: white; padding: 10px 12px; }
+.nr-detail-panel { position: relative; min-width: 0; border-block: 1px solid var(--ktp-border); background: white; padding: 10px 12px; }
 .nr-detail-panel > .data-provenance-chip { position: absolute; top: 18px; right: 38px; }
 .nr-detail-panel h3 { margin: 0 0 10px; }
 .nr-detail-panel h3 button { width: 100%; min-height: 30px; display: flex; gap: 10px; align-items: center; padding: 0; border: 0; background: none; text-align: left; color: var(--ink); font-size: 16px; }
 .nr-detail-panel h3 button > span:nth-child(2) { flex: 1; padding-right: 14px; }
 .nr-detail-panel h3 button[aria-expanded=true] > svg { transform: rotate(180deg); }
-.nr-detail-panel .panel-icon { color: #08724f; background: #e9f4ef; border-radius: 50%; width: 30px; height: 30px; display: grid; place-items: center; }
+.nr-detail-panel .panel-icon { color: var(--ktp-navy-900); background: var(--ktp-blue-50); border-radius: 50%; width: 30px; height: 30px; display: grid; place-items: center; }
 .nr-detail-panel-body { position: relative; font-size: 12px; line-height: 1.6; padding-top: 10px; }
 .nr-detail-panel-body[hidden] { display: none; }
 .nr-detail-panel-body p { margin: 8px 0; }
@@ -208,7 +208,7 @@
   .is-home-overview .nr-map-preview-card.is-touch { max-height: calc(100% - 12px); padding: 12px 10px; border-radius: 8px; }
   .is-home-overview .nr-map-preview-card.is-touch dl { max-height: none; min-height: 0; }
   .is-home-overview .nr-return-forecast { top: 43px; right: 10px; left: 10px; }
-  .is-home-overview .nr-forecast-overview-attention { padding: 10px; border-radius: 0; border-block: 1px solid #d8e3df; }
+  .is-home-overview .nr-forecast-overview-attention { padding: 10px; border-radius: 0; border-block: 1px solid var(--ktp-border); }
   .is-home-overview .nr-home-attention-heading { border-top: 0; padding-top: 0; }
   .is-home-overview .nr-forecast-overview-attention li a { min-height: 58px; }
   .is-home-overview .nr-forecast-overview-details { width: 100%; min-height: 44px; }

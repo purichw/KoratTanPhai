@@ -1,0 +1,44 @@
+/* Navy / Powder / Amber — web paint only, approved 2026-11-03.
+ * Keep spacing, type metrics, layout and official logo assets in their owners.
+ * Loaded before the startup shell so the pre-JavaScript screen uses this palette.
+ */
+:root {
+  --ktp-navy-950: #0f2e5e;
+  --ktp-navy-900: #173a6a;
+  --ktp-navy-800: #204777;
+  --ktp-navy-700: #2c5890;
+  --ktp-blue-600: #2e6bde;
+  --ktp-blue-300: #a9c8f7;
+  --ktp-blue-200: #cddff8;
+  --ktp-blue-100: #e7f0ff;
+  --ktp-blue-50: #f4f8ff;
+  --ktp-page: #eef4fc;
+  --ktp-card: #ffffff;
+  --ktp-panel: #fbfcfe;
+  --ktp-subtle: #f8fafe;
+  --ktp-map-canvas: #e2ebf5;
+  --ktp-text: #182b4c;
+  --ktp-text-secondary: #5d6e88;
+  --ktp-text-muted: #61728a;
+  --ktp-link: #2458b9;
+  --ktp-border: #d7e2f1;
+  --ktp-border-strong: #b9cbe3;
+  --ktp-risk-none: #5dae79;
+  --ktp-risk-moderate: #f6ae2d;
+  --ktp-risk-high: #d95d59;
+  --ktp-risk-outside: #cbd5e1;
+  --ktp-risk-hatch: #95a4b5;
+  --ktp-risk-unknown: #718198;
+  --ktp-risk-none-text: #176647;
+  --ktp-risk-moderate-text: #9a5700;
+  --ktp-risk-high-text: #b42334;
+  --ktp-risk-none-surface: #ebf4ff;
+  --ktp-risk-moderate-surface: #fff5e6;
+  --ktp-risk-high-surface: #fff0f2;
+  --ktp-risk-outside-surface: #f2f5f9;
+  --ktp-risk-moderate-light: #ffcf69;
+  --ktp-risk-high-light: #e97772;
+  --ktp-shadow: 0 4px 18px rgb(23 58 106 / 7%);
+  --ktp-popover-shadow: 0 12px 32px rgb(23 58 106 / 14%);
+  --ktp-focus-ring: 0 0 0 3px rgb(46 107 222 / 28%);
+}

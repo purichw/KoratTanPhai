@@ -52,7 +52,9 @@ Rules:
 
 ## Color / Tokens
 
-Current CSS custom properties live in `src/styles.css`.
+Current web paint tokens live in `src/theme-tokens.css` (Navy / Powder / Amber,
+owner-approved 2026-11-03). `src/brand-theme.css` maps the existing component API
+below to these roles. Component/lazy Admin CSS and SVGs share the palette.
 
 Core roles:
 
@@ -66,19 +68,22 @@ Core roles:
 - `--teal`, `--amber`, `--red`, `--yellow`: risk and evidence accents.
 - `--nr-rain-direct`, `--nr-rain-proxy`: Nakhon Ratchasima rainfall
   layer states for direct station and nearest-station representative context.
-- `--green-soft`: low-emphasis status background.
+- `--green-soft`: legacy component name for non-risk selected/quiet blue surfaces.
+- `--ktp-risk-*`: forecast fills, status text/surfaces and out-of-scope hatch.
 - `--radius`: 8px panel radius.
 
-Severity colors are also defined in `src/components/RiskMap.tsx`.
+Active forecast paint is in `NakhonRatchasimaLocalMap` and shared chart/legend
+owners. Risk 0 remains green, 1 amber, 2 coral and out-of-scope gray/hatched.
 
 Do not rely on color alone; always pair severity colors with labels.
 
 ## Web And iOS CI
 
-CI means corporate identity here. Web and iOS are the same Korat Tan Phai
-product, not separate visual brands. `src/styles.css`, `index.html` and the
-current Korat assets are the source of truth; do not introduce a new palette,
-typeface or logo for the native app.
+CI means corporate identity here. Web and iOS share authentic Korat assets and
+typography. November's owner request changes the website skin only; native
+retains the base identity tokens in `src/styles.css` until a separate native
+update. Do not recolor the logo or claim native visual parity with the new web
+skin based on the legacy token test alone.
 
 - Native semantic colors and typography live in `apps/mobile/src/theme.ts`.
   All current native text and surface styles use these roles. The native
@@ -106,11 +111,14 @@ guards source drift; Simulator screenshots still verify actual rendering.
 
 ### Shared web surface theme
 
-`src/brand-theme.css` adds the reference-led ivory, forest-green and antique-gold
+`src/brand-theme.css` adds the reference-led Navy / Powder Blue / White
 surface treatment to the existing web components. It is imported once by
 `src/main.tsx`. Use its `--brand-*` roles for decorative surfaces; the original
-semantic/risk tokens, font metrics and component geometry remain authoritative.
-The shared decorative illustration is `public/brand/korat-rice-landscape.webp`.
+semantic/risk meanings, font metrics and component geometry remain authoritative.
+The shared decorative illustration is
+`public/brand/korat-rice-landscape-navy-amber.webp`; retain the original
+`korat-rice-landscape.webp` as its source. Preserve gold rice against blue hills
+with normal blending, rather than desaturating all the artwork into blue.
 It is illustrative brand art, not satellite imagery or evidence of field conditions.
 See [surface-theme contract](BRAND_SURFACE_THEME.md) for reuse, asset provenance
 and the geometry-preservation verification.

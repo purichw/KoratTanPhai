@@ -22,6 +22,23 @@ the newest release supersedes earlier statements about production state.
 
 ## Recent Changes
 
+Navy / Powder / Amber theme (local implementation 2026-11-03, not deployed):
+
+- Isolated branch `feat/navy-theme-20261103`, based on `8186896` (the docs
+  checkpoint after runtime `2d2d7cb`). Unrelated main-checkout work is untouched.
+- Applied the November handoff to Visitor/Admin using shared paint tokens and
+  components. Layout, composition, type metrics, logo, map geometry, data, auth
+  and publication behavior are preserved.
+- Pre-JavaScript loading, lazy CMS styles, dialogs, chart SVGs and map hatching
+  share the palette. Risk 0 stays green, moderate amber, high coral; explicit
+  out-of-study stays gray/hatched and unavailable remains distinct.
+- Artwork follow-up restores visible gold rice and blue landscape with a
+  dedicated imagegen color derivative and lighter overlays. Original artwork,
+  logo, UI geometry and existing CSS crops remain intact; luminosity blending
+  is no longer used. See the current `artwork/` evidence under the theme artifacts.
+- See [surface theme](BRAND_SURFACE_THEME.md) for ownership and verification.
+  No push/deploy, remote data write or native palette change in this task.
+
 CMS forecast lifecycle (implemented 2026-10-15, released 2026-10-16):
 
 - Admin can create a new forecast origin through an empty draft or the existing
