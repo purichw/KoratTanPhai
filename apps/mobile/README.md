@@ -69,12 +69,16 @@ and share native components when actual repeated consumers exist.
 
 ## Corporate Identity
 
-The native app follows the same CI as the web product. See
+The native app shares the Korat identity with the web product. See
 [`docs/DESIGN_SYSTEM.md`](../../docs/DESIGN_SYSTEM.md). The source of truth is
 the current Korat web UI, not the legacy Kaset artwork.
 
 - `src/theme.ts` owns native semantic colors and font roles, matching
-  `src/styles.css` and `index.html`. Do not hardcode a separate native palette.
+  the base tokens in `src/styles.css` and typography in `index.html`.
+  November's Navy / Powder / Amber website skin and illustrated loader were
+  web-only releases. Native has not adopted `src/theme-tokens.css` or the web
+  loading scene; the existing brand test does not certify parity with those
+  overrides. Do not silently recolor native while maintaining web documentation.
 - `assets/korat-tan-phai-emblem.png` is byte-identical to the web emblem.
 - Use [Google Sans](https://fonts.google.com/specimen/Google+Sans) for Thai and
   English. `@expo-google-fonts/google-sans` 0.4.2 supplies static 400/600/700

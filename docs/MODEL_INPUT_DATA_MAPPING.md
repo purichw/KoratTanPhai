@@ -278,7 +278,7 @@ All URL query values are strings on the wire. No parameter may be repeated; unkn
 
 ## 7. Actual DOAE CSV → proposed V2 raw staging
 
-**ยังไม่มี adapter นี้ / Not implemented.** ชื่อคอลัมน์และ sample ด้านล่างมาจากแถวสาธารณะจริงที่เก็บไว้ใน [local research sample](../artifacts/thai-source-research/doae-2023-korat-sample.json), แถวคะน้า ตำบลในเมือง; ไม่ใช่รายงานปัจจุบัน และยังไม่ ingest เข้าโมเดล หลักฐานและ URL ต้นทางอยู่ใน [research](THAI_AGRICULTURAL_DATA_RESEARCH.md)
+**ยังไม่มี adapter นี้ / Not implemented.** ชื่อคอลัมน์และ sample ด้านล่างมาจากแถวสาธารณะจริงที่เก็บไว้ใน `artifacts/thai-source-research/doae-2023-korat-sample.json` (หลักฐาน local เดิม ไม่มีใน checkout นี้), แถวคะน้า ตำบลในเมือง; ไม่ใช่รายงานปัจจุบัน และยังไม่ ingest เข้าโมเดล หลักฐานและ URL ต้นทางอยู่ใน [research](THAI_AGRICULTURAL_DATA_RESEARCH.md)
 
 The following 15 exact headers and values come from the previously inspected public sample. `rawValues` is a **proposed staging object**, not a V1 field. Proposed M/N below means preserve every header as a string, including an empty string; it is not a claim that the provider guarantees nonempty values. Missing headers should be quarantined, not silently fabricated.
 
@@ -324,7 +324,7 @@ Unresolved records remain excluded from feature preparation. Do not invent harve
 
 ## 8. Actual ThaiWater JSON → normalization proposal
 
-**ไม่มี production preset / No production preset.** อิง snapshot ที่บันทึกไว้ก่อนหน้าใน [research response](../artifacts/thai-source-research/thaiwater-jjtjseqj/rain24-korat.response) ของ `rain_24h?province_code=30`; ไม่ได้เรียกต้นทางในงานเอกสารนี้ Sample ต่อไปนี้เป็น excerpt ของแถวจริงเดิม ไม่ใช่สภาพอากาศปัจจุบัน
+**ไม่มี production preset / No production preset.** อิง snapshot ที่บันทึกไว้ก่อนหน้าใน `artifacts/thai-source-research/thaiwater-jjtjseqj/rain24-korat.response` (หลักฐาน local เดิม ไม่มีใน checkout นี้) ของ `rain_24h?province_code=30`; ไม่ได้เรียกต้นทางในงานเอกสารนี้ Sample ต่อไปนี้เป็น excerpt ของแถวจริงเดิม ไม่ใช่สภาพอากาศปัจจุบัน
 
 ```json
 {

@@ -24,9 +24,35 @@ Current navigation and ownership are in `APP_MAP.md`. The owner requested
 
 Agriculture/research panels require actual records; cleared/synthetic datasets
 do not make them active. The nationwide, field-verification, farmer and delivery
-journeys below describe retained prototype contracts, not available services.
+journeys below describe historical prototype contracts removed from runtime,
+not available services or retained executable components.
 
-## Retained Prototype Journeys
+## Active Admin Journeys
+
+1. `/admin/login` signs in independently with the existing Supabase accounts;
+   server-verified CMS operator membership gates every operation.
+2. `/admin` shows published forecasts/readiness, saved import work/drafts and
+   the active reference catalogue. Names and tambon boundaries share one area
+   workspace with district grouping/filtering and a boundary map.
+3. Upload Excel/CSV, inspect source-row/cell issues, repair in the UI or download
+   reviewed Excel/CSV for offline correction and fresh validation on reupload.
+4. Save/resume the operator-private raw review, including original file bytes,
+   with revision conflicts and failed saves kept visible. Conversion produces a
+   canonical draft; the raw checkpoint is not a publication approval.
+5. Create a new origin using an empty 289×6 draft or the normalized importer.
+   Empty cells remain insufficient data. Validation, comparison against the live
+   base, explicit reason/confirmation and atomic publication remain separate.
+6. Recover one prior round into a new reviewed draft; other origins and immutable
+   history remain intact. Never reset the live publication pointer to an old ID.
+
+See [ADMIN_CMS](ADMIN_CMS.md) and [CMS_FORECAST_LIFECYCLE](CMS_FORECAST_LIFECYCLE.md).
+Five active references are read-only system resources; geometry replacement and
+arbitrary model output publication are not enabled by the forecast editor.
+
+## Historical Prototype Journeys (not mounted)
+
+The following demo IDs, personas and reducer actions describe the retired
+prototype. They are not the current Admin authorization or forecast workflow.
 
 ### Resident / Farmer Alert Journey
 
@@ -36,7 +62,7 @@ journeys below describe retained prototype contracts, not available services.
 4. Farmer taps the alert to mark it read.
 5. Farmer sees the top recommended actions from the advisory.
 
-Current limitation: This is local demo state only. No real notification,
+Historical limitation: This was local demo state only. No real notification,
 identity, acknowledgement receipt, or server audit exists.
 
 ### Local Operator Risk Review Journey
@@ -110,10 +136,10 @@ this description.
 5. Reducer creates farmer alert linked to `ADV-2026-824`.
 6. Main event status becomes `Published / Monitoring`.
 
-## Admin / Operator Journeys
+## Historical Persona Journeys (not CMS)
 
-FACT: Admin behavior is simulated through personas. There is no secure role
-enforcement.
+The retired prototype simulated roles through personas. The current CMS instead
+uses real sessions and server-enforced membership; see Active Admin Journeys.
 
 Operator persona expectations:
 
@@ -124,7 +150,9 @@ Operator persona expectations:
 - หน่วยงานน้ำ: ดำเนินการด้านชลประทานและบริหารจัดการน้ำ.
 - Supervisor: approval or changes requested.
 
-## Form Flows
+## Historical Demo Form Flows (removed owners)
+
+File/component names below are historical pointers, not current source paths.
 
 Field verification form:
 
@@ -157,38 +185,37 @@ FACT:
 - The old `korat-tan-phai-login-user` value is removed, never accepted as auth.
 - Login preserves internal `next` paths including query/hash, even if the
   login page is refreshed. External return URLs are rejected.
-- Persona selection is persisted display context, not account permissions.
+- Visitor and Admin use independent session keys and same-scope cross-tab
+  events. Cross-scope navigation reloads the document; signing out one scope
+  does not sign out the other. Retired personas are neither persisted current
+  UI nor a permission source.
 - See `AUTH_SETUP.md` for test-only mocks, logout error states and Preview checks.
 
-PROPOSAL:
-
-- Independently verify real-account authentication and backend settings before operational use.
-- Role-sensitive actions must move to backend authorization.
+Real-account release checks are separate from mocked local tests. CMS operations
+already enforce server authorization; future jurisdiction-specific officer
+restrictions remain separate work in [WORKSPACE_ACCESS](WORKSPACE_ACCESS.md).
 
 ## Error / Loading / Empty States
 
 Current states:
 
-- Map loading state: `กำลังโหลดแผนที่...`.
-- Map error state: `ไม่สามารถโหลดแผนที่ได้`.
-- No event matches filters.
-- No urgent actions for current filters.
-- No seeded drill-down for unseeded areas.
-- Review disabled until field verification is submitted.
-- Publish disabled until advisory approval.
-- No delivery records before publication.
-- No farmer alert before publication.
-- Nakhon Ratchasima local map loading state for
-  `/geodata/nakhon-ratchasima-subdistricts.geojson`.
-- Nakhon Ratchasima local map error state if the subdistrict geometry file
-  cannot load.
-- Nakhon Ratchasima unseeded subdistrict no-data state: local evidence missing
-  does not mean normal or low risk.
-
-needs audit:
-
-- Add failed delivery states before real notifications.
-- Add stale data and offline banners before operational use.
+- Shared illustrated loading covers initial Visitor/Admin reads. Real auth,
+  module/bootstrap and page-read milestones drive 0/33/67/100%; pending work
+  never advances with time. The orbit remains continuous across mounts.
+- Failed reads release the full-page loader to the existing error/retry; they
+  do not become successful data. A slow React loader offers reload after 20s.
+  Cached refreshes retain local feedback, and completion never delays content
+  interaction. See [LOADING_SCREEN](LOADING_SCREEN.md).
+- Core geometry/read failures have actionable retry and no static fallback in
+  CMS mode. Optional neighboring context does not block a ready core map.
+- Empty search/analysis/irrigation results use shared icon, explanation and reset
+  controls. Empty lists do not imply zero risk. Analysis results scroll inside
+  the bounded modal rather than forcing an empty full-height panel.
+- Risk 0, out of study scope and missing records remain distinct. A failed
+  revalidation is explicit and blocks exports that require a fresh revision.
+- Import validation errors identify source positions and repair actions.
+  Invalid/stale drafts cannot publish; failed saves retain unsaved input and
+  offer retry. Recovery creates a new draft rather than discarding history.
 
 ## Navigation Behavior That Must Not Regress
 
@@ -196,8 +223,7 @@ needs audit:
 - Control-band filters must preserve selected section.
 - The visible app is Thai-only; do not reintroduce a TH/EN toggle without an
   explicit product decision.
-- Farmer persona must not expose officer-only workflow surfaces.
-- Reset Demo Data must restore deterministic state.
+- Admin navigation must stay within CMS; Visitor login cannot bypass Admin login.
 - Toasts must be dismissible.
 - Map zoom/pan must stay bounded inside the map canvas so long-press or
   touchpad dragging cannot reveal page-level horizontal overscroll or move
@@ -207,24 +233,13 @@ needs audit:
   must not swallow the next tap. Keep pinch zoom and long-press panning intact.
   `e2e/map-touch-pan.spec.ts` covers real Chromium touch input across overview,
   province, district, and tambon routes without waiting for a long press.
-- Province, district, subdistrict, and future Bangkok district/subdistrict
-  equivalents (`เขต`/`แขวง`) share the same wheel/touchpad zoom contract:
+- Province, district and subdistrict maps share the same wheel/touchpad zoom contract:
   vertical wheel input over the map zooms around the pointer quickly, while
   horizontal wheel input is contained so the page cannot drift sideways.
-- Map province shapes must support click and keyboard Enter/Space selection.
-- The initial province context must not render as a map selection. A thin halo
-  appears only after explicit click or keyboard selection on a province shape.
-- Desktop pointer users see a compact province preview card on hover before
-  choosing a province. Clicking the polygon pins the province and updates the
-  full detail panel.
-- Touch users see the same lightweight preview as a compact bottom sheet on tap.
-  The full detail panel changes only after tapping `ดูรายละเอียด`.
-- Nakhon Ratchasima map shapes are buttons and navigate to district/subdistrict
-  routes. Their evidence status is visual support only; source/evidence cards
-  carry the operational wording.
-- When the rainfall layer is selected, map preview actions may open subdistricts
-  with direct station or nearest-station coverage. Other layers should preserve
-  their existing no-data/action gating.
+- Local map shapes support keyboard and pointer selection with scoped previews
+  and district/tambon drilldown. Clearing a transient selection must not reopen
+  a hover preview while the camera returns. A route-selected tambon remains
+  selected only on that route. No rainfall or national demo layer is active.
 - Nakhon Ratchasima breadcrumbs must remain usable on mobile and should not
   require the nationwide filter band.
 - Active hierarchy-back actions are deterministic: province drought returns to

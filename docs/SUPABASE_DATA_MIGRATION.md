@@ -1,5 +1,12 @@
 # Forecast Archive And Saved Workspaces
 
+> Historical initial database migration. The rev02 dataset/counts and earlier
+> date labels below are not the current source authority. The later
+> [rev03 cutover](DROUGHT_REV03_CUTOVER.md), [scoped loading](FORECAST_SCOPED_LOADING.md),
+> [CMS lifecycle](CMS_FORECAST_LIFECYCLE.md) and [DATA_CONTRACT](DATA_CONTRACT.md)
+> define current reads/publication. Do not replay the retired seed or treat the
+> zero-row initial table as current database state.
+
 ## Scope
 
 Only the approved rev02 forecast archive and per-account followed areas/saved

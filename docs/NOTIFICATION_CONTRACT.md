@@ -1,5 +1,11 @@
 # เกษตรทันภัย Notification Contract
 
+> Historical demo and future-provider contract. The current forecast/CMS
+> product does not mount these publication channels or simulated notifications.
+> Referenced prototype files/actions may have been removed. See
+> [APP_MAP](APP_MAP.md), [OPERATIONS](OPERATIONS.md) and
+> [legacy cleanup](LEGACY_CLEANUP_20261003.md) for current scope.
+
 ## Current Notification Model
 
 FACT: Notifications are simulated.

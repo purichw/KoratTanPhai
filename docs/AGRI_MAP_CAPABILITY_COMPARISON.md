@@ -169,7 +169,7 @@ map PDF/PNG พร้อมวันที่/legend/source และการ�
 - **K6**: [bookmark dialog](../src/components/WorkspaceBookmarks.tsx), [owner-scoped persistence](../src/data/savedWorkspaces.ts), [route restoration](../src/savedWorkspaceRoutes.ts).
 - **K8**: [mobile/shared CSS](../src/drought-workspace.css), [Home CSS](../src/home-overview.css), [app styles](../src/styles.css).
 - **K9**: [routing/domain](../src/domain.ts), [workspace model](../src/components/nakhon-ratchasima/workspaceModel.ts), [administrative hierarchy](../src/data/canonical/nakhon_ratchasima/admin_hierarchy.json).
-- **K10**: [province gates](../src/components/nakhon-ratchasima/ProvinceView.tsx), [district gates](../src/components/nakhon-ratchasima/DistrictView.tsx), [tambon gates](../src/components/nakhon-ratchasima/SubdistrictView.tsx), [cleared research metadata](../src/data/canonical/nakhon_ratchasima/normalized_research_panel_summary.json).
+- **K10**: [province gates](../src/components/nakhon-ratchasima/ProvinceView.tsx), [district gates](../src/components/nakhon-ratchasima/DistrictView.tsx), [tambon gates](../src/components/nakhon-ratchasima/SubdistrictView.tsx), cleared research metadata (`normalized_research_panel_summary.json`, removed during the later [source cleanup](LEGACY_CLEANUP_20261003.md)).
 
 การตรวจรอบนี้เป็น source/capability audit ไม่มีการรับรองความเท่าเทียมของภาพ,
 ประสิทธิภาพ, browser compatibility หรือผลข้อมูลสดใน production

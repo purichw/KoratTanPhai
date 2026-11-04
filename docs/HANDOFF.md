@@ -9,9 +9,11 @@ per-account followed areas/saved filters. The site brand is Korat Tan Phai /
 
 - Repo: `/Users/point/korattanphai`
 - Production: `https://korattanphai.vercel.app`
-- Current release branch: `feat/loading-scene-20261103`
+- Latest verified release branch: `feat/loading-scene-20261103`
 - Verified runtime Quality Gate: `41662827031`, attempt 1 (all seven jobs passed)
-- Deployed runtime: `9f7c80739fc56170ac2145cbf7a0476dc69c05a5`
+- Last verified deployed runtime (2026-11-03): `9f7c80739fc56170ac2145cbf7a0476dc69c05a5`
+- Documentation checkpoint: `dfc567d10156db32c1cf18e83e84e5d3b4bce384`;
+  docs-mode Quality Gate `41666465626` passed against runtime gate `41662827031`
 - Source snapshot: copied from Kaset Tan Phai commit
   `0f16794bb57d5dec93b7c6312de7d9362bb97013`.
 
@@ -21,6 +23,35 @@ Recent changes below are chronological checkpoints;
 the newest release supersedes earlier statements about production state.
 
 ## Recent Changes
+
+Project documentation and skills reconciliation (2026-11-04, local docs only):
+
+- Reviewed the 56 project Markdown documents (root guides, `docs/` and mobile
+  guides), project rules, focused source owners and saved exact-SHA release
+  receipts. Added a complete task/status reading index in `PROJECT_MAP.md`.
+  Last verified runtime remains `9f7c807`; this pass did not re-inspect the live
+  production alias or run another build, CI, deployment or database operation.
+- Aligned overview/architecture/journeys with shared illustrated startup and
+  real 0/33/67/100 readiness; retained the detailed contract and release proof in
+  `LOADING_SCREEN.md`. Updated CI docs with the verified docs-mode checkpoint,
+  and release/smoke guides with explicit backend flags and lifecycle read scope.
+- Corrected stale CMS candidate-only claims: new rounds, readiness, server
+  checkpoints/originals and reviewed recovery shipped on October 16. Added API/
+  persistence pointers without changing fields, access or publication rules.
+- Marked retired demo/research/rev02 documents as historical; removed misleading
+  current claims about personas, national maps, active rainfall and old source
+  files. Original release/test evidence remains dated. Missing local research
+  artifacts are labeled unavailable in this checkout, not reconstructed.
+- Documented web-only theme/loading versus native implementation/evidence gaps,
+  and the owner's latest-design retention rule without deleting files.
+- Updated both user-local project skills and the onboarding reference under
+  `/Users/point/.codex/skills/korat-tan-phai-*`: current-worktree resolution,
+  forecast-only routing, CMS capabilities, shared loading, native status and
+  proportional verification. These files are outside this repo; a Git push of
+  project docs does not publish them. No generic skill or other chat was changed.
+- Verification for this pass: scoped Markdown target/index checks, whitespace,
+  skill frontmatter/reference validation and source/receipt consistency review.
+  No UI was changed, so no new screenshots or runtime tests were needed.
 
 Loading motion continuity and real progress (released 2026-11-03 as `9f7c807`):
 

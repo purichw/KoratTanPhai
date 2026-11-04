@@ -1,23 +1,30 @@
 # โคราชทันภัย Operations
 
-Updated: **2026-09-09**. Start with the [NFR operations runbook](NFR_OPERATIONS_RUNBOOK.md)
+Current-scope review: **2026-11-04**; NFR activation evidence below is dated
+2026-09-09, not a new live probe. Start with the [NFR operations runbook](NFR_OPERATIONS_RUNBOOK.md)
 for checks, incidents, job replay, backup/restore and activation. Acceptance
 targets and owner roles live in [NON_FUNCTIONAL_REQUIREMENTS.md](NON_FUNCTIONAL_REQUIREMENTS.md).
 
 ## Current Operations Model
 
-The legacy advisory, approval and notification workflows below remain
-simulated. Supabase login, forecast reads and personal saved workspaces have
-separate real persistence; the simulated personas do not grant permissions.
+Supabase login, published forecast reads, saved workspaces and the independently
+authenticated CMS have real persistence. The legacy advisory/persona/delivery
+workflows below are historical demo descriptions removed from runtime.
+Current operator work is import/repair, reviewed downloads, new forecast rounds,
+data readiness, saved work and recovery into a new draft. See
+[ADMIN_CMS](ADMIN_CMS.md) and [CMS_FORECAST_LIFECYCLE](CMS_FORECAST_LIFECYCLE.md).
 
 The NFR handlers were deployed to [production](https://korattanphai.vercel.app)
 on 2026-09-09. Public health returns 200; model-input ingestion and private
 readiness remain unconfigured (503); telemetry POST returns 204 while disabled.
 The collector and resumable job/backup/restore tools remain operator-run.
 See [release evidence](HANDOFF.md) and [API setup](API.md#model-inputs-local-system-bridge).
-No remote migration, actual local/ThaiWater feed, provider dashboard, scheduler,
-monitoring, notification recipient or remote log store was activated. Prepared migrations and
-environment settings still need operator activation. V2 remains proposed.
+That NFR release activated no remote migration, actual local/ThaiWater feed,
+provider dashboard, scheduler, monitoring, notification recipient or remote log
+store. Prepared NFR migrations and environment settings still need operator
+activation. V2 remains proposed.
+This NFR limit does not negate the separately completed forecast/CMS migrations
+recorded in HANDOFF; do not replay migrations without checking the target ledger.
 
 ## Actual NFR Ownership / ผู้รับผิดชอบงานระบบจริง
 
@@ -32,9 +39,9 @@ These are roles to assign, separate from the simulated personas below.
 | Database operator | สำรองและซ้อมกู้ทั้งฐานข้อมูลและไฟล์ / Full database/asset backup and isolated restore. | Restore report with actual coverage and measured recovery time. |
 | Release/QA owner | รับหลักฐาน regression และควบคุมการปล่อยรุ่น / Review regression evidence and release controls. | Artifact identity, required CI checks and deployment smoke. |
 
-## Operator Roles
+## Historical Demo Operator Roles
 
-Simulated personas from `src/data/canonical/users.json`:
+Retired personas from the removed `src/data/canonical/users.json`:
 
 - National agricultural officer
 - Provincial agricultural officer
@@ -45,9 +52,9 @@ Simulated personas from `src/data/canonical/users.json`:
 - Supervisor / approver
 - Farmer
 
-## Operational Workflows
+## Historical Demo Workflows
 
-Current workflow chain:
+Retired workflow chain (not current CMS publication):
 
 1. Risk event selected.
 2. Field task submitted.
@@ -71,11 +78,9 @@ Current facts:
   live ingest job is scheduled.
 - Job freshness reports separately evaluate observation-window age and fetch
   age. Missing thresholds mean `unknown`; historical mode is explicit.
-- This local report is not yet connected to the dashboard's fixture provenance
-  text and is not provider availability monitoring.
-- Nakhon Ratchasima rainfall station coverage is static fixture data.
-  No live rainfall readings or province water-provider snapshots are ingested
-  into the app yet.
+- This local report is not a dashboard feed or provider availability monitor.
+- Historical rainfall station/proxy fixtures were removed from runtime. No live
+  rainfall readings or province water-provider snapshots supply the active app.
 
 Operational requirement:
 
@@ -94,8 +99,11 @@ Operational requirement:
 
 Current facts:
 
-- Runtime audit is local and resettable.
-- Seed audit trail is fixture data.
+- Current CMS revisions/publications keep server-side actor/reason/history and
+  immutable originals. Private import checkpoints enforce owner and revision.
+  See the CMS lifecycle contract for retention and recovery boundaries.
+- The former resettable frontend demo audit was a fixture, not the current CMS
+  audit system, and is no longer active.
 - Server completion logs and local ingest manifests are operational evidence;
   they are not append-only business approval/publication audit records.
 

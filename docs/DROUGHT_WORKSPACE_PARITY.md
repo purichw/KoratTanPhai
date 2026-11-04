@@ -1,5 +1,11 @@
 # Drought Operational Workspace Parity
 
+> Dated September design/verification record. Original references and local
+> checks below do not override later forecast-only routing, tambon layout fixes,
+> source cleanup or the web theme. Current contracts live in
+> [APP_MAP](APP_MAP.md), [SHARED_COMPONENTS](SHARED_COMPONENTS.md) and
+> [DESIGN_SYSTEM](DESIGN_SYSTEM.md).
+
 Local implementation on 2026-09-05, based on commit `2117253` plus this task's
 uncommitted changes. No commit, push or production deployment is authorized by
 this pass. The older Live Overview ZIP is not an implementation target.

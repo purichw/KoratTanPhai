@@ -18,6 +18,14 @@ reading and scanning. Do not center every `AppText` globally.
 
 ## Feature Parity Acceptance
 
+Maintenance note (2026-11-04): the table below is the dated September native
+feature comparison, not a claim of parity with all later web releases. Web CMS
+reference cutover, Plus Code, later analysis fixes and the November website
+theme/loading changes have not been certified in native. Recompare the touched
+feature with current web owners before implementing it. The recorded September
+device provisioning profile has expired; a successful old install is not proof
+that the current device can launch it. No new device check was run for this docs pass.
+
 Owner direction on 2026-09-21 requires equivalent **features and behavior**,
 not only matching branding or visible controls. Native navigation may differ,
 but the same selected area, source month, horizon and filters must produce the

@@ -5,7 +5,8 @@
 The smoke harness uses a real admin-provisioned Supabase test account in fresh,
 isolated Chromium contexts. Set `SMOKE_AUTH_EMAIL` and `SMOKE_AUTH_PASSWORD`
 securely in the runner environment; missing values fail before network access.
-It signs in/out and reads pages, assets and the GET risk-fusion API. It never
+It signs in/out and reads pages, assets and retained operational metadata. The
+retired risk-fusion endpoint is not a smoke target. It never
 edits application data, publishes advisories, resets demo state, changes account
 settings or saves reusable browser credentials. Login affects Supabase auth
 sessions/audit records but requires no application-data cleanup.
@@ -88,6 +89,30 @@ are included in the report for both widths.
 It blocks application writes and never uploads or creates a production draft.
 Local `e2e/admin-navigation.spec.ts` covers unsaved-file/history/discard behavior
 against the isolated database; the real-account check stays read-only.
+
+Set `SMOKE_CMS_LIFECYCLE=1` for current lifecycle verification. This additionally
+allowlists the read-only `forecast-readiness`, `forecast-history` and `work-list`
+POST actions, and checks readiness/new-round/recovery dialogs and saved work.
+It does not create a draft, upload a file, autosave or publish live data. Exercise
+those writes against the isolated fixtures as described in
+[CMS_FORECAST_LIFECYCLE](CMS_FORECAST_LIFECYCLE.md).
+
+## Illustrated loading checks
+
+For loading changes, cover pre-JS, pending authenticated entry and ready/error
+release on Visitor/Admin at representative desktop/mobile sizes. Hold then
+continue actual reads unchanged when verifying a hosted target; fixtures belong
+in local E2E. Verify real 0/33/67/100 milestones, no timed progress, continuous
+normal-motion orbit, reduced-motion feedback and non-blocking completion.
+Inspect decoded landscape/portrait artwork, emblem, orbit SVG, overflow and
+asset identity. Cached routes may legitimately skip already-completed steps.
+
+Maintained regression owners are `e2e/startup-loading.spec.ts`,
+`e2e/page-loading.spec.ts`, `e2e/forecast-loading.spec.ts` and
+`tests/pageLoadBoundary.test.tsx`. The November hosted capture helper was local
+tooling, not a tracked npm command. Exact hosted evidence and its limits live in
+[LOADING_SCREEN](LOADING_SCREEN.md); do not assume a gitignored helper exists in
+a fresh checkout or claim physical-device FPS from browser screenshots.
 
 ## Mobile Map Labels
 

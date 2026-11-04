@@ -1,5 +1,11 @@
 # Rollback Parking Lot
 
+> Entries preserve the state and approval boundaries at their recorded dates.
+> The October cleanup was subsequently released; use
+> [LEGACY_CLEANUP](LEGACY_CLEANUP_20261003.md) and the newest [HANDOFF](HANDOFF.md)
+> checkpoint before interpreting an old “local” or “not deployed” statement.
+> A historical approval does not authorize a new rollback, deletion or deploy.
+
 ## 2026-10-03 — Approved legacy runtime/data cleanup (local)
 
 - User reviewed the 52-path proposal and explicitly approved “ลบ”. The isolated

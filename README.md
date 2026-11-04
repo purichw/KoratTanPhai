@@ -24,7 +24,7 @@ The site brand is Korat Tan Phai / โคราชทันภัย.
 
 ## Main Surfaces
 
-All routes open the forecast workspace. `target` means source month T and
+All visitor product routes open the forecast workspace. `target` means source month T and
 `horizon` selects T+1 through T+6, with or without `mapLayer=forecast-archive`.
 Retired `period` links open the default forecast selection, never treating an
 actual valid month as an origin. See the [restoration contract](docs/FORECAST_ONLY_RESTORATION.md)
@@ -53,15 +53,39 @@ service-role JWT, `sb_secret` key or database password through Vite variables.
 
 Visitor `/login` and CMS `/admin/login` use the same accounts and shared login
 form, but independent SDK sessions. Entering `/admin` requires Admin sign-in;
-logging out one scope does not revoke the other scope. Persona selection changes display context,
-not account permissions. `VITE_DATA_BACKEND=supabase` reads the verified Excel
+logging out one scope does not revoke the other scope. CMS access additionally
+requires server-verified operator membership; retired personas grant no access.
+`VITE_DATA_BACKEND=supabase` reads the verified Excel
 archive through authenticated RLS and saves personal areas/filters per account.
 CMS builds also use `VITE_REFERENCE_BACKEND=cms` to read versioned reference
 resources and geometry from authenticated storage, with no bundled fallback.
 Original static files remain for verification builds; earlier deployment assets
 may remain public. See [Data Migration](docs/SUPABASE_DATA_MIGRATION.md)
-for source integrity and [Auth Setup](docs/AUTH_SETUP.md) for the Preview
+for historical source integrity and [Auth Setup](docs/AUTH_SETUP.md) for the Preview
 checklist, test-only mocks, unverified backend prerequisites and SMTP limitations.
+
+## Current Maintenance Context
+
+The latest verified release in this checkout is `9f7c807` (2026-11-03), with
+documentation checkpoint `dfc567d`. [HANDOFF](docs/HANDOFF.md) owns exact runtime,
+CI, candidate, promotion and smoke evidence; recheck the served revision before
+a future release. A docs-only checkpoint is not another runtime deployment.
+
+- Visitor and Admin share the illustrated [loading screen](docs/LOADING_SCREEN.md).
+  Its 0/33/67/100% values count completed auth/module/page-read milestones,
+  not bytes or elapsed time. Pending work does not advance the bar; the
+  blue/amber orbit remains continuous across screen replacement.
+- The [CMS lifecycle](docs/CMS_FORECAST_LIFECYCLE.md) is released: new forecast
+  rounds, computed data readiness, server-saved import review and recovery into
+  a new draft. Readiness does not imply accuracy or permission to publish.
+- [Navy / Powder / Amber](docs/BRAND_SURFACE_THEME.md) is the website palette.
+  Preserve the layout, original logo and visible gold-rice artwork.
+- [Native iOS](apps/mobile/README.md) has real Auth and forecast workflows.
+  [NATIVE_PARITY](apps/mobile/NATIVE_PARITY.md) records remaining feature/device
+  gaps. The new web skin/loading release does not update the native binary.
+- Use the current worktree for this task. The default branch or the main
+  checkout is not necessarily the deployed source. Project-specific skills
+  and the complete documentation index are in [PROJECT_MAP](PROJECT_MAP.md).
 
 ## Commands
 
@@ -109,10 +133,10 @@ VITE_SUPABASE_URL=https://ktp-auth-test.supabase.co VITE_SUPABASE_PUBLISHABLE_KE
 npm run test:e2e:attached
 ```
 
-In the Codex sandbox, local port binding and Chromium launch both require an
-outside-sandbox run. Playwright is configured to attach to the already-running
-Vite server there instead of spawning it. Outside the sandbox, use
-`npm run test:e2e:managed` for a one-command run that starts Vite automatically.
+When the current sandbox blocks local port binding or browser launch, use the
+supported outside-sandbox/attached path. Otherwise
+`npm run test:e2e:managed` starts Vite automatically. Follow the runtime guard's
+actual result; not every Codex host has the same restrictions.
 
 Production target: [https://korattanphai.vercel.app](https://korattanphai.vercel.app)
 
@@ -150,7 +174,9 @@ user task explicitly authorizes it.
   research-readiness layers have been removed from the runtime.
 - Active CMS references are the genuine administrative hierarchy, forecast
   archive summary, subdistrict polygons, province boundary and Thailand ADM1.
-  The first two are preloaded; geometry loads when a map is opened.
+  The first two are bootstrap payloads. After authenticated Visitor bootstrap,
+  geometry preloads alongside workspace/forecast loading; map readers share
+  those requests. Admin and signed-out entry do not preload Visitor geometry.
 - Local preferences store only language/month under
   `korat-tan-phai-preferences-v1`; account data remains in Supabase.
 - Nakhon Ratchasima local drill-down data lives under
@@ -173,15 +199,13 @@ user task explicitly authorizes it.
   moderate forecast risk, `2` high forecast risk, and blank workbook cells are
   out of scope. Do not collapse blank/out-of-scope values into no-risk or
   missing-evidence states.
-- Nakhon Ratchasima rainfall fixtures add 49 DWR EWS station points, 29
-  direct-station subdistricts, and 260 nearest-station coverage records.
-  They do not include a live province water-provider snapshot and must not be
-  treated as official subdistrict rainfall observations.
-- Nakhon Ratchasima local geometry is served from
-  `public/geodata/nakhon-ratchasima-subdistricts.geojson`.
-- The visible Nakhon Ratchasima local province outline is generated from that
-  same subdistrict source and served from
-  `public/geodata/nakhon-ratchasima-boundary.geojson`.
+- Historical rainfall fixtures and research panels were removed from runtime;
+  their research documents are provenance, not active observation feeds.
+- CMS mode fetches published local geometry from authenticated reference
+  storage. The source/static verification files remain at
+  `public/geodata/nakhon-ratchasima-subdistricts.geojson` and
+  `public/geodata/nakhon-ratchasima-boundary.geojson`. The outline is generated
+  from the same tambon geometry; these files are not a production fallback.
 - Local Nakhon Ratchasima joins must use admin codes, not Thai names or route
   slugs. Missing local evidence must render as no-data/insufficient evidence,
   not low risk.

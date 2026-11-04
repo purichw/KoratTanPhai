@@ -1,21 +1,25 @@
 # Admin Data Workspace
 
-Status: the owner-authorized production cutover completed on 2026-09-28
+Current contracts reviewed 2026-11-04 against runtime `9f7c807`. The initial
+owner-authorized production cutover completed on 2026-09-28
 (Asia/Bangkok), runtime `2a84a0e`. Database, candidate and post-promotion checks
 passed with the original data unchanged. This is the scoped CMS foundation,
 not complete no-code ownership of every data family; see remaining gates below.
 See `docs/CMS_CUTOVER_20260928.md` for the checkpoint and final outcome.
 
-## Forecast Lifecycle Candidate (2026-10-15)
+## Forecast Lifecycle (released 2026-10-16)
 
-The current implementation branch adds new forecast origins, computed readiness,
+The released implementation adds new forecast origins, computed readiness,
 server-owned import checkpoints/original downloads, comparison before publish,
 and recovery into a new reviewed draft. See
 [CMS_FORECAST_LIFECYCLE.md](CMS_FORECAST_LIFECYCLE.md) for contracts, limits,
-migration order and evidence. **Not deployed; neither new migration has been
-applied to production.** Earlier sections below describe their dated releases;
-their new-origin/raw-autosave/restore exclusions are superseded only in this
-candidate. Model-result publication and geometry changes remain gated.
+migration order and evidence. Both migrations (`20261015010000` and
+`20261015020000`) and runtime `2d2d7cb` were released with before/after database
+parity and authenticated read-only candidate/production checks. Later web
+releases retain these contracts; the latest verified runtime is in
+[HANDOFF](HANDOFF.md). Earlier import notes below preserve their dated evidence;
+their new-origin/raw-autosave/restore exclusions are superseded by this release.
+Arbitrary model-result publication and geometry changes remain gated.
 
 ## Repairable File Import (2026-10-08)
 
@@ -23,6 +27,10 @@ Released in runtime `3742db7` after full Quality Gate `37776954891` and
 authenticated read-only candidate checks. Production promotion and verification
 are recorded in [HANDOFF.md](HANDOFF.md). The notes below describe the feature
 and its initial local evidence, not a database migration.
+
+The memory-only raw-review and no-new-origin limits below apply to the October 8
+checkpoint only. Current imports use the server checkpoint/original-file and
+new-origin contracts described above; reviewed exports still revalidate on upload.
 
 - `AdminImport` retains readable XLSX/XLS/CSV rows in a review step before
   conversion. `ImportSheetReview` shows source sheet/physical row/column, error
@@ -114,7 +122,11 @@ and its initial local evidence, not a database migration.
   edit / reupload / save on desktop and mobile emulation. Native Excel rendering
   and physical-device testing are not part of this local checkpoint.
 
-## Returning to loaded Admin data (local follow-up)
+## Returning to loaded Admin data
+
+Implemented in `a63a288` and retained in the verified released runtime `9f7c807`.
+The later [performance follow-up](PERFORMANCE_20261011.md) also overlaps independent
+reads; these are related but separate changes. See HANDOFF for release proof.
 
 - `createAdminClient` retains up to 16 successful list/detail/catalogue reads in
   memory for the mounted Admin account. No draft data is persisted in browser
@@ -133,9 +145,17 @@ and its initial local evidence, not a database migration.
   still verifies the session and loads from the server.
 - Baseline isolated tests reproduced the imports-to-home loading regression;
   browser focus and same-user session notifications alone did not reproduce it.
-  This change is local, not deployed; no auth policy or backend contract changed.
+  Those were local reproduction checks; hosted release evidence is recorded in
+  the performance report and HANDOFF. No auth policy or backend contract changed.
 
-## Reference catalogue grouping (local follow-up)
+## Historical Reference Catalogue Grouping
+
+This records the earlier grouping design. The October 3 source cleanup
+supersedes its source/station catalogue and editability: the current five-resource
+allowlist is `shared/cmsResources.mjs`, and every active reference is read-only.
+Names and boundaries share the current area workspace. Retired versions remain
+available to authorized history/download paths; they are not bootstrap inputs.
+See [DATA_CONTRACT](DATA_CONTRACT.md) and [legacy cleanup](LEGACY_CLEANUP_20261003.md).
 
 - The reference panel now has three groups: ข้อมูลพื้นที่, ชั้นข้อมูลแผนที่ and
   แหล่งข้อมูลอ้างอิง. Area names and tambon boundaries now share the area group;
@@ -151,7 +171,7 @@ and its initial local evidence, not a database migration.
   source entries stay in the complete original payload but are omitted here.
 - Source editing retains original array indices, including gaps left by hidden
   rows. Saving changes only the selected original entry; all other rows remain.
-  This follow-up is not yet deployed.
+  These source-editor behaviors are historical, not current edit permissions.
 
 ## Resource row controls (2026-10-02 follow-up)
 
@@ -442,17 +462,17 @@ bookmark client. Database publication/run constraints remain authoritative.
 
 Do not describe this as complete no-code ownership of every dataset yet:
 
-- New forecast origins are implemented in the 2026-10-15 candidate, awaiting
-  migration and release. Arbitrary model-result publication remains disabled.
+- New forecast origins and reviewed prior-round recovery are released. Arbitrary
+  model-result publication remains disabled; these are bounded forecast adapters.
 - Geometry replacement, structural reference changes, new canonical areas and
   derived resource regeneration need domain-specific validation and coordinated
   publication. Those resources are inspect/export-only in the generic editor.
 - The reference editor preserves array cardinality; it is not a generic schema
   migration tool. Pending/retained data cannot be promoted to real by changing a
   status field.
-- Original XLSX/CSV bytes, durable raw-review checkpoints and UI restore are
-  implemented in the 2026-10-15 candidate, not activated on production yet.
-  Structured originals and previous publications remain preserved.
+- Original XLSX/CSV bytes, durable raw-review checkpoints and UI resume are
+  released. Storage is bounded and operator-private; this is not a general
+  file archive. Structured originals and previous publications remain preserved.
 - The existing model-input validator still uses the canonical area allowlist
   as a validation contract. Moving/change-managing that registry across all API
   services needs a coordinated migration, not a browser-only edit.
@@ -464,7 +484,13 @@ Do not describe this as complete no-code ownership of every dataset yet:
   the implemented adapters. CSV upload is supported for rev3 and observation
   tables; format-specific metadata and repair limits are documented above.
 
-## Candidate Runbook
+## Historical Foundation Cutover Procedure
+
+The sequence below records the September foundation rehearsal, including its
+then-45-resource seed. Do not replay that seed against the current five-resource
+catalogue. For a new release use [RELEASE_RUNBOOK](RELEASE_RUNBOOK.md); for
+lifecycle migration/recovery use [CMS_FORECAST_LIFECYCLE](CMS_FORECAST_LIFECYCLE.md),
+inspect the target migration ledger and obtain the appropriate current approval.
 
 1. Obtain owner approval for the target Supabase project and operator membership.
    Back up the live database and record the active forecast dataset/version.

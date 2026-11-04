@@ -11,7 +11,7 @@ share the V1 domain fields; draft bookkeeping is a separate envelope.
 references are authenticated read-only RPCs, not direct table access. See
 [CMS contracts](ADMIN_CMS.md) and [activation evidence](CMS_CUTOVER_20260928.md).
 
-Local import-review addition (2026-10-08): `POST /api/admin-data?action=inspect`
+Released import-review addition (2026-10-08): `POST /api/admin-data?action=inspect`
 accepts exactly `{kind, payload}` and returns `{valid, issues, rowCount,
 contentHash}` without creating or editing a draft. It requires the same verified
 Admin session, database operator access, same-origin POST checks and 2 MiB request
@@ -24,17 +24,29 @@ Rev3 `sourceImport` can also contain an immutable `review` evidence object with
 observation envelopes are unchanged. See the repairable-import section in
 `ADMIN_CMS.md` for source-row versus normalized-record positions and remaining limits.
 
-Local-only addition: `GET /api/operational-context[?period=YYYY-MM]` returns trusted
+The lifecycle release adds POST actions `forecast-new`, `forecast-template`,
+`forecast-history`, `forecast-restore`, `forecast-readiness`, `forecast-compare`
+and `work-list`, `work-get`, `work-create`, `work-upload`, `work-read-part`,
+`work-save`, `work-convert`. These retain the Admin session/membership boundary;
+import work additionally enforces operator ownership, revision and object hashes.
+Readiness/compare/read-part are reads despite using POST. Publication still uses
+the independently validated `accept` action. See
+[lifecycle API and storage limits](CMS_FORECAST_LIFECYCLE.md#api-additions),
+`server/admin-data/handler.mjs`, `forecast-lifecycle.mjs` and `import-work.mjs`.
+Do not create a second set of forecast fields for browser uploads.
+
+Retained metadata endpoint: `GET /api/operational-context[?period=YYYY-MM]` returns trusted
 server time, Bangkok current/next-month boundary, the selected data family, policy
 version and empty source catalogs. It is public metadata, not a record endpoint;
 responses are `private, no-store`. Invalid/duplicate/unknown query parameters return
 400; non-GET returns 405. Dev Vite and the Vercel handler use the same implementation.
 No actual source, forecast publication policy or new permission was activated.
+It is not called by active forecast routes; its existence is not Actual UI activation.
 See [actual/forecast separation](ACTUAL_FORECAST_SEPARATION.md).
 
 The repo contains the machine-authenticated model-input ingestion route,
 health probes and opt-in operational telemetry. The prototype risk-fusion
-route was removed in the local 2026-10-03 cleanup.
+route was removed in the released 2026-10-03 cleanup.
 The integration/operational handlers were deployed to
 [production](https://korattanphai.vercel.app) on 2026-09-09. Public health returns
 200; model-input ingestion returns 503 `service_not_configured`; private
@@ -58,8 +70,9 @@ tables are kept separately in [the v2 SPEC](MODEL_PIPELINE_DESIGN.md#parameter-r
 
 Network activity in CMS/database mode:
 
-- Authenticated RPCs bootstrap the five active reference heads and preload only
-  the hierarchy and forecast summary. Three geometry resources load on demand.
+- Authenticated RPCs bootstrap the five active reference heads and load the
+  hierarchy/forecast summary first. Visitor entry then preloads three geometries
+  alongside workspace/forecast loading; map consumers share those reads.
 - Scoped published rev03 forecast reads use `ktp_load_forecast_slice`.
 - The browser calls the Admin API only for the real import/review workflows.
 - Google Fonts may be requested from the stylesheet in `index.html`.

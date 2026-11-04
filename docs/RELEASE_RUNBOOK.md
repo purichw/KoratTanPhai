@@ -77,10 +77,11 @@ npm run dev:e2e
 npm run test:e2e:attached
 ```
 
-Local port binding and Chromium launch are blocked by the Codex sandbox, so keep
-`npm run dev:e2e` running in a separate outside-sandbox terminal and then run
-`npm run test:e2e:attached` outside the sandbox too. Outside Codex,
-`npm run test:e2e:managed` starts Vite automatically.
+Local restrictions depend on the current host. When the runtime guard reports
+blocked port binding or browser launch, use the supported outside-sandbox path
+above. When local execution is available, `npm run test:e2e:managed` starts Vite
+automatically; attached mode reuses an explicitly selected existing server.
+Do not assume all Codex sessions have the same sandbox profile.
 
 The `dev`, `preview`, and `test:e2e*` npm scripts include local-runtime
 preflight guards. If a command is accidentally run inside the Codex sandbox,
@@ -89,8 +90,9 @@ the guard should print the required outside-sandbox command instead of a raw
 
 Known non-fatal warning:
 
-- Vite may warn that the JS chunk is larger than 500 kB because canonical JSON
-  is bundled into the client.
+- Vite may report a large Excel/export chunk. Database-mode builds must not
+  bundle raw canonical forecast assets. An advisory is separate from a failing
+  exposure or protected bundle gate, which remains a release blocker.
 
 Production builds:
 
@@ -104,7 +106,9 @@ Production builds:
 Build a production-configured candidate without moving the production alias:
 
 ```bash
-vercel --prod --skip-domain --yes
+vercel --prod --skip-domain --yes \
+  --build-env VITE_DATA_BACKEND=supabase \
+  --build-env VITE_REFERENCE_BACKEND=cms
 ```
 
 Expected production alias:
@@ -165,20 +169,16 @@ baseline.
 
 ## Rollback / Recovery
 
-If the last commit is bad:
+For an owner-authorized source revert, inspect the exact commit and preserve
+unrelated work, create a new revert commit, then follow the same scoped checks,
+exact-SHA CI, production-configured candidate and smoke/promotion sequence above.
+Do not bypass candidate verification with a direct production alias deployment.
 
-```bash
-git revert <commit-sha>
-npm run build
-npm run build:protected
-npm test
-npm run test:e2e
-vercel --prod --yes
-```
-
-Alternative:
-
-- Use Vercel dashboard rollback to promote the previous good deployment.
+Alternatively, when rollback is explicitly authorized, inspect and promote the
+recorded previous good deployment. First check its backend flags and database
+compatibility; rolling back a frontend does not reverse a CMS migration or
+published data. Recovery targets belong to their dated HANDOFF checkpoints,
+not a permanently hardcoded deployment in this runbook.
 
 After rollback:
 

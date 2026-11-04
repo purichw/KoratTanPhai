@@ -148,7 +148,7 @@ counts come from the API; the six-month lead is the existing rev3 contract and
 published status describes the current dataset, not draft readiness. Resource
 cards use the existing supported catalogue without invented row counts.
 
-The 2026-10-15 lifecycle candidate composes `ForecastLifecycle` into that same
+The lifecycle released on 2026-10-16 composes `ForecastLifecycle` into that same
 forecast panel and reuses its KPI styles instead of adding a second metric set.
 It uses `MetricGrid`, `MonthSelect`, `AppSelect`, `WorkspaceDialog` and
 `WorkspaceEmptyState` unchanged. The domain owner supplies computed readiness,
@@ -158,8 +158,9 @@ and responsive draft-list styles. Only the two-action mobile column placement is
 scoped to the work list; existing draft rows are unchanged. New/recovery dialogs
 reuse the existing form footer spacing and alignment.
 `useImportAutosave` owns serialized, account-private server checkpoints.
-It does not share state with visitor caches. See `CMS_FORECAST_LIFECYCLE.md`;
-these additions require the candidate migrations and are not deployed yet.
+It does not share state with visitor caches. Both lifecycle migrations and the
+compatible runtime were released as `2d2d7cb`; see `CMS_FORECAST_LIFECYCLE.md`
+for proof and limits, and `HANDOFF.md` for the newest verified runtime.
 
 `ImportSheetReview` is the Admin-only raw-file review adapter. It composes
 `AppSelect`, `WorkspaceDialog`, `WorkspaceEmptyState` and `ConfirmAction` without

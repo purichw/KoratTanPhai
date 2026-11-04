@@ -10,8 +10,8 @@ Primary audience:
 - Local operators and field teams who need quick action cues.
 - Administrators who need review, approval, and publication controls.
 
-Do not make the app feel like a marketing landing page. It is an operational
-alert and decision-support prototype.
+Do not make the app feel like a marketing landing page. The active product is a
+forecast dashboard and no-code CMS; it is not an activated public alert service.
 
 ### Brand Assets
 
@@ -21,7 +21,7 @@ alert and decision-support prototype.
 - Compact emblem: `public/brand/korat-tan-phai-emblem.png` (`768x768`), with a
   WebP counterpart. Use it with live brand text when the full lockup is too small.
 - Browser favicon: `public/brand/korat-tan-phai-favicon.png` (`512x512`).
-- The iOS shell uses the same unmodified Korat emblem. Legacy `kaset-*` files
+- The native iOS app uses the same unmodified Korat emblem. Legacy `kaset-*` files
   are not the current product identity and must not be used in new Korat UI.
 - The supplied artwork contains gradients, highlights, and fine raster detail;
   do not auto-trace it to SVG. Re-export from the original design source only if
@@ -66,8 +66,6 @@ Core roles:
 - `--line`, `--line-strong`: borders.
 - `--primary`, `--primary-strong`: actions/nav.
 - `--teal`, `--amber`, `--red`, `--yellow`: risk and evidence accents.
-- `--nr-rain-direct`, `--nr-rain-proxy`: Nakhon Ratchasima rainfall
-  layer states for direct station and nearest-station representative context.
 - `--green-soft`: legacy component name for non-risk selected/quiet blue surfaces.
 - `--ktp-risk-*`: forecast fills, status text/surfaces and out-of-scope hatch.
 - `--radius`: 8px panel radius.
@@ -76,6 +74,7 @@ Active forecast paint is in `NakhonRatchasimaLocalMap` and shared chart/legend
 owners. Risk 0 remains green, 1 amber, 2 coral and out-of-scope gray/hatched.
 
 Do not rely on color alone; always pair severity colors with labels.
+Retained rainfall styles do not establish an active rainfall layer.
 
 ## Web And iOS CI
 
@@ -124,8 +123,6 @@ See [surface-theme contract](BRAND_SURFACE_THEME.md) for reuse, asset provenance
 and the geometry-preservation verification.
 
 - Static map: `public/geodata/thailand-adm1.geojson`
-- Static regional-country underlay:
-  `public/geodata/thailand-neighbor-context.geojson`
 - Nakhon Ratchasima subdistrict map:
   `public/geodata/nakhon-ratchasima-subdistricts.geojson`
 - Nakhon Ratchasima local province outline:
@@ -135,12 +132,26 @@ and the geometry-preservation verification.
 - Screenshots used for handoff should live outside git unless intentionally
   added under a documented snapshots folder.
 
+### Illustrated startup and readiness
+
+Visitor and Admin reuse `AppStartup`, `PageLoadBoundary`, `startupMotion.ts`
+and the matching pre-JS markup. The loading scene has its own responsive
+landscape/portrait WebPs and blue/amber orbit SVG; keep UI text, emblem, steps
+and progress native rather than baking them into an image. Read
+[LOADING_SCREEN](LOADING_SCREEN.md) for asset paths, crops and exact behavior.
+
+The orbit rotates continuously across mounts (8s per revolution). Progress is
+0/33/67/100% for real auth/module/page-read milestones, explicitly N/3 steps.
+Never advance it with time or label it as downloaded bytes. Completion releases
+the page immediately; its 220ms fade is non-interactive. Reduced motion stops
+the ring and skips interpolation/fade. Decorative artwork never blocks readiness.
+
 ## Responsive Rules
 
 Current priorities:
 
 - Officer/admin surfaces: desktop-first, dense but readable.
-- Farmer/resident alert surface: mobile-first, plain Thai.
+- Visitor forecast surface: mobile-first, plain Thai.
 
 Rules:
 
@@ -151,18 +162,17 @@ Rules:
   mobile.
 - Nakhon Ratchasima local workspace must stack route controls, hero, map,
   inspector, and evidence cards on mobile before labels become squeezed.
-- Rainfall station/proxy panels must fit at 390px without clipped station IDs,
-  narrow word columns, or color-only meaning.
-- Map zoom and pan must keep Thailand in focus; regional country context should
-  stay soft, lightly blurred, and must not compete with Thai province risk
-  colors.
+- Map zoom and pan stay bounded to the selected Korat scope; neighboring
+  province context must not compete with forecast polygons or labels.
 - Toasts must not cover primary actions permanently.
 
 ## Screenshot QA Expectations
 
 Use `$snapshot` for visible UI work.
 
-Minimum visual evidence for UI changes:
+Choose evidence proportional to the change. A small visible fix needs one
+current contextual render; shared or responsive changes need representative
+affected states at desktop/mobile widths. Typical checks:
 
 - Desktop around 1440px wide.
 - Mobile around 390px wide.
@@ -182,3 +192,19 @@ Minimum visual evidence for UI changes:
 - No compressed word-by-word columns in risk or crop detail panels.
 - No generic hero/landing page replacing the operational first screen.
 - No fabricated official-looking values.
+
+## Design Evidence Retention
+
+Keep only the latest accepted design of each page/component, preserving its
+important languages, viewports and states. Before proposing deletion, pair each
+superseded mock/export with the actual replacement; filename/date alone is not
+proof. Source artwork and runtime assets are not disposable design exports.
+Release/incident evidence may have a separate operational purpose; do not delete
+the entire artifacts directory or create duplicate old-design backups.
+
+Cleanup is a separate authorized task: inspect real sizes, Git status and active
+processes, checksum duplicate files, retain a verified original/recoverable ZIP,
+prepare an exact-path dry run and follow the current approval rules. Preserve
+source, uploads, databases, credentials, user data, important backups, .git and
+uncommitted work. Unproven candidates stay. Measure actual reclaimed space
+without rebuilding caches merely to test cleanup. This policy performs no deletion.

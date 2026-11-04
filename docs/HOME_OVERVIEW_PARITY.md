@@ -1,5 +1,10 @@
 # Home Overview v4
 
+> Dated September design/verification record. Later forecast-only, source
+> cleanup, CMS and theme changes supersede older data panels and colors below.
+> Use [APP_MAP](APP_MAP.md), [SHARED_COMPONENTS](SHARED_COMPONENTS.md) and
+> [DESIGN_SYSTEM](DESIGN_SYSTEM.md) for the maintained UI contract.
+
 ## Scope And Evidence
 
 Local implementation of `/`, following the two Homepage Live Overview Interaction

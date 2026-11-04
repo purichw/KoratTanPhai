@@ -12,8 +12,9 @@ omit raw archive assets, but older public deployment URLs are not revoked.
 The frontend now uses `@supabase/supabase-js` for email/password login, initial
 session restoration, refresh, auth-change events and local-scope logout. This
 has passed local mock verification and real-account candidate/production smoke
-on 2026-09-05. Runtime commit `15275fd` is deployed; exact evidence and recovery
-deployment are recorded separately from local checks in `docs/HANDOFF.md`.
+on 2026-09-05. Runtime commit `15275fd` was the original auth release, not the
+latest runtime. Current release and recovery evidence live in
+[HANDOFF.md](HANDOFF.md), separately from the historical local checks below.
 
 The user reports that project `dihchjflzhcekywarhxd` has six `ktp_` tables, RLS,
 area seeds, an Auto Confirm first user, and Production/Preview Vercel variables.

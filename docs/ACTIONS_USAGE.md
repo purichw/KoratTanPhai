@@ -1,5 +1,26 @@
 # GitHub Actions usage and coverage
 
+## Latest verified gate evidence
+
+Reviewed 2026-11-04 from saved exact-SHA release receipts (no new run started):
+
+- Full runtime [41662827031](https://github.com/purichw/KoratTanPhai/actions/runs/41662827031)
+  passed all seven jobs on `9f7c807` on November 3: 493 unit, 228 built-browser,
+  150 database-browser, 65 CMS-browser and six compatibility cases, with the
+  existing intentional backend/viewport skips. Workflow wall time was about
+  14m35s, not summed runner time or a billing total.
+- Docs [41666465626](https://github.com/purichw/KoratTanPhai/actions/runs/41666465626)
+  passed on `dfc567d`, explicitly selecting `docs` against `9f7c807` and baseline
+  run `41662827031`. Scope/regression passed and all five heavy jobs intentionally
+  skipped. Hosted docs-mode behavior is therefore verified; the earlier rollout
+  note below records the state before this evidence existed.
+- Production [Deployment Smoke 41665661116](https://github.com/purichw/KoratTanPhai/actions/runs/41665661116)
+  passed separately on runtime `9f7c807`. A skipped Preview event is not that proof.
+
+Use current comparable successes before the next authorized release. The October
+duration table below is historical measurement, not a fixed timeout or current
+billing estimate. No workflow, test budget or gate changed in this docs refresh.
+
 ## Audit source and measured baseline
 
 The 2026-10-03 review used the latest observed Preview source,
@@ -30,9 +51,10 @@ The automatic [Preview](https://korattanphai-arh6mk5cy-purich-w.vercel.app)
 reported success; no production promotion was performed by this Actions work.
 
 Local validation passed 16 selector/gate tests, actionlint and whitespace checks,
-and confirmed preservation of the five heavy-job bodies. Hosted docs-mode
-selection still awaits a genuine eligible docs push; a passing full run does
-not prove that shortcut has executed. The shorter full run cannot be attributed
+and confirmed preservation of the five heavy-job bodies. At that rollout,
+hosted docs-mode selection still awaited a genuine eligible docs push; a passing
+full run alone did not prove it. See the newer verified gate above.
+The shorter full run cannot be attributed
 to a docs-only selector, especially across the private-to-public transition.
 Raw receipts are kept in the primary checkout's ignored
 `.tools/usage-audit-20261003/` directory.

@@ -1,5 +1,11 @@
 # เกษตรทันภัย Rainfall Source Audit
 
+> Historical source audit. The station/proxy/research fixtures described below
+> are no longer active runtime inputs or CMS bootstrap resources after the
+> [October cleanup](LEGACY_CLEANUP_20261003.md). This preserves research lineage,
+> not a connected rainfall feed. Current/future source boundaries are in
+> [DATA_CONTRACT](DATA_CONTRACT.md#future-rainfall-integration-guards).
+
 ## Current State
 
 FACT: This repo now has an incremental rainfall research/data patch for Nakhon

@@ -1,8 +1,8 @@
 # Korat Tan Phai / โคราชทันภัย Project Map
 
-Source cleanup checkpoint: 2026-10-03. This is a map of the current working source,
-not confirmation that these changes are deployed. See [HANDOFF](docs/HANDOFF.md)
-for release evidence and the current production revision.
+Documentation review: 2026-11-04, against this checkout at `dfc567d` and its
+runtime `9f7c807`. This maps maintained source, not a fresh production inspection.
+See [HANDOFF](docs/HANDOFF.md) for the latest verified release evidence.
 
 ## Purpose and Current Scope
 
@@ -55,6 +55,8 @@ Actual/operational components are not mounted by current public workspace routes
 | Files/directories | Owns |
 | --- | --- |
 | `src/main.tsx`, `src/App.tsx` | Root, lightweight login/startup, history, lazy loading |
+| `index.html`, `src/components/AppStartup.tsx`, `src/app-startup.css`, `src/startupMotion.ts` | Shared pre-JS/React illustrated loading, real readiness steps, continuous orbit and reduced motion |
+| `src/components/PageLoadBoundary.tsx` | Blocking page-read registration, hidden/inert content, immediate release plus visual completion fade |
 | `src/theme-tokens.css`, `src/brand-theme.css` | Navy / Powder / Amber web paint; shared Visitor/Admin palette, no layout changes |
 | `src/AuthenticatedApp.tsx` | Visitor shell, account controls, export and saved actions |
 | `src/store.tsx`, `src/persistedState.ts`, `src/browserStorage.ts` | Supported language/month preferences and storage recovery |
@@ -65,7 +67,7 @@ Actual/operational components are not mounted by current public workspace routes
 | `src/useForecastArchive.ts`, `src/data/supabaseForecastArchive.ts` | Revision-aware scoped database loading |
 | `src/data/cmsReferences.ts`, `shared/cmsResources.mjs` | Five-resource active catalog and pinned reference loading |
 | `src/data/localMapGeometry.ts` | Shared bounded loading for three map geometries |
-| `src/admin`, `server/admin-data` | No-code CMS forms/import, validation, drafts, publication/history and membership; new-round/readiness/checkpoint candidate in `docs/CMS_FORECAST_LIFECYCLE.md` (not deployed) |
+| `src/admin`, `server/admin-data` | No-code CMS import/repair, reviewed downloads, publication/history, new rounds, readiness, private checkpoints and recovery; released contracts in `docs/CMS_FORECAST_LIFECYCLE.md` |
 | `src/authScope.ts`, `src/useAuth.ts`, `src/supabase.ts` | Separate account session scopes and shared lazy client |
 | `src/access` | Parked officer-role scaffold; visitor compatibility mode remains explicit |
 | `src/styles.css`, `src/admin/admin.css` | Existing brand tokens, layout, responsive component styles |
@@ -92,8 +94,10 @@ Database builds exclude raw archive assets and load current published revisions.
 
 `shared/cmsResources.mjs` contains exactly five active read-only system resources:
 real hierarchy, generated forecast summary, local subdistrict geometry, local
-province boundary and Thailand ADM1 neighbor context. Startup requests only the
-first two payloads; maps fetch the three geometry resources when needed. Retired
+province boundary and Thailand ADM1 neighbor context. Bootstrap requires only
+the first two payloads; authenticated Visitor entry then preloads the three
+geometries alongside workspace/forecast loading, sharing requests with map readers.
+Admin and signed-out entry do not trigger that Visitor preload. Retired
 catalog rows may still exist in CMS history but are not active runtime inputs.
 
 Source geometry is retained at:
@@ -224,3 +228,38 @@ with test fixtures. Source cleanup alone does not authorize remote data deletion
 Historical specifications preserve provenance but do not override current code,
 verified source data or explicit product decisions. A deleted runtime file should
 not be restored merely to satisfy an old diagram or source inventory.
+
+### Complete reading index
+
+Use the relevant row, not every document for every task. Dated evidence records
+what was checked then; it does not certify the current alias or device install.
+
+| Area | Maintained contracts / operating guides | Dated evidence, research or parked design |
+| --- | --- | --- |
+| Orientation | [README](README.md), [AGENTS](AGENTS.md), this map, [HANDOFF](docs/HANDOFF.md) | — |
+| Runtime and journeys | [ARCHITECTURE](docs/ARCHITECTURE.md), [APP_MAP](docs/APP_MAP.md), [INTERACTION_MAP](docs/INTERACTION_MAP.md), [FORECAST_ONLY_RESTORATION](docs/FORECAST_ONLY_RESTORATION.md) | [ACTUAL_FORECAST_SEPARATION](docs/ACTUAL_FORECAST_SEPARATION.md), [rollback parking lot](docs/rollback-parking-lot.md) |
+| Design and loading | [DESIGN_SYSTEM](docs/DESIGN_SYSTEM.md), [BRAND_SURFACE_THEME](docs/BRAND_SURFACE_THEME.md), [SHARED_COMPONENTS](docs/SHARED_COMPONENTS.md), [LOADING_SCREEN](docs/LOADING_SCREEN.md) | [HOME_OVERVIEW_PARITY](docs/HOME_OVERVIEW_PARITY.md), [DROUGHT_WORKSPACE_PARITY](docs/DROUGHT_WORKSPACE_PARITY.md), [semantic audit](docs/SITEWIDE_SEMANTIC_AUDIT_2026-09-05.md), [sidebar account release](docs/SIDEBAR_ACCOUNT_RELEASE_20260930.md) |
+| Forecast tools | [SEARCH_BEHAVIOR](docs/SEARCH_BEHAVIOR.md), [FORECAST_MAP_TOOLS](docs/FORECAST_MAP_TOOLS.md), [FORECAST_EXCEL_EXPORT](docs/FORECAST_EXCEL_EXPORT.md), [FORECAST_SCOPED_LOADING](docs/FORECAST_SCOPED_LOADING.md) | [IRRIGATION_FILTER](docs/IRRIGATION_FILTER.md) contains original rev02-era evidence; current source authority is rev03 |
+| Data | [DATA_CONTRACT](docs/DATA_CONTRACT.md), [API](docs/API.md) | [rev03 normalization](docs/DROUGHT_REV03_NORMALIZATION.md), [rev03 cutover](docs/DROUGHT_REV03_CUTOVER.md), [original Supabase migration](docs/SUPABASE_DATA_MIGRATION.md), [legacy cleanup](docs/LEGACY_CLEANUP_20261003.md) |
+| CMS | [ADMIN_CMS](docs/ADMIN_CMS.md), [CMS_FORECAST_LIFECYCLE](docs/CMS_FORECAST_LIFECYCLE.md) | [CMS cutover](docs/CMS_CUTOVER_20260928.md), [no-code implementation](docs/CMS_NO_CODE_20260930.md), [no-code release](docs/CMS_NO_CODE_RELEASE_20260930.md), [rev3 import](docs/CMS_REV3_IMPORT_20260930.md) |
+| Auth | [AUTH_SETUP](docs/AUTH_SETUP.md), [WORKSPACE_ACCESS](docs/WORKSPACE_ACCESS.md) | Historical account/configuration checks stay dated within these guides |
+| Release and performance | [RELEASE_RUNBOOK](docs/RELEASE_RUNBOOK.md), [ACTIONS_USAGE](docs/ACTIONS_USAGE.md), [PRODUCTION_SMOKE](docs/PRODUCTION_SMOKE.md) | [performance audit](docs/PERFORMANCE_20261011.md), [theme dependency repair](docs/THEME_RELEASE_DEPENDENCIES_20261103.md), [NFR regression](docs/NFR_REGRESSION_2026-09-09.md) |
+| Operations | [OPERATIONS](docs/OPERATIONS.md), [NFR_OPERATIONS_RUNBOOK](docs/NFR_OPERATIONS_RUNBOOK.md), [NON_FUNCTIONAL_REQUIREMENTS](docs/NON_FUNCTIONAL_REQUIREMENTS.md), [ANALYTICS](docs/ANALYTICS.md), [SEO](docs/SEO.md) | [ALERTING](docs/ALERTING.md), [NOTIFICATION_CONTRACT](docs/NOTIFICATION_CONTRACT.md) describe removed demo/future delivery contracts |
+| Research and proposed integrations | [MODEL_INPUT_DATA_MAPPING](docs/MODEL_INPUT_DATA_MAPPING.md) describes the implemented V1 envelope and proposed adapters | [MODEL_PIPELINE_DESIGN](docs/MODEL_PIPELINE_DESIGN.md), [THAI_AGRICULTURAL_DATA_RESEARCH](docs/THAI_AGRICULTURAL_DATA_RESEARCH.md), [RAINFALL_SOURCE_AUDIT](docs/RAINFALL_SOURCE_AUDIT.md), [AGRI_MAP_CAPABILITY_COMPARISON](docs/AGRI_MAP_CAPABILITY_COMPARISON.md) are not proof of live feeds |
+| Native | [Mobile README](apps/mobile/README.md), [NATIVE_PARITY](apps/mobile/NATIVE_PARITY.md) | Simulator, device install and export evidence are separate; no TestFlight/App Store release is recorded |
+
+### Project skills and maintenance
+
+- `$korat-tan-phai-new-chat` at
+  `/Users/point/.codex/skills/korat-tan-phai-new-chat/SKILL.md` owns onboarding
+  and its `references/new-chat-context.md` reading/continuation guide.
+- `$korat-tan-phai-shared-components` at
+  `/Users/point/.codex/skills/korat-tan-phai-shared-components/SKILL.md` routes
+  component work to the maintained owner and current product contracts.
+- These user-local skills are outside Git. A project commit does not publish
+  skill edits. Shared UI/motion/release skills remain generic; keep project
+  palettes, release SHAs and data contracts here rather than copying them there.
+- Resolve repo-relative docs against the current authorized worktree, not a
+  hardcoded main checkout. Keep source/runtime, docs commits, hosted CI,
+  deployment and physical-device proof separate. Update the canonical contract
+  and link it from maps/skills; preserve dated history with a supersession note.

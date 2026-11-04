@@ -37,7 +37,9 @@ Forecast-only restoration, 2026-09-20; see [release evidence](HANDOFF.md):
 Primary user-facing surface:
 
 - Global search: `WorkspaceSearch` opens a
-  shared dialog from navigation/mobile controls across all authenticated routes.
+  shared dialog from the top-right desktop/mobile toolbar on Visitor routes.
+  Its trigger shares alignment with bookmarks. Account controls live at the
+  bottom of the sidebar; Admin has its own navigation without Visitor search.
   It finds repeated names across province/district/tambon levels and active tools,
   with aliases, topics, filters and clearable per-account browser history.
   See [Search behavior](SEARCH_BEHAVIOR.md). Existing scoped map search remains available.
@@ -62,8 +64,8 @@ Primary user-facing surface:
   typed data/dictionary and optional same-target comparison across origin rounds.
   See `FORECAST_EXCEL_EXPORT.md` for limits; it is not an online general BI tool.
 
-Inherited nationwide/workflow components remain in source for later extraction
-or reuse, but they are not exposed through the initial Korat Tan Phai sidebar.
+Inherited nationwide/workflow demo sections were removed in the October cleanup.
+Retained parked Actual contracts do not establish active routes or source feeds.
 
 Database mode adds a shared bookmark control in the desktop/mobile account
 toolbar, not a new route. Its modal lists followed areas and saved filters for
@@ -129,7 +131,9 @@ needs audit:
 - Drought archive controls use source/base month T + T+ horizon as the primary
   navigation state, following the user's 2026-09-06 confirmation that source
   rows are forecast origins. Changing T+ preserves T and changes the actual
-  target month to T+horizon. Selectable T spans June 2015-December 2025; for
+  target month to T+horizon. The original rev03 baseline spans June 2015-December
+  2025; current selectable origins come from published metadata, including
+  approved new CMS rounds. For
   December 2025, T+1-T+6 target January-June 2026. A no-data/out-of-scope archive
   combination must remain visibly distinct from no-risk.
 - Nakhon Ratchasima route slugs are navigation-only. Data joins must use admin
@@ -152,10 +156,13 @@ needs audit:
   `src/components/WorkspaceBookmarks.tsx`.
 - Nakhon Ratchasima workspace: `NakhonRatchasimaWorkspace` in
   `src/components/NakhonRatchasimaWorkspace.tsx`.
-- Legacy `OverviewSection`, `RisksSection`, `MapSection`, `ForecastSection`,
-  `CropsSection`, `WorkflowSection`, `AlertsSection`, `FarmerExperience`,
-  `PlanningAnalyticsSection` and `DataModelsSection` remain in
-  `src/AuthenticatedApp.tsx`, but are not the current workspace route surfaces.
+- Admin entry: `src/admin/AdminWorkspace.tsx`; navigation: `AdminNavigation.tsx`;
+  area catalogue/map: `AreaWorkspace.tsx` and `AreaBoundaryMap.tsx`; forecast
+  readiness/new-round/recovery: `ForecastLifecycle.tsx`; private import resume:
+  `ImportWorkList.tsx` and `useImportAutosave.ts`.
+- Shared startup: `AppStartup.tsx`, `PageLoadBoundary.tsx`, `src/startupMotion.ts`
+  and pre-JS `index.html`. Blocking reads expose the ready result or existing
+  error UI after actual milestones settle. See [LOADING_SCREEN](LOADING_SCREEN.md).
 
 ## Do Not Regress
 

@@ -1,6 +1,6 @@
 # Korat Tan Phai / โคราชทันภัย Data Contract
 
-Source cleanup checkpoint: 2026-10-03. This document describes the working
+Source contract review: 2026-11-04 at `dfc567d`. This document describes the working
 source contract; [HANDOFF.md](HANDOFF.md) records deployment evidence separately.
 
 ## Actual / Forecast Boundary
@@ -58,13 +58,13 @@ Their historical documentation is not evidence that those feeds are connected.
 reference plugin and seed preparation. `VITE_REFERENCE_BACKEND=cms` requires
 the Supabase forecast backend and disables bundled reference fallbacks.
 
-| Resource key | Purpose | Startup payload |
+| Resource key | Purpose | Bootstrap payload |
 | --- | --- | --- |
 | `canonical/nakhon_ratchasima/admin_hierarchy` | Real area identity/navigation | Preloaded |
 | `generated/forecast-archive-summary` | Generated archive metadata | Preloaded |
-| `geodata/nakhon-ratchasima-subdistricts` | Local subdistrict polygons | On demand |
-| `geodata/nakhon-ratchasima-boundary` | Local province outline | On demand |
-| `geodata/thailand-adm1` | Neighboring province context | On demand |
+| `geodata/nakhon-ratchasima-subdistricts` | Local subdistrict polygons | Separate geometry read |
+| `geodata/nakhon-ratchasima-boundary` | Local province outline | Separate geometry read |
+| `geodata/thailand-adm1` | Neighboring province context | Separate geometry read |
 
 All five are read-only system resources (`editable: false`). The HTTP resource
 handler denies clone/edit/publish for inactive or unknown keys as well as these
@@ -76,6 +76,10 @@ rows nor changes their published pointers.
 Bootstrap requires all five active heads, pins their IDs, and requests only the
 two preload payloads. Extra retired catalog/bundle rows cannot become runtime
 dependencies. Geometry reads use pinned IDs; failed reads expose retry.
+After CMS bootstrap, authenticated Visitor entry preloads those geometries
+alongside workspace/forecast loading. Map consumers share pending/parsed results;
+Admin and signed-out entry do not start this Visitor preload. Static mode keeps
+its existing map-owned loading/retry. See [performance evidence](PERFORMANCE_20261011.md).
 
 ## Database and Canonical Models
 
@@ -90,6 +94,15 @@ reference versions separately. Its account session/membership checks are
 independent of visitor login. Browser roles cannot directly write published
 forecast tables. Model-input ingestion/storage is a separate validated backend;
 an accepted input does not automatically publish a rev03 forecast.
+
+Released lifecycle storage adds operator-private `ktp_cms_import_work`,
+`ktp_cms_import_objects` and `ktp_cms_import_parts`. Original bytes, editable
+raw checkpoints and canonical forecast drafts remain separate. Server actions
+enforce ownership, revision/hash integrity and idempotent conversion. New-origin
+draft cells use insufficient-data status until reviewed; prior-round recovery
+creates a new draft against the current base and preserves other origins.
+See [CMS_FORECAST_LIFECYCLE](CMS_FORECAST_LIFECYCLE.md) for exact limits and
+migration evidence. Data completeness is not model accuracy or issuance proof.
 
 Frontend models in `src/types.ts` cover real hierarchy, archive selections,
 forecast values and supported preferences. A parked generic agricultural panel

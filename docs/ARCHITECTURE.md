@@ -1,6 +1,6 @@
 # Korat Tan Phai / โคราชทันภัย Architecture
 
-Source cleanup checkpoint: 2026-10-03. This describes the current working source;
+Source review: 2026-11-04 at `dfc567d` (runtime `9f7c807`). This describes this checkout;
 release and production evidence are tracked separately in [HANDOFF.md](HANDOFF.md).
 
 ## Current Architecture
@@ -22,7 +22,8 @@ The active data graph has three parts:
    horizon through Supabase revision and slice RPCs.
 2. Five published CMS system references: real administrative hierarchy,
    generated archive summary and three map geometries. Only the first two are
-   startup payloads; map geometries load on demand.
+   bootstrap payloads; authenticated Visitor entry then preloads map geometry
+   concurrently with workspace/forecast loading through shared loaders.
 3. Owner-only followed areas/saved filters, independent of local preferences.
 
 The canonical rev03 JSON and normalized source package remain verification
@@ -54,8 +55,15 @@ flowchart TD
 ```
 
 - `src/App.tsx` owns browser history, lightweight login and lazy authenticated
-  loading. `AppStartup` shows branding/neutral placeholders while protected
-  routes resolve a session or load a chunk. No protected forecast request or
+  loading. `AppStartup` shows the illustrated readiness screen while protected
+  routes resolve a session or load a chunk. `index.html` supplies its pre-JS
+  counterpart; `startupMotion.ts` preserves the orbit timeline across mounts.
+  Auth, module/bootstrap and blocking page reads drive 0/33/67/100%, never a
+  timer or byte estimate. `PageLoadBoundary` keeps children mounted/measurable
+  but hidden/inert during initial reads. On settlement it releases content
+  immediately, with only a non-blocking 220ms completion fade. Cached refresh,
+  criteria changes and mutations remain local. See [LOADING_SCREEN](LOADING_SCREEN.md).
+  No protected forecast request or
   account content appears before session resolution. Return paths preserve
   query parameters and hashes.
 - `src/AuthenticatedApp.tsx` owns the visitor shell, workspace composition,
@@ -111,7 +119,10 @@ retired extra rows. `src/data/localMapGeometry.ts` loads these three resources:
 - Local province boundary generated from the same subdistrict geometry.
 - Thailand ADM1 for neighboring province context.
 
-Geometry requests share pending/parsed results and retain deadline/retry behavior.
+After authenticated CMS bootstrap, Visitor entry starts geometry reads alongside
+workspace/forecast loading; Admin and signed-out entry do not. Static mode
+retains its map-owned loading/retry behavior. Geometry requests share
+pending/parsed results and retain deadline/retry behavior.
 Core geometry failure is actionable; optional context failure need not block the
 core map. CMS builds fetch pinned published references, with no `/geodata/`
 fallback. Static regression builds use the retained source files in that folder.
@@ -131,6 +142,13 @@ keys cannot be cloned, edited or published through the HTTP resource handler.
 Stored retired versions remain accessible through existing get/history operations;
 source cleanup does not delete originals, CMS rows, revisions or database pointers.
 The separate forecast import/edit/publish workflow remains supported.
+
+The released [forecast lifecycle](CMS_FORECAST_LIFECYCLE.md) adds empty/new-origin
+drafts, computed readiness and prior-round recovery into a new reviewed draft.
+Raw import checkpoints and original bytes are server-owned, private per operator,
+revision-checked and resumed through the existing importer. Readiness is separate
+from validation and explicit atomic publication; recovery does not move the live
+publication pointer backwards. UI and API share field/validation contracts.
 
 Current Vercel entry points are:
 

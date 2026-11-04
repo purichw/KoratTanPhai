@@ -1,5 +1,11 @@
 # เกษตรทันภัย Alerting Contract
 
+> Historical prototype specification. The simulated alert/advisory runtime and
+> its seed files were removed in the October cleanup. Sections below preserve
+> the earlier design, not current product features. Active forecasts/CMS are
+> described in [APP_MAP](APP_MAP.md) and [ADMIN_CMS](ADMIN_CMS.md); no live public
+> warning or delivery service is established by this document.
+
 ## Current Alerting Model
 
 FACT: Alerting is simulated in frontend runtime state.

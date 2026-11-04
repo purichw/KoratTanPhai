@@ -1,5 +1,12 @@
 # Irrigation Status Filter
 
+> The source counts, old palette literals and release receipts below describe
+> the original rev02-era implementation. Current forecast/irrigation authority
+> is rev03 and its published CMS-compatible revisions; see
+> [DATA_CONTRACT](DATA_CONTRACT.md) and [DESIGN_SYSTEM](DESIGN_SYSTEM.md).
+> Preserve filter semantics and saved criteria, but do not re-import rev02 or
+> restore old paint values from this historical evidence.
+
 ## Source Representation
 
 Verified against `Drought_T1-6_rev02.xlsx` (`Master_Data_Drought_Final`,
