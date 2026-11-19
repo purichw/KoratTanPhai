@@ -157,12 +157,16 @@ for (const area of [
     const fits = await label.evaluate((element: SVGTextElement, code) => {
       const shape = element.ownerSVGElement?.querySelector<SVGPathElement>(`[data-nr-subdistrict-code="${code}"]`);
       const { x, y, width, height } = element.getBBox();
+      const labelToScreen = element.getScreenCTM();
+      const shapeToScreen = shape?.getScreenCTM();
+      if (!shape || !labelToScreen || !shapeToScreen) return false;
+      const labelToShape = shapeToScreen.inverse().multiply(labelToScreen);
       const halo = parseFloat(getComputedStyle(element).strokeWidth) / 2;
       const fractions = [0, 0.25, 0.5, 0.75, 1];
-      return Boolean(shape && fractions.every(row => fractions.every(column => shape.isPointInFill(new DOMPoint(
+      return fractions.every(row => fractions.every(column => shape.isPointInFill(new DOMPoint(
         x - halo + column * (width + 2 * halo),
         y - halo + row * (height + 2 * halo),
-      )))));
+      ).matrixTransform(labelToShape))));
     }, area.code);
     expect(fits).toBe(true);
   });

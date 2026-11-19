@@ -42,6 +42,7 @@ import {
   type LabelGeometry,
   makeVisibleMapLabels,
   type MapLabelCandidate,
+  mapLabelReferenceFontSize,
   projectedBoundsForGeometries,
   projectedLabelPlacement,
   projectedLabelPointForGeometries,
@@ -1585,14 +1586,14 @@ export function NakhonRatchasimaLocalMap({
             <g className="map-label-layer nr-map-label-layer" aria-hidden="true">
               {localLabels.map((label) => {
                 const isProvinceLabel = label.className?.includes("is-province-label");
+                const fontScale = label.fontSize * (isProvinceLabel ? 1.24 : 1) / mapLabelReferenceFontSize;
                 return (
                   <text
                     key={label.id}
                     className={["map-label", label.className].filter(Boolean).join(" ")}
-                    x={label.x}
-                    y={label.y}
-                    fontSize={Number((label.fontSize * (isProvinceLabel ? 1.24 : 1)).toFixed(3))}
-                    strokeWidth={Number((label.strokeWidth * (isProvinceLabel ? 1.12 : 1)).toFixed(3))}
+                    transform={`translate(${label.x} ${label.y}) scale(${fontScale})`}
+                    fontSize={mapLabelReferenceFontSize}
+                    strokeWidth={label.strokeWidth * (isProvinceLabel ? 1.12 : 1) / fontScale}
                   >
                     {label.text}
                   </text>

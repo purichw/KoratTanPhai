@@ -88,6 +88,7 @@ const emptyBounds: MapLabelBounds = {
 };
 
 const labelGridSteps = 8;
+export const mapLabelReferenceFontSize = 100;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -405,7 +406,7 @@ export function createMapLabelMeasurer(fontFamily?: string): (text: string) => L
   if (!context) return estimate;
 
   // Match the map's SVG labels, measuring at a larger size to reduce rounding.
-  const fontSize = 100;
+  const fontSize = mapLabelReferenceFontSize;
   context.font = `900 ${fontSize}px ${fontFamily}`;
   context.textAlign = "center";
   return (text) => {
