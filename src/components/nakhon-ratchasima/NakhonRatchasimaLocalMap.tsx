@@ -1593,6 +1593,7 @@ export function NakhonRatchasimaLocalMap({
                     className={["map-label", label.className].filter(Boolean).join(" ")}
                     transform={`translate(${label.x} ${label.y}) scale(${fontScale})`}
                     fontSize={mapLabelReferenceFontSize}
+                    textRendering="geometricPrecision"
                     strokeWidth={label.strokeWidth * (isProvinceLabel ? 1.12 : 1) / fontScale}
                   >
                     {label.text}
