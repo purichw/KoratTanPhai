@@ -141,3 +141,29 @@ test('single-area inspection retains a readable selected place name', async ({ p
   await page.screenshot({ path: info.outputPath('selected-place-label.png') });
   await info.attach('visible-label-metrics', { body: JSON.stringify(labels, null, 2), contentType: 'application/json' });
 });
+
+for (const area of [
+  { code: '300116', name: 'จอหอ', path: '/mueang-nakhon-ratchasima/t-300116' },
+  { code: '302201', name: 'หนองบุนนาก', path: '/nong-bunnak/t-302201' },
+]) {
+  test(`subdistrict label fits inside the boundary of ${area.name}`, async ({ page }, info) => {
+    await setup(page, area.path);
+    const map = page.locator('.nr-map-svg');
+    const label = map.locator('.is-selected-label').filter({ hasText: area.name });
+    await expect(label).toBeVisible();
+    await page.mouse.move(0, 0);
+    await map.screenshot({ path: info.outputPath('map-label-placement.png') });
+
+    const fits = await label.evaluate((element: SVGTextElement, code) => {
+      const shape = element.ownerSVGElement?.querySelector<SVGPathElement>(`[data-nr-subdistrict-code="${code}"]`);
+      const { x, y, width, height } = element.getBBox();
+      const halo = parseFloat(getComputedStyle(element).strokeWidth) / 2;
+      const fractions = [0, 0.25, 0.5, 0.75, 1];
+      return Boolean(shape && fractions.every(row => fractions.every(column => shape.isPointInFill(new DOMPoint(
+        x - halo + column * (width + 2 * halo),
+        y - halo + row * (height + 2 * halo),
+      )))));
+    }, area.code);
+    expect(fits).toBe(true);
+  });
+}

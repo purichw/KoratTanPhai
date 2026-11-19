@@ -38,10 +38,12 @@ import {
   serializeMapTransform,
 } from "../../mapInteraction";
 import {
+  createMapLabelMeasurer,
   type LabelGeometry,
   makeVisibleMapLabels,
   type MapLabelCandidate,
   projectedBoundsForGeometries,
+  projectedLabelPlacement,
   projectedLabelPointForGeometries,
 } from "../../mapLabels";
 import { type NakhonRatchasimaDroughtForecastArchive, type NakhonRatchasimaDroughtForecastArchiveRecord, type NakhonRatchasimaDroughtForecastArchiveTargetMonth } from "../../types";
@@ -210,6 +212,16 @@ export function NakhonRatchasimaLocalMap({
   const { isFullscreen, toggleFullscreen } = useFullscreenTarget(canvasRef);
   const isMobileMap = useMediaQuery("(max-width: 720px)");
   const [labelPlotScale, setLabelPlotScale] = useState(1);
+  const [measureMapLabel, setMeasureMapLabel] = useState(() => createMapLabelMeasurer());
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!geo || !svg || !document.fonts) return;
+    const updateMeasurer = () => setMeasureMapLabel(() => createMapLabelMeasurer(getComputedStyle(svg).fontFamily));
+    updateMeasurer();
+    document.fonts.addEventListener("loadingdone", updateMeasurer);
+    return () => document.fonts.removeEventListener("loadingdone", updateMeasurer);
+  }, [geo]);
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -278,9 +290,9 @@ export function NakhonRatchasimaLocalMap({
   // need new label visibility, not another scan through all polygon vertices.
   const labelGeometryCache = useMemo(() => new globalThis.Map<string, {
     geometries: LabelGeometry[];
-    point: ReturnType<typeof projectedLabelPointForGeometries>;
-    bounds: ReturnType<typeof projectedBoundsForGeometries>;
-  }>(), [geo, projection, provinceContextGeo]);
+    areaName?: string;
+    placement: ReturnType<typeof projectedLabelPlacement>;
+  }>(), [geo, projection, provinceContextGeo, measureMapLabel]);
   const provinceContextFeatures = useMemo(
     () => provinceContextGeo?.features.filter((feature) => NAKHON_RATCHASIMA_NEIGHBOR_BOUNDARY_ISOS.has(feature.properties.shapeISO)) ?? [],
     [provinceContextGeo],
@@ -955,19 +967,15 @@ export function NakhonRatchasimaLocalMap({
     return <div className="nr-map-loading" role="status" aria-busy="true">กำลังโหลดขอบเขตตำบลนครราชสีมา...</div>;
   }
 
-  const labelGeometryFor = (key: string, geometries: LabelGeometry[]) => {
+  const labelGeometryFor = (key: string, geometries: LabelGeometry[], areaName?: string) => {
     const cached = labelGeometryCache.get(key);
     // A district's membership can come from runtime rows. Verify membership as
     // well as the cache key so refreshed data cannot reuse another area's point.
-    if (cached && cached.geometries.length === geometries.length
-      && cached.geometries.every((geometry, index) => geometry === geometries[index])) return cached;
-    const value = {
-      geometries,
-      point: projectedLabelPointForGeometries(geometries, projection),
-      bounds: projectedBoundsForGeometries(geometries, projection),
-    };
-    labelGeometryCache.set(key, value);
-    return value;
+    if (cached && cached.areaName === areaName && cached.geometries.length === geometries.length
+      && cached.geometries.every((geometry, index) => geometry === geometries[index])) return cached.placement;
+    const placement = projectedLabelPlacement(geometries, projection, areaName ? measureMapLabel(areaName) : undefined);
+    labelGeometryCache.set(key, { geometries, areaName, placement });
+    return placement;
   };
 
   const previewTitle = preview ? localPreviewTitleForTarget(target, preview) : "";
@@ -1017,17 +1025,14 @@ export function NakhonRatchasimaLocalMap({
     const candidates: MapLabelCandidate[] = [];
 
     if (target.valid && target.level === "province") {
+      const districtLabelZoom = isMobileMap ? 1.72 : 1.14;
       provinceContextFeatures.forEach((feature) => {
         const label = NAKHON_RATCHASIMA_NEIGHBOR_LABELS_TH[feature.properties.shapeISO];
         if (!label) return;
-        const { point, bounds } = labelGeometryFor(`neighbor-${feature.properties.shapeISO}`, [feature.geometry]);
-
         candidates.push({
           id: `neighbor-${feature.properties.shapeISO}`,
           text: label,
-          x: point.x,
-          y: point.y,
-          bounds,
+          ...labelGeometryFor(`neighbor-${feature.properties.shapeISO}`, [feature.geometry]),
           minZoom: localMinZoom,
           maxWidthRatio: 0.8,
           maxHeightRatio: 0.72,
@@ -1037,14 +1042,11 @@ export function NakhonRatchasimaLocalMap({
         });
       });
 
-      if (transform.k < (isMobileMap ? 1.72 : 1.14)) {
-        const { point, bounds } = labelGeometryFor("province-nakhon-ratchasima", geo.features.map((feature) => feature.geometry));
+      if (transform.k < districtLabelZoom) {
         candidates.push({
           id: "province-nakhon-ratchasima",
           text: "นครราชสีมา",
-          x: point.x,
-          y: point.y,
-          bounds,
+          ...labelGeometryFor("province-nakhon-ratchasima", geo.features.map((feature) => feature.geometry)),
           minZoom: localMinZoom,
           maxWidthRatio: 0.52,
           maxHeightRatio: 0.42,
@@ -1072,11 +1074,11 @@ export function NakhonRatchasimaLocalMap({
       });
 
       districtGroups.forEach((group, districtCode) => {
+        if (transform.k < districtLabelZoom) return;
         const visibleModels = group.models.filter((model) => !useFilterCriteriaMap || model.matchesCriteria);
         if (visibleModels.length === 0) return;
 
         const geometries = group.models.map((model) => model.feature.geometry);
-        const { point, bounds } = labelGeometryFor(`district-${districtCode}`, geometries);
         const priority = visibleModels.reduce(
           (highest, model) => Math.max(highest, localLabelPriorityForStatus(model.status)),
           0,
@@ -1085,12 +1087,8 @@ export function NakhonRatchasimaLocalMap({
         candidates.push({
           id: `district-${districtCode}`,
           text: group.districtTh,
-          x: point.x,
-          y: point.y,
-          bounds,
-          minZoom: isMobileMap ? 1.72 : 1.14,
-          maxWidthRatio: 0.74,
-          maxHeightRatio: 0.66,
+          ...labelGeometryFor(`district-${districtCode}`, geometries, group.districtTh),
+          minZoom: districtLabelZoom,
           minFeatureArea: 2600,
           priority: priority + visibleModels.length * 0.3,
           className: "is-district-label",
@@ -1109,16 +1107,12 @@ export function NakhonRatchasimaLocalMap({
           || (transform.k >= subdistrictLabelZoom && (!useFilterCriteriaMap || model.matchesCriteria)))
         .forEach((model) => {
           const isHighlighted = highlightedSubdistrictCodes.has(model.subdistrictCode);
-          const { point, bounds } = labelGeometryFor(`subdistrict-${model.subdistrictCode}`, [model.feature.geometry]);
+          const text = model.subdistrict?.nameTh ?? model.feature.properties.T_Name_T;
           candidates.push({
             id: `subdistrict-${model.subdistrictCode}`,
-            text: model.subdistrict?.nameTh ?? model.feature.properties.T_Name_T,
-            x: point.x,
-            y: point.y,
-            bounds,
+            text,
+            ...labelGeometryFor(`subdistrict-${model.subdistrictCode}`, [model.feature.geometry], text),
             minZoom: isHighlighted ? localFitZoom : subdistrictLabelZoom,
-            maxWidthRatio: 0.88,
-            maxHeightRatio: 0.74,
             minFeatureArea: 420,
             force: isHighlighted,
             priority: (isHighlighted ? 260 : 120) + localLabelPriorityForStatus(model.status),
@@ -1134,16 +1128,12 @@ export function NakhonRatchasimaLocalMap({
 
         if (isCriteriaFiltered && !isSelected && !isPreviewed) return;
 
-        const { point, bounds } = labelGeometryFor(`subdistrict-${model.subdistrictCode}`, [model.feature.geometry]);
+        const text = model.subdistrict?.nameTh ?? model.feature.properties.T_Name_T;
         candidates.push({
           id: `subdistrict-${model.subdistrictCode}`,
-          text: model.subdistrict?.nameTh ?? model.feature.properties.T_Name_T,
-          x: point.x,
-          y: point.y,
-          bounds,
+          text,
+          ...labelGeometryFor(`subdistrict-${model.subdistrictCode}`, [model.feature.geometry], text),
           minZoom: isSubdistrictRoute ? 1.36 : 1.92,
-          maxWidthRatio: isSubdistrictRoute ? 0.94 : 0.78,
-          maxHeightRatio: 0.72,
           minFeatureArea: isSubdistrictRoute ? 420 : 1150,
           force: isSelected || isPreviewed || isSubdistrictRoute,
           priority: (isSelected ? 260 : 0) + (isPreviewed ? 240 : 0) + localLabelPriorityForStatus(model.status),
@@ -1163,7 +1153,7 @@ export function NakhonRatchasimaLocalMap({
       viewportWidth: localMapWidth,
       viewportHeight: localMapHeight,
       baseScreenFontSize: (singleAreaInspection ? 14 : isMobileMap ? 12 : 10.2) / labelScale,
-      minScreenFontSize: (singleAreaInspection ? 12 : isMobileMap ? 12 : 8.8) / labelScale,
+      minScreenFontSize: (singleAreaInspection || isMobileMap ? 12 : 8.8) / labelScale,
       maxScreenFontSize: (singleAreaInspection ? 16 : isMobileMap ? 13 : 12.1) / labelScale,
       zoomFontBoost: 0.62 / labelScale,
       haloStrokeWidth: isMobileMap ? 2.5 / labelScale : 3,
