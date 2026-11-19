@@ -1,0 +1,107 @@
+name: Map smoke 172f273
+on:
+  push:
+    branches: [ops/auth-smoke-172f273]
+permissions:
+  contents: read
+env:
+  RELEASE_SHA: 172f273f136ae580ee3dc1005f5eb504480e7288
+  EXPECTED_ENTRY: /assets/index-939d5cb36a.js
+jobs:
+  candidate:
+    name: Authenticated candidate map smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    environment:
+      name: auth-smoke-172f273
+      deployment: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Check exact protected candidate and run the read-only map harness
+        env:
+          SMOKE_URL: https://korattanphai-6peidptpq-purich-w.vercel.app
+          SMOKE_ALLOWED_PREVIEW_ORIGINS: https://korattanphai-6peidptpq-purich-w.vercel.app
+          SMOKE_VERCEL_COOKIE: ${{ secrets.SMOKE_VERCEL_COOKIE }}
+          SMOKE_AUTH_EMAIL: ${{ secrets.SMOKE_AUTH_EMAIL }}
+          SMOKE_AUTH_PASSWORD: ${{ secrets.SMOKE_AUTH_PASSWORD }}
+          SMOKE_OUTPUT_DIR: ${{ runner.temp }}/map-smoke-candidate
+        run: |
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          node --input-type=module - <<'JS'
+          import assert from 'node:assert/strict';
+          const { SMOKE_URL, SMOKE_VERCEL_COOKIE, EXPECTED_ENTRY } = process.env;
+          assert.ok(/^[A-Za-z0-9_.-]+$/.test(SMOKE_VERCEL_COOKIE));
+          const get = async path => {
+            const response = await fetch(`${SMOKE_URL}${path}`, {
+              redirect: 'error', signal: AbortSignal.timeout(20000),
+              headers: { Cookie: `_vercel_jwt=${SMOKE_VERCEL_COOKIE}` },
+            });
+            assert.equal(response.status, 200);
+            return response;
+          };
+          const [html, data, references, health] = await Promise.all(['/', '/data-backend.json', '/reference-backend.json', '/api/health'].map(get));
+          assert.ok((await html.text()).includes(`src="${EXPECTED_ENTRY}"`));
+          assert.deepEqual(await data.json(), { backend: 'supabase' });
+          assert.deepEqual(await references.json(), { backend: 'cms', fallback: false });
+          assert.deepEqual(await health.json(), { status: 'ok', scope: 'process' });
+          console.log(`Verified ${process.env.RELEASE_SHA} entry, backends and API health.`);
+          JS
+          node scripts/smoke-map-labels.mjs
+  production:
+    name: Authenticated production map smoke
+    needs: candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Confirm the verified entry is live and run the read-only map harness
+        env:
+          SMOKE_URL: https://korattanphai.vercel.app
+          SMOKE_AUTH_EMAIL: ${{ secrets.SMOKE_AUTH_EMAIL }}
+          SMOKE_AUTH_PASSWORD: ${{ secrets.SMOKE_AUTH_PASSWORD }}
+          SMOKE_OUTPUT_DIR: ${{ runner.temp }}/map-smoke-production
+        run: |
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          node --input-type=module - <<'JS'
+          import assert from 'node:assert/strict';
+          import { setTimeout } from 'node:timers/promises';
+          const { SMOKE_URL, EXPECTED_ENTRY } = process.env;
+          const deadline = Date.now() + 240000;
+          const get = path => fetch(`${SMOKE_URL}${path}`, { redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(15000) });
+          let published = false;
+          while (Date.now() < deadline) {
+            const response = await get('/');
+            assert.equal(response.status, 200);
+            if ((await response.text()).includes(`src="${EXPECTED_ENTRY}"`)) {
+              published = true;
+              break;
+            }
+            await setTimeout(8000);
+          }
+          assert.ok(published, 'Production is waiting for the verified deployment entry.');
+          const [data, references, health] = await Promise.all(['/data-backend.json', '/reference-backend.json', '/api/health'].map(get));
+          for (const response of [data, references, health]) assert.equal(response.status, 200);
+          assert.deepEqual(await data.json(), { backend: 'supabase' });
+          assert.deepEqual(await references.json(), { backend: 'cms', fallback: false });
+          assert.deepEqual(await health.json(), { status: 'ok', scope: 'process' });
+          console.log(`Verified the live entry for ${process.env.RELEASE_SHA}.`);
+          JS
+          node scripts/smoke-map-labels.mjs
