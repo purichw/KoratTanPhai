@@ -1,0 +1,56 @@
+name: Candidate smoke 1c80977
+on:
+  push:
+    branches: [ops/auth-smoke-1c80977]
+permissions:
+  contents: read
+jobs:
+  candidate:
+    name: Authenticated candidate smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: auth-smoke-1c80977
+      deployment: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: 1c80977305d9271cfa7eb2dab92ecbb08bad3c64
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Verify exact candidate and exercise the signed-in workspace
+        env:
+          RELEASE_SHA: 1c80977305d9271cfa7eb2dab92ecbb08bad3c64
+          EXPECTED_ENTRY: /assets/index-cf82d118db.js
+          SMOKE_URL: https://korattanphai-17hnjnr6w-purich-w.vercel.app
+          SMOKE_ALLOWED_PREVIEW_ORIGINS: https://korattanphai-17hnjnr6w-purich-w.vercel.app
+          SMOKE_DATA_BACKEND: supabase
+          SMOKE_VERCEL_COOKIE: ${{ secrets.SMOKE_VERCEL_COOKIE }}
+          SMOKE_AUTH_EMAIL: ${{ secrets.SMOKE_AUTH_EMAIL }}
+          SMOKE_AUTH_PASSWORD: ${{ secrets.SMOKE_AUTH_PASSWORD }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          node --input-type=module - <<'JS'
+          import assert from 'node:assert/strict';
+          const { SMOKE_URL, SMOKE_VERCEL_COOKIE, EXPECTED_ENTRY } = process.env;
+          assert.ok(/^[A-Za-z0-9_.-]+$/.test(SMOKE_VERCEL_COOKIE || ''));
+          const read = async path => {
+            const response = await fetch(SMOKE_URL + path, {
+              redirect: 'error', signal: AbortSignal.timeout(20000),
+              headers: { Cookie: '_vercel_jwt=' + SMOKE_VERCEL_COOKIE }
+            });
+            assert.equal(response.status, 200, path);
+            return response;
+          };
+          assert.ok((await (await read('/')).text()).includes('src="' + EXPECTED_ENTRY + '"'));
+          assert.deepEqual(await (await read('/data-backend.json')).json(), { backend: 'supabase' });
+          assert.deepEqual(await (await read('/reference-backend.json')).json(), { backend: 'cms', fallback: false });
+          assert.deepEqual(await (await read('/api/health')).json(), { status: 'ok', scope: 'process' });
+          JS
+          npm run smoke
+          node -e 'const fs = require("node:fs"); const report = JSON.parse(fs.readFileSync("smoke-results/report.json")); console.log(JSON.stringify(report.checks.filter(check => check.mapSearch || check.excelExport)));'
