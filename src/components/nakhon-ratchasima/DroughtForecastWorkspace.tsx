@@ -533,7 +533,7 @@ export function DroughtCompactForecastWorkspace({
 
   return (
     <>
-    <DroughtWorkspaceHeader target={target} archiveLabel={formatMonth(archive.meta.targetMonthEnd, "th")} onNavigate={navigateWithForecast} />
+    <DroughtWorkspaceHeader target={target} onNavigate={navigateWithForecast} />
     <DroughtWorkspaceFilters target={target} selectedMonth={selectedMonth} monthOptions={monthOptions} onMonthChange={onMonthChange}
       selectedHorizon={selectedHorizon} onHorizonChange={onHorizonChange} onNavigate={navigateWithForecast} />
     <section className={`nr-drought-compact-workspace is-${level}${emptyIrrigationScope ? " is-empty-scope" : ""}`} aria-labelledby={`nr-drought-compact-workspace-${level}`}>

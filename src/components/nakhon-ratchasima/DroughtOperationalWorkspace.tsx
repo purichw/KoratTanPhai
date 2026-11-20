@@ -6,9 +6,8 @@ import { forecastHorizonLabel } from "../../forecastPeriod";
 import { type DroughtForecastWorkspaceTarget, type DroughtForecastArchiveSummary, type ForecastArchiveHorizon, forecastArchiveHorizonValues } from "./forecastModel";
 import { districtOptionsForProvince, formatThaiNumber, formatPercent, pathForDistrictCode, pathForSubdistrictCode, routeBackTargetForRoute } from "./workspaceModel";
 
-export function DroughtWorkspaceHeader({ target, archiveLabel, onNavigate }: {
+export function DroughtWorkspaceHeader({ target, onNavigate }: {
   target: DroughtForecastWorkspaceTarget;
-  archiveLabel?: string;
   onNavigate: (path: string) => void;
 }) {
   const back = routeBackTargetForRoute(target);
@@ -21,7 +20,7 @@ export function DroughtWorkspaceHeader({ target, archiveLabel, onNavigate }: {
     </button>}
     <h1>ภัยแล้ง{target.level !== "province" && <span> · {scope}</span>}</h1>
     <p>ติดตามสถานการณ์และคาดการณ์พื้นที่เสี่ยงภัยแล้งของ{scope}</p>
-    <small>{archiveLabel && <>เดือนตั้งต้นล่าสุดในคลัง {archiveLabel} · </>}ผลพยากรณ์ตามรอบข้อมูล ไม่ใช่สถานการณ์ตรวจวัดจริง</small>
+    <small>ผลพยากรณ์ตามรอบข้อมูล ไม่ใช่สถานการณ์ตรวจวัดจริง</small>
   </header>;
 }
 

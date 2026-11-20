@@ -127,6 +127,7 @@ try {
         await page.goto(new URL(route, base).href, { waitUntil: "domcontentloaded" });
         await page.locator(".nr-map-shape").first().waitFor();
         assert.equal(await page.locator(".nr-map-shape").count(), 289, `${name}: polygon count`);
+        await expect(page.getByText(/เดือนตั้งต้นล่าสุดในคลัง|ไม่ใช่ข้อมูลสด/)).toHaveCount(0);
         await expect(page.locator('.nr-home-readiness, .nr-data-readiness-section, .nr-prediction-readiness, .nr-readiness-map-action, .nr-return-forecast')).toHaveCount(0);
         if (databaseMode) {
           const url = new URL(page.url());

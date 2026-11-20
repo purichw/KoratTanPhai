@@ -77,7 +77,6 @@ export function ForecastOverviewLoading({ failed, retry, message = "กำลั
   return <section className="nr-forecast-overview nr-loading-overview" aria-label="ภาพรวมพยากรณ์ภัยแล้ง">
     <header className="nr-forecast-overview-heading nr-dashboard-heading">
       <div><p className="eyebrow">ภาพรวมสถานการณ์</p><h1>จังหวัดนครราชสีมา</h1><p>ภาพรวมพยากรณ์ภัยแล้ง</p></div>
-      <p>คลังพยากรณ์ย้อนหลัง · ไม่ใช่ข้อมูลสด</p>
     </header>
     <ForecastLoadState failed={failed} retry={retry} message={message}>
       <LoadingFilters overview />

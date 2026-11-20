@@ -7,7 +7,6 @@
 .nr-forecast-overview-heading h1 { margin: 3px 0; font-size: 30px; line-height: 1.25; }
 .nr-forecast-overview-heading .eyebrow { margin: 0; font-size: 14px; color: var(--muted); }
 .nr-forecast-overview-heading > div > p:last-child { font-size: 12px; margin: 0; }
-.is-home-overview .nr-forecast-overview-heading > p { margin: 0 0 5px; font-size: 11px; }
 .is-home-overview .nr-forecast-overview-context { margin: -4px 0 0; gap: 4px 12px; font-size: 11px; }
 .is-overview-filter.control-band { margin: 0; padding: 8px; border: 1px solid var(--ktp-border); border-radius: 8px; box-shadow: none; }
 .is-overview-filter .operational-filter-fields { gap: 10px; align-items: stretch; }
@@ -136,13 +135,11 @@
   :is(.is-home-overview, .is-admin-workspace) > .sidebar { width: 208px; padding: 20px 12px; }
   :is(.is-home-overview, .is-admin-workspace) .brand-mark.is-sidebar-logo { width: 164px; }
   .is-home-overview .topbar { position: absolute; top: 14px; right: 22px; min-height: 0; padding: 0; z-index: 40; }
-  .is-home-overview .nr-forecast-overview-heading > p { margin-top: 54px; }
 }
 @media (min-width: 721px) and (max-width: 1180px) {
   .is-home-overview .main-panel { padding: 14px 16px; }
   .is-home-overview .topbar { min-height: 0; padding: 0; position: absolute; right: 16px; top: 14px; }
   .is-home-overview .nr-forecast-overview-heading { padding-top: 0; }
-  .is-home-overview .nr-forecast-overview-heading > p { max-width: 240px; padding-top: 50px; line-height: 1.4; }
   .is-home-overview .nr-forecast-overview-grid { grid-template-columns: minmax(0,1.3fr) minmax(285px,1fr); }
   .is-home-overview .nr-overview-cockpit-map .nr-dashboard-map-card { height: 530px; }
   .is-home-overview .nr-dashboard-map-header > div { max-width: none; }
@@ -165,7 +162,6 @@
   .is-home-overview .nr-forecast-overview-heading.nr-dashboard-heading { display: grid; gap: 6px; min-height: 0; }
   .nr-forecast-overview-heading h1 { font-size: 26px; }
   .nr-forecast-overview-heading .eyebrow, .nr-forecast-overview-heading > div > p:last-child { font-size: 13px; }
-  .is-home-overview .nr-forecast-overview-heading > p { padding: 0; margin: 0; font-size: 11px; }
   .is-home-overview .nr-forecast-overview-heading .nr-forecast-overview-context { font-size: 11px; display: grid; gap: 1px; }
   .is-overview-filter.control-band.operational-filters { padding: 10px; border-radius: 8px; }
   .is-overview-filter .operational-filter-chip-row { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 6px; }

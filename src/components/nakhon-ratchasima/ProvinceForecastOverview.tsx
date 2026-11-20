@@ -6,7 +6,6 @@ import { forecastSubdistrictCodesForIrrigation } from "../../irrigation";
 import type { NakhonRatchasimaDroughtForecastArchive } from "../../types";
 import { useForecastArchive } from "../../useForecastArchive";
 import { ArchiveUnavailableState } from "../ArchiveUnavailableState";
-import { DataProvenanceChip } from "../DataProvenanceChip";
 import { ForecastArchiveRequest } from "../ForecastArchiveRequest";
 import { IrrigationEmptyState } from "../IrrigationEmptyState";
 import { OperationalFilters } from "../OperationalFilters";
@@ -74,7 +73,6 @@ function ForecastOverviewContent({ archive, onNavigate }: OverviewProps & {
           <h1>จังหวัดนครราชสีมา</h1>
           <p className="nr-forecast-overview-context"><strong>พยากรณ์ {formatMonth(summary.targetMonth, "th")}</strong><span>ล่วงหน้า 1 เดือน · เดือนตั้งต้น {formatMonth(summary.issueMonth, "th")}</span></p>
         </div>
-        <p><DataProvenanceChip kind="FORECAST_ARCHIVE" />เดือนตั้งต้นล่าสุดในคลัง {formatMonth(archive.meta.targetMonthEnd, "th")} · ไม่ใช่ข้อมูลสด</p>
       </header>
       <OperationalFilters
         compactOverview

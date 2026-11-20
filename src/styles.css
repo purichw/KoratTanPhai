@@ -3151,7 +3151,6 @@ textarea {
 }
 
 .nr-forecast-overview-heading h2 { margin: 0; font-size: 24px; }
-.nr-forecast-overview-heading > p { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 .nr-forecast-overview-context { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; font-size: 13px; }
 .nr-forecast-overview-context span { color: var(--muted); }
 

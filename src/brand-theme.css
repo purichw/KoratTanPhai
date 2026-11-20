@@ -100,11 +100,6 @@
   color: var(--brand-strong);
 }
 
-/* Keep the archive note readable over the full-color landscape. */
-.app-shell .nr-forecast-overview-heading > p {
-  background-color: color-mix(in srgb, var(--brand-paper) 94%, transparent);
-}
-
 .app-shell :is(.nr-bookmarks-trigger, .operational-filter-mobile-summary,
   .control-band, .nr-fixed-filter, .operational-fixed-field) {
   background-color: var(--brand-paper);
