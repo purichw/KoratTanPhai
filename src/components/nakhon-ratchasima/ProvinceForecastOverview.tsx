@@ -72,7 +72,7 @@ function ForecastOverviewContent({ archive, onNavigate }: OverviewProps & {
         <div>
           <p className="eyebrow">ภาพรวมสถานการณ์</p>
           <h1>จังหวัดนครราชสีมา</h1>
-          <p className="nr-forecast-overview-context"><strong>พยากรณ์ {formatMonth(summary.targetMonth, "th")}</strong><span>ล่วงหน้า 1 เดือน · เดือนตั้งต้น (T) {formatMonth(summary.issueMonth, "th")}</span></p>
+          <p className="nr-forecast-overview-context"><strong>พยากรณ์ {formatMonth(summary.targetMonth, "th")}</strong><span>ล่วงหน้า 1 เดือน · เดือนตั้งต้น {formatMonth(summary.issueMonth, "th")}</span></p>
         </div>
         <p><DataProvenanceChip kind="FORECAST_ARCHIVE" />เดือนตั้งต้นล่าสุดในคลัง {formatMonth(archive.meta.targetMonthEnd, "th")} · ไม่ใช่ข้อมูลสด</p>
       </header>

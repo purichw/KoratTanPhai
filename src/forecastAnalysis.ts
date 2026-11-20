@@ -1,4 +1,5 @@
 import { exportHorizons, summarizeExportRisks, type ExportLocation, type ExportRisk, type ForecastExportComparisonRow } from './forecastExportModel';
+import { forecastHorizonLabel } from './forecastPeriod';
 
 export type AnalysisLevel = 'district' | 'subdistrict';
 const analysisHierarchyByScope = {
@@ -16,10 +17,10 @@ export function analysisHierarchy(areaCode: string) {
 export type RiskPattern = 'all' | 'high' | 'consecutive3' | `first-${number}` | `risk-${number}`;
 export const riskPatternOptions = [
   { value: 'all', label: 'ทุกรูปแบบพยากรณ์' },
-  ...exportHorizons.map(h => ({ value: `risk-${h}`, label: `มีความเสี่ยงใน T+${h}`, group: 'ความเสี่ยงรายเดือน' })),
+  ...exportHorizons.map(h => ({ value: `risk-${h}`, label: `มีความเสี่ยงที่ระยะ ${forecastHorizonLabel(h, 'short')}`, searchText: `T+${h}`, group: 'ความเสี่ยงรายเดือน' })),
   { value: 'high', label: 'เสี่ยงสูงอย่างน้อย 1 เดือน', group: 'รูปแบบตลอด 6 เดือน' },
   { value: 'consecutive3', label: 'เสี่ยงต่อเนื่องอย่างน้อย 3 เดือน', group: 'รูปแบบตลอด 6 เดือน' },
-  ...exportHorizons.map(h => ({ value: `first-${h}`, label: `เริ่มเสี่ยงครั้งแรกในรอบที่ T+${h}`, group: 'เดือนแรกที่เสี่ยงในรอบพยากรณ์' })),
+  ...exportHorizons.map(h => ({ value: `first-${h}`, label: `เริ่มเสี่ยงครั้งแรกที่ระยะ ${forecastHorizonLabel(h, 'short')}`, searchText: `T+${h}`, group: 'เดือนแรกที่เสี่ยงในรอบพยากรณ์' })),
 ];
 
 export function forecastPattern(risks: ExportRisk[]) {

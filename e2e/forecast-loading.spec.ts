@@ -71,7 +71,7 @@ test("login and overview defer the archive while preserving summary and forecast
   const summary = page.locator(".nr-forecast-overview");
   await expect(summary).toContainText("117/289 ตำบล");
   await expect(summary.locator(".nr-forecast-overview-context")).toContainText("พยากรณ์ ม.ค. 2569");
-  await expect(summary.locator(".nr-forecast-overview-context")).toContainText("เดือนตั้งต้น (T) ธ.ค. 2568");
+  await expect(summary.locator(".nr-forecast-overview-context")).toContainText("เดือนตั้งต้น ธ.ค. 2568");
   await expect(page.locator(".nr-map-shape")).toHaveCount(289);
   expect(archiveRequests).toBe(0);
   await summary.locator(".nr-forecast-overview-details").click();

@@ -45,7 +45,7 @@ describe('forecast Excel data contract', () => {
     await book.xlsx.load(bytes);
     expect(book.worksheets.map(sheet => sheet.name)).toEqual(['วิเคราะห์', 'สรุปอำเภอ', 'รายตำบล', 'สถิติรายเดือน', 'PivotTable', 'ฐาน Pivot', 'ที่มาและนิยาม', forecastExportSheetNames.machine, forecastExportSheetNames.dictionary]);
     const raw = book.getWorksheet('รายตำบล')!;
-    expect(raw.getCell('H4').value).toBe('T+1 ม.ค. 2569');
+    expect(raw.getCell('H4').value).toBe('1 เดือน · ม.ค. 2569');
     for (const [index, row] of report.rows.entries()) {
       expect(raw.getCell(index + 5, 1).value).toBe(row.sourceId);
       for (const [horizon, risk] of row.risks.entries()) expect(raw.getCell(index + 5, horizon + 8).value).toBe(risk ?? exportRiskLabel(risk));
@@ -53,7 +53,8 @@ describe('forecast Excel data contract', () => {
     const sheet = book.getWorksheet('วิเคราะห์')!;
     expect(sheet.getCell('B4').dataValidation.formulae).toEqual(['ExportDistricts']);
     expect(sheet.getCell('E4').dataValidation.formulae).toEqual(['ExportIrrigation']);
-    expect(sheet.getCell('C9').formula).toContain('COUNTIFS');
+    expect(book.getWorksheet('ฐาน Pivot')!.getCell('H2').value).toBe('1 เดือน');
+    expect(sheet.getCell('C9').formula).toMatch(/^COUNTIFS\(.*,"1 เดือน",/);
     expect(sheet.getCell('C9').result).toBe(report.totals[0].counts[1]);
     expect(sheet.getCell('C9').numFmt).toBe('#,##0');
     expect(sheet.getCell('H9').numFmt).toBe('0.0%');

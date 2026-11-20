@@ -256,7 +256,7 @@ test('Korat playback period stays grouped and keeps the map frame stable', async
   const period = playback.getByRole('status');
   const panel = page.locator('.nr-map-panel');
   await playback.scrollIntoViewIfNeeded();
-  await expect(period).toContainText('T+1');
+  await expect(period).toContainText('1 เดือน');
   await expect(period).toContainText('ม.ค. 2569');
   const initial = await panel.boundingBox();
   const initialControl = await playback.boundingBox();
@@ -264,7 +264,7 @@ test('Korat playback period stays grouped and keeps the map frame stable', async
   await expect(playback).toHaveClass(/is-playing/);
   await expect(page).toHaveURL(/horizon=2/);
   await playback.getByRole('button', { name: 'หยุดลำดับพยากรณ์' }).click();
-  await expect(period).toContainText('T+2');
+  await expect(period).toContainText('2 เดือน');
   await expect(period).toContainText('ก.พ. 2569');
   await expect(playback).not.toHaveClass(/is-playing/);
   expect((await panel.boundingBox())!.height).toBeCloseTo(initial!.height, 0);

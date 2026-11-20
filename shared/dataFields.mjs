@@ -39,7 +39,7 @@ export const DATA_FIELDS = {
     choice('yieldAreaBasis', 'ฐานพื้นที่ผลผลิตต่อไร่', ['harvested', 'planted', 'unspecified']), quality, sourceRecordId,
   ],
   forecast: [
-    text('subdistrictCode', 'รหัสตำบล'), number('horizonMonths', 'ระยะพยากรณ์ (T+)'),
+    text('subdistrictCode', 'รหัสตำบล'), number('horizonMonths', 'ระยะพยากรณ์ (เดือนล่วงหน้า)'),
     text('targetMonth', 'เดือนพยากรณ์ (YYYY-MM)'),
     choice('status', 'สถานะพยากรณ์', ['predicted', 'out_of_scope', 'insufficient_data']),
     number('riskCode', 'ระดับความเสี่ยง (0/1/2)', true),

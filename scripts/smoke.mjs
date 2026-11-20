@@ -148,7 +148,7 @@ try {
           await summary.waitFor();
           assert.deepEqual(await summary.locator(".metric-card-value").allTextContents(), ["0 ตำบล", "117 ตำบล", "0 ตำบล", "172 ตำบล"], `${name}: latest T+1 forecast counts`);
           await expect(page.locator(".nr-forecast-overview-context")).toContainText("พยากรณ์ ม.ค. 2569");
-          await expect(page.locator(".nr-forecast-overview-context")).toContainText("เดือนตั้งต้น (T) ธ.ค. 2568");
+          await expect(page.locator(".nr-forecast-overview-context")).toContainText("เดือนตั้งต้น ธ.ค. 2568");
           await expect(page).toHaveURL(new URL('/', base).href);
           assert.equal(await page.evaluate(() => window.history.state?.ktpHomeForecastOrigin), "2025-12");
           await page.screenshot({ path: path.join(output, `${name}-overview.png`), fullPage: true });
@@ -181,7 +181,7 @@ try {
           await expect(page.locator('.nr-forecast-horizon-date-break').first()).toHaveCSS('display', name === 'mobile' ? 'inline' : 'none');
           const forecastMonth = route.includes("horizon=4") ? "เม.ย. 2569" : "ม.ค. 2569";
           await expect(page.locator(".nr-drought-workspace-horizon").getByRole("tab", { selected: true }).locator("span")).toHaveText(forecastMonth);
-          await expect(page.locator(".nr-drought-workspace-context .is-issue dt")).toHaveText("เดือนตั้งต้น (T)");
+          await expect(page.locator(".nr-drought-workspace-context .is-issue dt")).toHaveText("เดือนตั้งต้น");
           await expect(page.locator(".nr-drought-workspace-context .is-issue strong")).toHaveText("ธ.ค. 2568");
           await expect(page.locator(".nr-drought-workspace-context .is-target dt")).toHaveText("เดือนที่พยากรณ์");
           await expect(page.locator(".nr-drought-workspace-context .is-target strong")).toHaveText(forecastMonth);
@@ -190,6 +190,23 @@ try {
         if (route.startsWith("/drought")) {
           assert.match(await page.locator(".nr-drought-workspace-kpis .is-coverage").innerText(), /117\/289/);
           await expect(page.locator(".nr-forecast-target-note")).toHaveText("เดือนตั้งต้น ธ.ค. 2568 · พยากรณ์ล่วงหน้า 1–6 เดือน: ม.ค. 2569 – มิ.ย. 2569");
+          if (databaseMode) {
+            const initialUrl = page.url();
+            await page.getByRole("button", { name: "ค้นหาพื้นที่บนแผนที่", exact: true }).click();
+            const search = page.getByRole("dialog", { name: "ค้นหาข้อมูล", exact: true });
+            await expect(search.getByRole("button", { name: "เฉพาะพื้นที่บนแผนที่", exact: true })).toHaveAttribute("aria-pressed", "true");
+            await search.getByRole("searchbox", { name: "คำค้นหา" }).fill("จอหอ");
+            await search.getByRole("button", { name: /ตำบลจอหอ.*รหัสพื้นที่ 300116/ }).click();
+            await expect(page.locator('[data-nr-subdistrict-code="300116"]')).toHaveClass(/is-selected/);
+            assert.equal(page.url(), initialUrl);
+            await page.getByRole("button", { name: "ล้างพื้นที่ที่ค้นหา", exact: true }).click();
+            await page.getByRole("button", { name: "วิเคราะห์พยากรณ์", exact: true }).click();
+            const analysis = page.getByRole("dialog", { name: /^วิเคราะห์พยากรณ์/ });
+            await expect(analysis.getByRole("columnheader", { name: /^1 เดือน/ })).toBeVisible();
+            await expect(analysis.getByRole("columnheader", { name: /^6 เดือน/ })).toBeVisible();
+            await analysis.getByRole("button", { name: "ปิดเครื่องมือแผนที่", exact: true }).click();
+            report.checks.push({ viewport: name, mapSearch: "passed", analysisMonthLabels: "passed" });
+          }
         }
         if (databaseMode && (areaCode === "30" && route !== "/?mapLayer=forecast-archive" || areaCode === "3008")) {
           const chart = page.locator(".nr-drought-workspace-chart-card");

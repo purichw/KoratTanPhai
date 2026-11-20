@@ -60,7 +60,7 @@ export function ExcelExport({ archive, areaCode, origin, irrigation, loader, vis
     }
   };
   return <Sheet title="ส่งออก Excel" visible={visible} onClose={() => { mounted.current = false; onClose(); }}>
-    <AppText style={[s.small, s.center]}>ข้อมูล T+1 ถึง T+6 พร้อมสรุปอำเภอ กราฟ และ PivotTable</AppText>
+    <AppText style={[s.small, s.center]}>ข้อมูลพยากรณ์ล่วงหน้า 6 เดือน พร้อมสรุปอำเภอ กราฟ และ PivotTable</AppText>
     {!busy && <><Select label="เดือนตั้งต้น" value={period} options={options} onChange={v => { setPeriod(v); if (baseline === v) setBaseline(''); }} /><Select label="พื้นที่" value={area} options={areas.map(a => ({ value: a.code, label: a.label, search: a.search }))} onChange={setArea} /><Select label="ชลประทาน" value={water} options={irrigationCriteria.map(value => ({ value, label: irrigationLabels[value] }))} onChange={v => setWater(v as IrrigationCriterion)} /><Select label="เปรียบเทียบรอบ" value={baseline} options={[{ value: '', label: 'ไม่เปรียบเทียบ' }, ...options.filter(o => o.value !== period)]} onChange={setBaseline} /></>}
     <AppText style={s.center}>{areaInfo(area).label} · {formatMonth(period, 'th')}</AppText>
     {!!message && <AppText accessibilityLiveRegion="polite" style={s.center}>{message}</AppText>}

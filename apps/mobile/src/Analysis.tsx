@@ -1,3 +1,4 @@
+import { forecastHorizonLabel } from '../../../src/forecastPeriod';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
@@ -43,7 +44,7 @@ export function Analysis({ archive, rows, origin, areaCode, irrigation, horizon,
     <Input accessibilityLabel="ค้นหาพื้นที่วิเคราะห์" placeholder="ค้นหาชื่อพื้นที่ / รหัส" value={query} onChangeText={setQuery} autoCorrect={false} />
     <Select label="รูปแบบพยากรณ์" value={pattern} options={riskPatternOptions} onChange={v => setPattern(v as RiskPattern)} />
     {tab === 'table' && <Segments value={group} options={[{ value: 'district', label: 'สรุปอำเภอ' }, { value: 'tambon', label: 'รายตำบล' }]} onChange={setGroup} />}
-    <AppText style={[s.small, s.center]}>{filtered.length}/{rows.length} ตำบล · {districts.length} อำเภอ{tab === 'graph' ? ` · T+${horizon}` : ''}</AppText>
+    <AppText style={[s.small, s.center]}>{filtered.length}/{rows.length} ตำบล · {districts.length} อำเภอ{tab === 'graph' ? ` · ${forecastHorizonLabel(horizon)}` : ''}</AppText>
     {tab === 'compare' && <><Select label="รอบตั้งต้นที่ใช้เปรียบเทียบ" value={baseline} options={[{ value: '', label: 'เลือกรอบพยากรณ์' }, ...[...archive.targetMonths].reverse().filter(m => m.period !== origin).map(m => ({ value: m.period, label: m.labelTh, search: m.period }))]} onChange={setBaseline} />
       <Button disabled={!baseline} busy={busy} onPress={() => void compare()}>เปรียบเทียบกับ {formatMonth(origin, 'th')}</Button>
       <AppText style={s.small}>เทียบตำบลและเดือนที่พยากรณ์ตรงกันเท่านั้น ไม่ใช่การเทียบกับผลจริง</AppText>
@@ -52,14 +53,14 @@ export function Analysis({ archive, rows, origin, areaCode, irrigation, horizon,
   </Section>;
   return tab === 'compare' ? <FlatList data={pairs} keyExtractor={row => `${row.subdistrictCode}-${row.targetPeriod}`} ListHeaderComponent={header} contentContainerStyle={{ paddingBottom: 24 }}
     ListEmptyComponent={busy ? <ActivityIndicator /> : <Empty title={comparison ? 'ไม่มีคู่ข้อมูลตามตัวกรอง' : 'เลือกรอบที่จะเปรียบเทียบ'} detail={comparison ? 'รอบที่เลือกอาจไม่มีเดือนพยากรณ์ตรงกัน' : undefined} />}
-    renderItem={({ item }) => <Section><AppText weight="semibold">ต.{item.subdistrictNameTh} · {formatMonth(item.targetPeriod, 'th')}</AppText><AppText>{formatMonth(item.baselineOriginPeriod, 'th')} T+{item.baselineHorizon}: {item.baselineStatus === 'VALID' ? item.baselineForecastRisk : item.baselineStatus === 'OUT_OF_SCOPE' ? 'นอกขอบเขต' : 'ไม่มีข้อมูล'}</AppText><AppText>{formatMonth(item.currentOriginPeriod, 'th')} T+{item.currentHorizon}: {item.currentStatus === 'VALID' ? item.currentForecastRisk : item.currentStatus === 'OUT_OF_SCOPE' ? 'นอกขอบเขต' : 'ไม่มีข้อมูล'}</AppText><AppText weight="semibold">{comparisonStyles[item.comparisonStatus].label}</AppText></Section>} />
+    renderItem={({ item }) => <Section><AppText weight="semibold">ต.{item.subdistrictNameTh} · {formatMonth(item.targetPeriod, 'th')}</AppText><AppText>{formatMonth(item.baselineOriginPeriod, 'th')} {forecastHorizonLabel(item.baselineHorizon)}: {item.baselineStatus === 'VALID' ? item.baselineForecastRisk : item.baselineStatus === 'OUT_OF_SCOPE' ? 'นอกขอบเขต' : 'ไม่มีข้อมูล'}</AppText><AppText>{formatMonth(item.currentOriginPeriod, 'th')} {forecastHorizonLabel(item.currentHorizon)}: {item.currentStatus === 'VALID' ? item.currentForecastRisk : item.currentStatus === 'OUT_OF_SCOPE' ? 'นอกขอบเขต' : 'ไม่มีข้อมูล'}</AppText><AppText weight="semibold">{comparisonStyles[item.comparisonStatus].label}</AppText></Section>} />
     : <FlatList data={items} keyExtractor={item => item.code} ListHeaderComponent={header} contentContainerStyle={{ paddingBottom: 24 }}
       ListEmptyComponent={<Empty title="ไม่พบตำบลตามตัวกรองนี้" action="ล้างตัวกรองวิเคราะห์" onAction={() => { setQuery(''); setPattern('all'); }} />}
       renderItem={({ item }) => <Section>
         <Pressable accessibilityRole="button" onPress={() => onArea(item.code)} style={[s.row, { minHeight: 44 }]}><AppText weight="bold" style={s.flex}>{item.name}</AppText><ChevronRight size={18} color="#245947" /></Pressable>
         {tab === 'graph' && item.summaries ? <><View style={{ height: 18, flexDirection: 'row', overflow: 'hidden', borderRadius: 4 }}>{item.summaries[horizon - 1].counts.map((n, i) => n > 0 && <View key={i} style={{ flex: n, backgroundColor: riskColors[i] }} />)}</View><AppText style={s.small}>ไม่เสี่ยง {item.summaries[horizon - 1].counts[0]} · ปานกลาง {item.summaries[horizon - 1].counts[1]} · สูง {item.summaries[horizon - 1].counts[2]} · นอกขอบเขต {item.summaries[horizon - 1].counts[3]} · ไม่มีข้อมูล {item.summaries[horizon - 1].counts[4]}</AppText></>
           : <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>{exportHorizons.map(h => <View key={h} style={{ width: '31%', gap: 4, padding: 8, justifyContent: 'center', backgroundColor: '#f7f8f6', borderRadius: 6 }}>
-            <AppText weight="semibold" style={[s.center, { fontSize: 14 }]}>T+{h}</AppText><AppText style={[s.small, s.center]}>{formatMonth(forecastTargetPeriod(origin, h), 'th')}</AppText>
+            <AppText weight="semibold" style={[s.center, { fontSize: 14 }]}>{forecastHorizonLabel(h, 'short')}</AppText><AppText style={[s.small, s.center]}>{formatMonth(forecastTargetPeriod(origin, h), 'th')}</AppText>
             <View style={{ height: 4, backgroundColor: riskColors[riskIndex(item.risks[h - 1])], borderRadius: 2 }} /><AppText style={[s.center, { fontSize: 12, lineHeight: 19 }]}>{exportRiskLabel(item.risks[h - 1])}</AppText>
             {item.summaries && <AppText style={[s.small, s.center]}>มีค่า {item.summaries[h - 1].valid}/{item.summaries[h - 1].total}</AppText>}
           </View>)}</View>}

@@ -10,7 +10,7 @@ import { buildForecastExport, buildForecastComparison, exportHorizons, type Expo
 import { ForecastRiskValue } from '../ForecastRiskValue';
 import { LoadingAnalysisTable } from './ForecastLoadingPrimitives';
 import { analysisDistricts, analysisHierarchy, comparisonStyles, filterAnalysisRows, forecastPattern, riskPatternOptions, type AnalysisLevel, type ForecastAnalysisOverlay, type RiskPattern } from '../../forecastAnalysis';
-import { forecastTargetPeriod } from '../../forecastPeriod';
+import { forecastHorizonLabel, forecastTargetPeriod } from '../../forecastPeriod';
 import { formatMonth } from '../../i18n';
 import { irrigationLabels, type IrrigationCriterion } from '../../irrigation';
 import type { NakhonRatchasimaDroughtForecastArchive as Archive } from '../../types';
@@ -126,7 +126,7 @@ export default function ForecastAnalysisDialog({ archive, originPeriod, horizon,
     {error ? <div role="alert" className="nr-tool-error"><p>{error}</p><button type="button" className="secondary-button" onClick={() => setAttempt(v => v + 1)}><RotateCcw size={16} />ลองใหม่</button></div> : !report ? <LoadingAnalysisTable /> : <>
       <div className="nr-analysis-toolbar"><span role="status">{rows.length} / {report.rows.length} ตำบล · {districts.length} อำเภอ</span>
         {tab === 'table' && <>{hierarchy.levels.length > 1 && <AppSelect ariaLabel="ระดับตาราง" value={level} onChange={value => setLevelSelection({ areaCode, level: value as AnalysisLevel })} options={hierarchy.levels.map(value => ({ value, label: value === 'district' ? 'สรุปอำเภอ' : 'รายตำบล' }))} />}
-          <AppSelect ariaLabel="เรียงตาราง" value={sort} onChange={setSort} icon={<ArrowDownWideNarrow size={16} />} options={[{ value: 'code', label: 'รหัสพื้นที่' }, { value: 'name', label: 'ชื่อพื้นที่' }, { value: 'risk', label: `ความเสี่ยง T+${horizon}` }]} /></>}
+          <AppSelect ariaLabel="เรียงตาราง" value={sort} onChange={setSort} icon={<ArrowDownWideNarrow size={16} />} options={[{ value: 'code', label: 'รหัสพื้นที่' }, { value: 'name', label: 'ชื่อพื้นที่' }, { value: 'risk', label: `ความเสี่ยง ${forecastHorizonLabel(horizon)}` }]} /></>}
         {tab === 'areas' && hierarchy.comparisonLevel === 'district' && <AppSelect ariaLabel="หน่วยเปรียบเทียบอำเภอ" value={unit} onChange={setUnit} options={[{ value: 'percent', label: 'สัดส่วนตำบลเสี่ยง (%)' }, { value: 'count', label: 'จำนวนตำบลเสี่ยง' }]} />}
         <button className="secondary-button" type="button" disabled={busy || !rows.length || (tab === 'comparison' && !comparison.length)} onClick={() => overlay(tab === 'comparison')}><MapPinned size={16} />แสดงบนแผนที่</button>
       </div>
@@ -140,7 +140,7 @@ export default function ForecastAnalysisDialog({ archive, originPeriod, horizon,
       </div> : tab === 'table' ? <>
         <div className="nr-analysis-table-wrap" tabIndex={0} role="region" aria-label="ตารางพยากรณ์ 6 เดือน"><table className="nr-analysis-table">
           <caption>{level === 'district' ? 'ระดับอำเภอใช้ค่าสูงสุดของตำบลที่มีค่าพยากรณ์ตามตัวกรอง พร้อมจำนวนที่มีค่า/จำนวนตำบล' : 'ค่าจาก Excel รายตำบล · หมายเลขแหล่งข้อมูลอยู่ใต้รหัสพื้นที่'}</caption>
-          <thead><tr><th scope="col">พื้นที่</th>{exportHorizons.map(h => <th scope="col" key={h}>T+{h}<small>{formatMonth(forecastTargetPeriod(originPeriod, h), 'th')}</small></th>)}{level === 'subdistrict' && <th scope="col">ต่อเนื่องสูงสุด</th>}</tr></thead>
+          <thead><tr><th scope="col">พื้นที่</th>{exportHorizons.map(h => <th scope="col" key={h}>{forecastHorizonLabel(h, 'short')}<small>{formatMonth(forecastTargetPeriod(originPeriod, h), 'th')}</small></th>)}{level === 'subdistrict' && <th scope="col">ต่อเนื่องสูงสุด</th>}</tr></thead>
           <tbody>{tableRows.map(row => <tr key={row.code}><th scope="row"><button type="button" className="nr-tool-link" onClick={() => focused(row.code)}>{row.name}</button><small>{row.district} · {row.code}{row.source ? ` · ID ${row.source}` : ''}</small></th>
             {row.risks.map((risk, index) => <td key={index} className={index === horizon - 1 ? 'is-active-period' : ''}><ForecastRiskValue risk={risk} />{row.coverage[index] && <small>มีค่า {row.coverage[index]} ตำบล</small>}</td>)}
             {level === 'subdistrict' && <td>{forecastPattern(row.risks).longestRun} เดือน</td>}</tr>)}</tbody>
@@ -172,7 +172,7 @@ export default function ForecastAnalysisDialog({ archive, originPeriod, horizon,
             </div>;
           })}
         </div>
-      </> : baseline ? <div className="nr-analysis-table-wrap" tabIndex={0} role="region" aria-label="ตารางเปรียบเทียบรอบ"><table className="nr-analysis-table"><thead><tr><th>ตำบล</th><th>รอบ {formatMonth(baselinePeriod, 'th')}</th><th>รอบ {formatMonth(originPeriod, 'th')}</th><th>การเปลี่ยนระดับ</th></tr></thead><tbody>{comparison.map(row => <tr key={row.subdistrictCode}><th scope="row"><button className="nr-tool-link" type="button" onClick={() => focused(row.subdistrictCode)}>ต.{row.subdistrictNameTh}</button><small>อ.{row.districtNameTh} · {row.subdistrictCode}</small></th><td><ForecastRiskValue risk={row.baselineStatus === 'MISSING' ? undefined : row.baselineForecastRisk} /><small>T+{row.baselineHorizon}</small></td><td><ForecastRiskValue risk={row.currentStatus === 'MISSING' ? undefined : row.currentForecastRisk} /><small>T+{row.currentHorizon}</small></td><td>{comparisonStyles[row.comparisonStatus].label}</td></tr>)}</tbody></table></div> : <p role="status">เลือกรอบตั้งต้นอ้างอิงเพื่อเปรียบเทียบเดือนพยากรณ์เดียวกัน</p>}
+      </> : baseline ? <div className="nr-analysis-table-wrap" tabIndex={0} role="region" aria-label="ตารางเปรียบเทียบรอบ"><table className="nr-analysis-table"><thead><tr><th>ตำบล</th><th>รอบ {formatMonth(baselinePeriod, 'th')}</th><th>รอบ {formatMonth(originPeriod, 'th')}</th><th>การเปลี่ยนระดับ</th></tr></thead><tbody>{comparison.map(row => <tr key={row.subdistrictCode}><th scope="row"><button className="nr-tool-link" type="button" onClick={() => focused(row.subdistrictCode)}>ต.{row.subdistrictNameTh}</button><small>อ.{row.districtNameTh} · {row.subdistrictCode}</small></th><td><ForecastRiskValue risk={row.baselineStatus === 'MISSING' ? undefined : row.baselineForecastRisk} /><small>{forecastHorizonLabel(row.baselineHorizon, 'short')}</small></td><td><ForecastRiskValue risk={row.currentStatus === 'MISSING' ? undefined : row.currentForecastRisk} /><small>{forecastHorizonLabel(row.currentHorizon, 'short')}</small></td><td>{comparisonStyles[row.comparisonStatus].label}</td></tr>)}</tbody></table></div> : <p role="status">เลือกรอบตั้งต้นอ้างอิงเพื่อเปรียบเทียบเดือนพยากรณ์เดียวกัน</p>}
     </>}
   </>;
 }

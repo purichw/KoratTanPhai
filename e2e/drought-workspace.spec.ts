@@ -182,7 +182,7 @@ for (const boundary of [
       await expect(tabs.filter({ hasText: `${horizon} เดือน` })).toHaveAttribute("aria-selected", "true");
       await expect(page).toHaveURL(new RegExp(`target=${boundary.source}&horizon=${horizon}`));
       await expect(sourceSelect).toContainText(boundary.label);
-      await expect(context.locator(".is-issue dt")).toHaveText("เดือนตั้งต้น (T)");
+      await expect(context.locator(".is-issue dt")).toHaveText("เดือนตั้งต้น");
       await expect(context.locator(".is-issue strong")).toHaveText(boundary.label);
       await expect(context.locator(".is-target dt")).toHaveText("เดือนที่พยากรณ์");
       await expect(context.locator(".is-target strong")).toHaveText(forecast);
@@ -200,7 +200,7 @@ for (const boundary of [
       const preview = map.locator(".nr-map-preview-card");
       await expect(preview).toBeVisible();
       await expect(preview.locator("dl > div").filter({ has: page.getByText("เดือนที่พยากรณ์", { exact: true }) }).locator("dd")).toHaveText(forecast);
-      await expect(preview.locator("dl > div").filter({ has: page.getByText("เดือนตั้งต้น (T)", { exact: true }) }).locator("dd")).toHaveText(`${boundary.label} · ล่วงหน้า ${horizon} เดือน`);
+      await expect(preview.locator("dl > div").filter({ has: page.getByText("เดือนตั้งต้น", { exact: true }) }).locator("dd")).toHaveText(`${boundary.label} · ล่วงหน้า ${horizon} เดือน`);
     }
   });
 }

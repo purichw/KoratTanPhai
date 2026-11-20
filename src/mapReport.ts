@@ -1,4 +1,5 @@
 import { paginateReportItems, wrapReportText, type ReportFlowItem } from './reportLayout';
+import { forecastHorizonLabel } from './forecastPeriod';
 import type { MapExportContext } from './mapImageExport';
 
 type TextRow = { kind: 'text'; text: string; size: number; bold: boolean; color: string };
@@ -32,7 +33,7 @@ export async function createMapReport(snapshot: { xml: string; aspect: number },
     rows.push({ height: 32, keepWithNext: true, content: { kind: 'rule' } });
     paragraph(text, 28, true, true, '#1c2922');
   }
-  const metrics = [['เดือนตั้งต้น (T)', context.origin], ['ระยะพยากรณ์', `T+${context.horizon} · ล่วงหน้า ${context.horizon} เดือน`], ['เดือนที่พยากรณ์', context.target]]
+  const metrics = [['เดือนตั้งต้น', context.origin], ['ระยะพยากรณ์', forecastHorizonLabel(context.horizon)], ['เดือนที่พยากรณ์', context.target]]
     .map(([label, value]) => ({ label, lines: wrap(value, 29, true, innerWidth / 3 - 28) }));
   rows.push({ height: 46 + Math.max(...metrics.map(item => item.lines.length)) * 44 + 22, content: { kind: 'metrics', items: metrics } });
   paragraph(context.filters, 24);

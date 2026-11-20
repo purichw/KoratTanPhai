@@ -1655,7 +1655,7 @@ export function NakhonRatchasimaLocalMap({
             )}
             {useForecastArchiveMap && forecastArchiveMonth && (
               <div>
-                <dt>เดือนตั้งต้น (T)</dt>
+                <dt>เดือนตั้งต้น</dt>
                 <dd>
                   {formatMonth(
                     previewForecastRecord?.issueMonth ?? forecastArchiveIssueMonth ??

@@ -17,6 +17,7 @@ import { AppSelect } from './AppSelect';
 import '../forecast-export.css';
 
 type Services = NonNullable<ReturnType<typeof useDatabaseWorkspace>>;
+const formatThaiNumber = new Intl.NumberFormat('th-TH').format;
 
 function currentExportOptions(): ExportOptions {
   const selection = readWorkspaceSelection(window.location, window.history.state);
@@ -95,7 +96,7 @@ function ExportDialog({ services, initial, onClose }: { services: Services; init
     if (job.current) return;
     const controller = new AbortController(); job.current = controller;
     const active = () => live.current && job.current === controller && !controller.signal.aborted;
-    setBusy(true); setError(''); setMessage('1/3 กำลังตรวจรุ่นข้อมูลและจำนวนพื้นที่');
+    setBusy(true); setError(''); setMessage('1/3 กำลังตรวจข้อมูลและจำนวนพื้นที่');
     try {
       // load() revalidates the Supabase revision even when this scope is cached.
       const archive = await loaders.full.load({ areaCode: options.areaCode, originPeriod: options.originPeriod });
@@ -143,7 +144,12 @@ function ExportDialog({ services, initial, onClose }: { services: Services; init
   const comparisonPeriods = periods.filter(period => period !== options.originPeriod
     && forecastTargetPeriod(period, 6) >= forecastTargetPeriod(options.originPeriod, 1)
     && forecastTargetPeriod(period, 1) <= forecastTargetPeriod(options.originPeriod, 6));
-  const counts = preview?.totals.reduce((sum, total) => ({ missing: sum.missing + total.counts[4], outOfScope: sum.outOfScope + total.counts[3] }), { missing: 0, outOfScope: 0 });
+  const counts = preview?.totals.reduce((sum, month) => ({
+    total: sum.total + month.total,
+    valid: sum.valid + month.valid,
+    outOfScope: sum.outOfScope + month.counts[3],
+    missing: sum.missing + month.counts[4],
+  }), { total: 0, valid: 0, outOfScope: 0, missing: 0 });
   const districts = [{ value: '30', label: 'ทุกอำเภอในจังหวัดนครราชสีมา' }, ...hierarchy.province.districts.map(district => ({ value: district.districtCode, label: `อำเภอ${district.nameTh}` }))];
   return <dialog className="nr-export-dialog" ref={dialog} aria-labelledby={`${id}-title`} onCancel={event => { event.preventDefault(); close(); }} onClick={event => { if (event.target === event.currentTarget) close(); }}>
     <div className="nr-export-body">
@@ -153,7 +159,7 @@ function ExportDialog({ services, initial, onClose }: { services: Services; init
       <div className="nr-export-scroll">
       <fieldset className="nr-export-filters" disabled={initializing || busy}>
         <legend className="sr-only">ตัวกรองรายงาน Excel</legend>
-        <MonthSelect label="เดือนตั้งต้น (T)" ariaLabel="เดือนตั้งต้นของไฟล์ Excel" value={options.originPeriod} options={periods.map(period => ({ value: period, label: formatMonth(period, 'th') }))} onChange={originPeriod => { changeOptions({ ...options, originPeriod }); setComparisonPeriod(''); }} icon={<CalendarDays size={19} />} />
+        <MonthSelect label="เดือนตั้งต้น" ariaLabel="เดือนตั้งต้นของไฟล์ Excel" value={options.originPeriod} options={periods.map(period => ({ value: period, label: formatMonth(period, 'th') }))} onChange={originPeriod => { changeOptions({ ...options, originPeriod }); setComparisonPeriod(''); }} icon={<CalendarDays size={19} />} />
         <AppSelect searchable label="พื้นที่" ariaLabel="พื้นที่ของไฟล์ Excel" value={options.areaCode} options={districts} onChange={areaCode => changeOptions({ ...options, areaCode })} icon={<MapPin size={19} />} />
         <AppSelect label="สถานะชลประทาน" ariaLabel="ชลประทานของไฟล์ Excel" value={options.irrigation} options={irrigationCriteria.map(value => ({ value, label: irrigationLabels[value] }))} onChange={irrigation => changeOptions({ ...options, irrigation: irrigation as ExportOptions['irrigation'] })} icon={<Droplets size={19} />} />
         <MonthSelect label="รอบตั้งต้นที่ใช้เปรียบเทียบ" value={comparisonPeriod} options={[{ value: '', label: 'ไม่เปรียบเทียบ' }, ...comparisonPeriods.map(period => ({ value: period, label: formatMonth(period, 'th') }))]} onChange={period => { setComparisonPeriod(period); setPreview(null); setError(''); setMessage(''); }} icon={<CalendarDays size={19} />} />
@@ -162,11 +168,14 @@ function ExportDialog({ services, initial, onClose }: { services: Services; init
       {options.originPeriod && <div className="nr-export-period"><CalendarDays size={18} aria-hidden="true" /><span><strong>พยากรณ์ล่วงหน้า 6 เดือน</strong><span>{formatMonth(forecastTargetPeriod(options.originPeriod, 1), 'th')} – {formatMonth(forecastTargetPeriod(options.originPeriod, 6), 'th')}</span></span></div>}
       {preview && counts && <section className="nr-export-preview" aria-labelledby={`${id}-preview`}>
         <h3 id={`${id}-preview`}>ตรวจข้อมูลก่อนดาวน์โหลด</h3>
-        <div className="nr-export-preview-counts"><p><strong>{preview.districts.length.toLocaleString('th-TH')}</strong> อำเภอ</p><p><strong>{preview.rows.length.toLocaleString('th-TH')}</strong> ตำบล</p><p><strong>{preview.rows.length * 6}</strong> รายการพยากรณ์</p></div>
-        <p>ไม่มีข้อมูล {counts.missing.toLocaleString('th-TH')} · นอกขอบเขตการศึกษา {counts.outOfScope.toLocaleString('th-TH')} รายการ</p>
-        <p className="nr-export-hint">1 รายการ = 1 ตำบล × 1 เดือน ทั้งสองสถานะไม่ถือเป็นความเสี่ยงระดับ 0</p>
+        <div className="nr-export-preview-counts"><p><strong>{formatThaiNumber(preview.districts.length)}</strong> อำเภอ</p><p><strong>{formatThaiNumber(preview.rows.length)}</strong> ตำบล</p><p><strong>{formatThaiNumber(counts.total)}</strong> แถวข้อมูลรายเดือน</p></div>
+        <dl className="nr-export-preview-breakdown">
+          <div><dt>มีผลพยากรณ์</dt><dd>{formatThaiNumber(counts.valid)} แถว</dd></div>
+          <div><dt>นอกขอบเขตการศึกษา</dt><dd>{formatThaiNumber(counts.outOfScope)} แถว</dd></div>
+          <div><dt>ไม่มีข้อมูล</dt><dd>{formatThaiNumber(counts.missing)} แถว</dd></div>
+        </dl>
+        <p className="nr-export-hint">แต่ละแถวแสดงข้อมูลของ 1 ตำบลใน 1 เดือน</p>
         {preview.comparison && <p>เทียบได้ {preview.comparison.targets.length} เดือน · {preview.comparison.rows.length.toLocaleString('th-TH')} คู่ จาก {formatMonth(preview.comparison.targets[0], 'th')} ถึง {formatMonth(preview.comparison.targets.at(-1)!, 'th')}</p>}
-        <p className="nr-export-revision">รุ่นข้อมูล: {preview.meta.datasetVersion}</p>
       </section>}
       <dl className="nr-export-contents">
         <div><dt>ขอบเขต</dt><dd>ทุกระดับความเสี่ยงของตำบลในพื้นที่ที่เลือก</dd></div>

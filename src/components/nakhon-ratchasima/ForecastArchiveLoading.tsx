@@ -17,7 +17,7 @@ export function DroughtWorkspaceLoading({ target, failed, retry, onNavigate }: L
         <div className="nr-loading-forecast-heading"><h2>{single ? "พยากรณ์ภัยแล้งรายตำบล" : "เปรียบเทียบพยากรณ์ภัยแล้งล่วงหน้า 6 เดือน"}</h2><Skeleton className="is-line" /></div>
         <div className="nr-loading-horizons">{[1, 2, 3, 4, 5, 6].map((horizon) => <div key={horizon}><strong>{forecastHorizonLabel(horizon, "short")}</strong><Skeleton /></div>)}</div>
         <div className={`nr-loading-context${single ? " is-single" : ""}`}>
-          {(single ? ["เดือนตั้งต้น (T)", "เดือนที่พยากรณ์", "พืชที่ประเมิน"] : ["เดือนตั้งต้น (T)", "เดือนที่พยากรณ์", "มีค่าพยากรณ์", "พืชที่ประเมิน"]).map((label) => <div key={label}><small>{label}</small><Skeleton className="is-value" /></div>)}
+          {(single ? ["เดือนตั้งต้น", "เดือนที่พยากรณ์", "พืชที่ประเมิน"] : ["เดือนตั้งต้น", "เดือนที่พยากรณ์", "มีค่าพยากรณ์", "พืชที่ประเมิน"]).map((label) => <div key={label}><small>{label}</small><Skeleton className="is-value" /></div>)}
         </div>
         <LoadingMap />
         {!single && <LoadingChart />}

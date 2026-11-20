@@ -24,7 +24,9 @@
 .nr-export-preview p { margin: 6px 0; font-size: 13px; line-height: 1.6; }
 .nr-export-preview-counts { display: flex; flex-wrap: wrap; gap: 6px 22px; }
 .nr-export-preview-counts strong { font-size: 22px; font-variant-numeric: tabular-nums; color: var(--ktp-navy-900); }
-.nr-export-preview .nr-export-revision { overflow-wrap: anywhere; color: var(--ktp-text-secondary); }
+.nr-export-preview-breakdown { display: grid; gap: 6px; margin: 6px 0 8px; padding-top: 8px; border-top: 1px solid var(--ktp-border); font-size: 13px; }
+.nr-export-preview-breakdown > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; }
+.nr-export-preview-breakdown dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
 .nr-export-contents { margin: 0; font-size: 14px; line-height: 1.6; }
 .nr-export-contents > div { display: grid; grid-template-columns: 76px 1fr; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--ktp-border); }
 .nr-export-contents dt { color: var(--ktp-text-secondary); }

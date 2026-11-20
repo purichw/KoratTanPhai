@@ -23,6 +23,15 @@ export async function smokeExcelExport({ page, viewport, output, archive }) {
   await expect(dialog).toContainText('ม.ค. 2569 – มิ.ย. 2569');
   await dialog.getByRole('button', { name: 'ตรวจข้อมูลก่อนส่งออก' }).click();
   await expect(downloadButton).toBeEnabled();
+  const preview = dialog.locator('.nr-export-preview');
+  await expect(preview).toContainText(`${(locations.length * 6).toLocaleString('th-TH')} แถวข้อมูลรายเดือน`);
+  await expect(preview).not.toContainText('รุ่นข้อมูล');
+  const values = locations.flatMap(row => archive.packedRiskByTargetMonth[origin][row.subdistrictCode]);
+  for (const [label, count] of [
+    ['มีผลพยากรณ์', values.filter(Number.isInteger).length],
+    ['นอกขอบเขตการศึกษา', values.filter(value => value === null).length],
+    ['ไม่มีข้อมูล', values.filter(value => value === undefined).length],
+  ]) await expect(preview.locator('.nr-export-preview-breakdown > div').filter({ hasText: label })).toContainText(`${count.toLocaleString('th-TH')} แถว`);
   await page.screenshot({ path: path.join(output, `${viewport}-excel-export.png`), fullPage: true });
   assert.equal(await dialog.evaluate(node => node.scrollWidth > node.clientWidth), false, 'Export dialog overflow');
   const event = page.waitForEvent('download', { timeout: 60_000 });

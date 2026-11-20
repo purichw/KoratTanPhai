@@ -5,7 +5,7 @@ import { WorkspaceSearch, WorkspaceSearchContext } from '../WorkspaceSearch';
 import { AppSelect } from '../AppSelect';
 import type { ForecastAnalysisOverlay } from '../../forecastAnalysis';
 import { formatMonth } from '../../i18n';
-import { forecastTargetPeriod } from '../../forecastPeriod';
+import { forecastHorizonLabel, forecastTargetPeriod } from '../../forecastPeriod';
 import { irrigationLabels, irrigationStatusFromSource, type IrrigationCriterion } from '../../irrigation';
 import { ForecastRiskValue } from '../ForecastRiskValue';
 import { LoadingAnalysisTable } from './ForecastLoadingPrimitives';
@@ -130,7 +130,7 @@ export function ForecastMapTools({ archive, originPeriod, horizon, areaCode, sco
           if (!playing && horizon === 6) onHorizonChange(1);
           setPlaying(!playing);
         }}>{playing ? <Pause size={17} /> : <Play size={17} />}</button>
-        <span className="nr-map-playback-period" role="status" aria-atomic="true"><strong>T+{horizon}</strong><span>{formatMonth(forecastTargetPeriod(originPeriod, horizon), 'th')}</span></span>
+        <span className="nr-map-playback-period" role="status" aria-atomic="true"><strong>{forecastHorizonLabel(horizon, 'short')}</strong><span>{formatMonth(forecastTargetPeriod(originPeriod, horizon), 'th')}</span></span>
       </div>}
     </div>
     {picked && <div className="nr-map-tool-result" role="status"><span>ต.{picked.subdistrictNameTh} · อ.{picked.districtNameTh}</span><ForecastRiskValue risk={archive.packedRiskByTargetMonth[originPeriod]?.[picked.subdistrictCode]?.[horizon - 1]} /><span>{irrigationLabels[irrigationStatusFromSource(picked.irrigationStatus)]}</span>
@@ -166,7 +166,7 @@ export function ForecastMapTools({ archive, originPeriod, horizon, areaCode, sco
         <p className="nr-analysis-context">เฉพาะนครราชสีมา · ผลพยากรณ์เป็นของตำบลที่ครอบคลุมพิกัด ไม่ใช่การประเมินความเสี่ยง ณ จุดหรือแปลงเกษตร</p>
         <button className="primary-button" type="submit" disabled={locating}><Crosshair size={17} />{locating ? 'กำลังค้นหาตำบล' : 'ค้นหาตำบล'}</button>
       </form>}
-      {tool === 'export' && <><p>เดือนตั้งต้น {formatMonth(originPeriod, 'th')} · T+{horizon} · พยากรณ์ {formatMonth(forecastTargetPeriod(originPeriod, horizon), 'th')}</p>
+      {tool === 'export' && <><p>เดือนตั้งต้น {formatMonth(originPeriod, 'th')} · {forecastHorizonLabel(horizon)} · พยากรณ์ {formatMonth(forecastTargetPeriod(originPeriod, horizon), 'th')}</p>
         <AppSelect ariaLabel="รูปแบบไฟล์แผนที่" value={format} onChange={value => setFormat(value as 'png' | 'pdf')} options={[{ value: 'png', label: 'PNG' }, { value: 'pdf', label: 'PDF' }]} />
         <AppSelect ariaLabel="ขอบเขตภาพรายงาน" value={framing} onChange={value => setFraming(value as 'scope' | 'camera')} options={[{ value: 'scope', label: 'พื้นที่ทั้งหมดของหน้านี้' }, { value: 'camera', label: 'มุมมองแผนที่ปัจจุบัน' }]} />
         <p className="nr-analysis-context">รายงาน A4 จัดหน้าตามเนื้อหา · PNG หลายหน้าจะรวมเป็นไฟล์ ZIP</p>

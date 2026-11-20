@@ -104,7 +104,7 @@ export function OperationalDroughtWorkspace({ target, onNavigate }: { target: Ta
           <dl className="nr-primary-source-facts">
             <div><dt>ข้อมูลสถานการณ์จริง</dt><dd>ยังไม่มีชุดข้อมูล actual ที่ยืนยันและพร้อมเผยแพร่</dd></div>
             <div><dt>ข้อมูลพืชและชลประทาน</dt><dd>ยังไม่มี observations สำหรับเดือนนี้ ข้อมูลชลประทานในคลัง rev03 เป็นบริบทของชุดพยากรณ์ ไม่ใช่สถานะน้ำปัจจุบัน</dd></div>
-            <div><dt>คลังพยากรณ์</dt><dd>rev03 เป็นคำพยากรณ์จากเดือนตั้งต้น T ถึง T+6 ไม่ใช่รายงานผลที่เกิดขึ้นจริง</dd></div>
+            <div><dt>คลังพยากรณ์</dt><dd>rev03 แสดงค่าพยากรณ์ล่วงหน้า 1 ถึง 6 เดือนจากเดือนตั้งต้น ค่าที่แสดงมาจากชุดข้อมูลพยากรณ์</dd></div>
             {data.snapshot?.partialPeriod && <div><dt>ข้อมูลระหว่างเดือน</dt><dd>ยังไม่มีวันที่ข้อมูลครอบคลุมถึง และไม่ใช่ผลสรุปทั้งเดือน</dd></div>}
           </dl>
         </DroughtOperationalDisclosure>

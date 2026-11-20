@@ -120,8 +120,8 @@ test('searchable analysis and export menus retain their parent modal and tab seq
   if (info.project.name === 'mobile') await page.getByRole('button', { name: 'เปิดเมนูหลัก' }).click();
   await page.getByRole('button', { name: 'ส่งออก Excel', exact: true }).click();
   const exportDialog = page.getByRole('dialog', { name: 'ส่งออกข้อมูลพยากรณ์' });
-  await exportDialog.getByRole('combobox', { name: /^เดือนตั้งต้น \(T\) / }).click();
-  await page.getByRole('searchbox', { name: 'ค้นหาตัวเลือก เดือนตั้งต้น (T)', exact: true }).fill('dec 2025');
+  await exportDialog.getByRole('combobox', { name: /^เดือนตั้งต้น / }).click();
+  await page.getByRole('searchbox', { name: 'ค้นหาตัวเลือก เดือนตั้งต้น', exact: true }).fill('dec 2025');
   await page.getByRole('option', { name: 'ธ.ค. 2568', exact: true }).click();
   await exportDialog.getByRole('combobox', { name: /^รอบตั้งต้นที่ใช้เปรียบเทียบ / }).click();
   await page.getByRole('searchbox', { name: 'ค้นหาตัวเลือก รอบตั้งต้นที่ใช้เปรียบเทียบ', exact: true }).fill('ตุลาคม');

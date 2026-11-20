@@ -33,7 +33,7 @@ test('Excel export filters, real download and fresh revision gate', async ({ pag
   await expect(dialog).toContainText('ม.ค. 2569 – มิ.ย. 2569');
   await dialog.getByRole('button', { name: 'ตรวจข้อมูลก่อนส่งออก' }).click();
   await expect(dialog.getByRole('heading', { name: 'ตรวจข้อมูลก่อนดาวน์โหลด' })).toBeVisible();
-  await expect(dialog.locator('.nr-export-preview')).toContainText('36 รายการพยากรณ์');
+  await expect(dialog.locator('.nr-export-preview')).toContainText('36 แถวข้อมูลรายเดือน');
   expect(downloads).toHaveLength(0);
   await page.screenshot({ path: testInfo.outputPath('excel-export-filters.png') });
   expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
@@ -64,7 +64,7 @@ test('Excel export filters, real download and fresh revision gate', async ({ pag
   current.packedRiskByTargetMonth['2025-12']['300301'][0] = 2;
   await dialog.getByRole('button', { name: 'ดาวน์โหลด Excel' }).click();
   await expect(dialog.getByRole('status')).toContainText('ข้อมูลเปลี่ยนจากที่ตรวจไว้');
-  await expect(dialog.locator('.nr-export-preview')).toContainText('test-only-export-new-publication');
+  await expect(dialog.locator('.nr-export-preview')).not.toContainText('test-only-export-new-publication');
   const nextEvent = page.waitForEvent('download');
   await dialog.getByRole('button', { name: 'ดาวน์โหลด Excel' }).click();
   const next = await nextEvent;
@@ -194,6 +194,12 @@ test('Excel export province preserves all 1734 source values through the workboo
   await dialog.getByRole('button', { name: 'ตรวจข้อมูลก่อนส่งออก' }).click();
   await expect(dialog.locator('.nr-export-preview')).toContainText('32 อำเภอ');
   await expect(dialog.locator('.nr-export-preview')).toContainText('289 ตำบล');
+  await expect(dialog.locator('.nr-export-preview')).toContainText('1,734 แถวข้อมูลรายเดือน');
+  await expect(dialog.locator('.nr-export-preview-breakdown > div').filter({ hasText: 'มีผลพยากรณ์' })).toContainText('702 แถว');
+  await expect(dialog.locator('.nr-export-preview-breakdown > div').filter({ hasText: 'นอกขอบเขตการศึกษา' })).toContainText('1,032 แถว');
+  await expect(dialog.locator('.nr-export-preview-breakdown > div').filter({ hasText: 'ไม่มีข้อมูล' })).toContainText('0 แถว');
+  await dialog.locator('.nr-export-preview').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath('excel-preview-coverage.png'), scale: 'css' });
   const event = page.waitForEvent('download');
   await dialog.getByRole('button', { name: 'ดาวน์โหลด Excel' }).click();
   const download = await event;

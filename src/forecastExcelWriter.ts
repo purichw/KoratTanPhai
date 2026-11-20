@@ -4,6 +4,7 @@ import JSZip from 'jszip';
 import { DOMParser, XMLSerializer, onWarningStopParsing } from '@xmldom/xmldom';
 import templateUrl from './assets/forecast-export-template.xlsx?url';
 import { exportHorizons, exportRiskLabel, exportRiskLabels, type ForecastExport } from './forecastExportModel';
+import { forecastHorizonLabel } from './forecastPeriod';
 import { formatMonth } from './i18n';
 import { irrigationLabels, irrigationStatusFromSource } from './irrigation';
 import { withLoadDeadline } from './data/loadDeadline';
@@ -86,7 +87,7 @@ const legacyFieldUses: Record<string, string> = {
   sourceId: 'รายตำบล!A; ฐาน Pivot!A', districtCode: 'สรุปอำเภอ!A; รายตำบล!B; ฐาน Pivot!B',
   districtNameTh: 'สรุปอำเภอ!B; รายตำบล!C; ฐาน Pivot!C; PivotTable: อำเภอ',
   subdistrictCode: 'รายตำบล!D; ฐาน Pivot!D', subdistrictNameTh: 'รายตำบล!E; ฐาน Pivot!E',
-  originPeriod: 'รายตำบล!G; ฐาน Pivot!G; ที่มาและนิยาม: เดือนตั้งต้น (T)',
+  originPeriod: 'รายตำบล!G; ฐาน Pivot!G; ที่มาและนิยาม: เดือนตั้งต้น',
   riskLabelTh: 'ฐาน Pivot!K; PivotTable: ระดับความเสี่ยง',
   locationCount: 'ฐาน Pivot!L (ก่อนรวม / before aggregation)', sourceVintageKey: 'ฐาน Pivot!M',
   sourceWorkbook: 'ที่มาและนิยาม: ไฟล์ต้นฉบับ', sourceSheet: 'ที่มาและนิยาม: ชีตพยากรณ์',
@@ -101,7 +102,7 @@ function legacyDictionary(): WriterDictionaryEntry[] {
     sampleValue: sample, blankMeaningTh: blankTh, blankMeaningEn: blankEn,
   });
   return [
-    entry('highestForecastRiskDisplay', 'สรุปอำเภอ!E:J (T+1–T+6)', 'ระดับสูงสุดในตำบลที่ผ่านตัวกรองแต่ละระยะ ไม่ใช่ค่าเฉลี่ยหรือความเสี่ยงของทุกตำบล; ใช้ข้อความเมื่อไม่มีค่าพยากรณ์', 'Highest valid class among filtered subdistricts per horizon, not an average or the class of every subdistrict; uses a status label when no valid values exist.', 'integer | string', 2),
+    entry('highestForecastRiskDisplay', 'สรุปอำเภอ!E:J (ล่วงหน้า 1–6 เดือน)', 'ระดับสูงสุดในตำบลที่ผ่านตัวกรองแต่ละระยะ ไม่ใช่ค่าเฉลี่ยหรือความเสี่ยงของทุกตำบล; ใช้ข้อความเมื่อไม่มีค่าพยากรณ์', 'Highest valid class among filtered subdistricts per horizon, not an average or the class of every subdistrict; uses a status label when no valid values exist.', 'integer | string', 2),
     entry('forecastRiskDisplay', 'รายตำบล!H:M; ฐาน Pivot!J', 'ค่า 0/1/2 ตามต้นฉบับ หรือข้อความแยกนอกขอบเขตกับไม่มีข้อมูล หากต้องการคอลัมน์ตัวเลขล้วนให้ใช้ forecastRisk ในข้อมูลสำหรับระบบ', 'Original class 0/1/2, or distinct out-of-scope/missing labels. Use forecastRisk in the machine-readable sheet for a numeric-only column.', 'integer | string', 'นอกขอบเขตการศึกษา'),
     entry('irrigationLabelTh', 'รายตำบล!F; ฐาน Pivot!F; PivotTable: ชลประทาน', 'ชื่อสถานะชลประทานภาษาไทยจากข้อมูลต้นทาง ไม่ได้แปลว่ามีน้ำเพียงพอในปัจจุบัน', 'Thai irrigation-status label from source data; it does not imply current water sufficiency.', 'string', irrigationLabels.rainfed),
     entry('sourceAmphoeEn', 'รายตำบล!N', 'ชื่ออำเภอภาษาอังกฤษตามต้นฉบับ เก็บไว้ตรวจย้อนกลับแม้มีการแก้ไขการจับคู่พื้นที่', 'Original English district name retained for traceability even when its administrative mapping was corrected.', 'string', 'Dan Khun Thot'),
@@ -109,9 +110,9 @@ function legacyDictionary(): WriterDictionaryEntry[] {
     entry('irrigationStatusRaw', 'รายตำบล!P', 'ข้อความสถานะชลประทานเดิมก่อนจัดกลุ่ม รวมการสะกดในต้นฉบับ', 'Original irrigation text before normalization, preserving source spelling.', 'string', 'RainFed'),
     entry('scopeCode', 'สถิติรายเดือน!A', 'รหัสอำเภอ หรือคำว่า รวม สำหรับผลรวมทุกพื้นที่ที่รวมในไฟล์ตามตัวกรอง', 'District code, or รวม for the total of all filtered areas included in this file.', 'string', 'รวม'),
     entry('scopeNameTh', 'สถิติรายเดือน!B', 'ชื่อพื้นที่ภาษาไทยของแถวสรุปตามขอบเขตส่งออก', 'Thai area label of the summary row within the exported scope.', 'string', 'จังหวัดนครราชสีมา'),
-    entry('horizonLabel', 'สถิติรายเดือน!C; ฐาน Pivot!H; PivotTable: ระยะ', 'ข้อความ T+1 ถึง T+6 โดย T คือเดือนตั้งต้นเดียวกันของการส่งออก', 'Display label T+1 through T+6, where T is the same exported origin month.', 'string', 'T+1', 'เดือนล่วงหน้า / months ahead'),
-    entry('targetMonthLabelTh', 'สถิติรายเดือน!D; ฐาน Pivot!I; หัวคอลัมน์ รายตำบล!H:M และ สรุปอำเภอ!E:J', 'เดือนเป้าหมายแสดงภาษาไทยและปี พ.ศ.; หัวคอลัมน์ระบุ T+ ประกอบ ใช้ targetPeriod สำหรับค่า ISO', 'Target month displayed in Thai with Buddhist Era year; column headers also show the horizon. Use targetPeriod for the ISO value.', 'string', 'ม.ค. 2569', 'เดือนปฏิทิน / calendar month'),
-    entry('horizonTargetLabelTh', 'วิเคราะห์!A8:A14', 'ป้ายระยะและเดือนเป้าหมายของแต่ละแถวในตารางวิเคราะห์', 'Combined horizon and target-month label for each analysis row.', 'string', 'T+1 ม.ค. 2569'),
+    entry('horizonLabel', 'สถิติรายเดือน!C; ฐาน Pivot!H; PivotTable: ระยะ', 'ระยะ 1 ถึง 6 เดือนนับจากเดือนตั้งต้นเดียวกันของการส่งออก', 'Lead times of one through six months from the same exported origin month.', 'string', '1 เดือน', 'เดือนล่วงหน้า / months ahead'),
+    entry('targetMonthLabelTh', 'สถิติรายเดือน!D; ฐาน Pivot!I; หัวคอลัมน์ รายตำบล!H:M และ สรุปอำเภอ!E:J', 'เดือนเป้าหมายแสดงภาษาไทยและปี พ.ศ.; หัวคอลัมน์ระบุจำนวนเดือนล่วงหน้าประกอบ ใช้ targetPeriod สำหรับค่า ISO', 'Target month displayed in Thai with Buddhist Era year; column headers also show the horizon. Use targetPeriod for the ISO value.', 'string', 'ม.ค. 2569', 'เดือนปฏิทิน / calendar month'),
+    entry('horizonTargetLabelTh', 'วิเคราะห์!A8:A14', 'ป้ายระยะและเดือนเป้าหมายของแต่ละแถวในตารางวิเคราะห์', 'Combined horizon and target-month label for each analysis row.', 'string', '1 เดือน · ม.ค. 2569'),
     entry('filteredSubdistrictCount', 'สรุปอำเภอ!C; สถิติรายเดือน!E; วิเคราะห์!I8:I14', 'จำนวนตำบลที่ผ่านตัวกรองพื้นที่และชลประทาน รวมทั้งแถวที่นอกขอบเขตหรือไม่มีข้อมูล', 'Number of subdistricts matching area and irrigation filters, including out-of-scope and missing records.', 'integer', 289, 'ตำบล / subdistricts'),
     entry('districtSubdistrictCount', 'สรุปอำเภอ!D', 'จำนวนตำบลทั้งอำเภอตามทะเบียนพื้นที่ ก่อนใช้ตัวกรองชลประทาน', 'Total canonical subdistrict count in the district before applying irrigation filters.', 'integer', 6, 'ตำบล / subdistricts'),
     entry('validForecastCount', 'สถิติรายเดือน!F; วิเคราะห์!G8:G14', 'จำนวนตำบลที่มีค่าพยากรณ์ 0/1/2 ใช้เป็นตัวหารของสัดส่วนเสี่ยง', 'Count of subdistricts with class 0/1/2; denominator of the risk share.', 'integer', 117, 'ตำบล / subdistricts'),
@@ -124,7 +125,7 @@ function legacyDictionary(): WriterDictionaryEntry[] {
     ].map(([field, statsColumn, analysisColumn, labelTh, labelEn]) => entry(String(field), `สถิติรายเดือน!${statsColumn}; วิเคราะห์!${analysisColumn}8:${analysisColumn}14`,
       `จำนวนตำบลในสถานะ ${labelTh} สำหรับระยะนั้น แยกนอกขอบเขตและไม่มีข้อมูลออกจากค่า 0`, `Count of subdistricts with ${labelEn} for that horizon; out-of-scope and missing states are distinct from class 0.`, 'integer', 10, 'ตำบล / subdistricts')),
     { ...entry('riskShare', 'สถิติรายเดือน!L; วิเคราะห์!H8:H14', '(จำนวนเสี่ยงปานกลาง + สูง) หารจำนวนที่มีค่า 0/1/2; ไม่รวมตำบลนอกขอบเขตหรือไม่มีข้อมูลในตัวหาร', '(Moderate + high count) divided by valid class 0/1/2 count; out-of-scope and missing records are excluded from the denominator.', 'number | string', 0.5, 'สัดส่วน 0–1 แสดงเป็น % / fraction 0–1 displayed as %', 'ชีตวิเคราะห์แสดงว่างเมื่อไม่มีค่าพยากรณ์; ชีตสถิติใช้ข้อความ ไม่มีค่าพยากรณ์ ไม่ใช่ 0%', 'Analysis shows blank when no valid values exist; Statistics uses ไม่มีค่าพยากรณ์, not 0%'), nullable: true },
-    entry('pivotLocationHorizonCount', 'PivotTable: ผลรวม จำนวนตำบล', 'จำนวนแถวตำบลต่อระยะหลังกรอง Pivot; ถ้ารวมหลาย T+ ตำบลเดิมอาจถูกนับหลายครั้ง', 'Sum of subdistrict-horizon rows after Pivot filters; totals across multiple horizons can count the same subdistrict more than once.', 'integer', 1734, 'ตำบล-เดือน / subdistrict-months'),
+    entry('pivotLocationHorizonCount', 'PivotTable: ผลรวม จำนวนตำบล', 'จำนวนแถวตำบลต่อระยะหลังกรอง Pivot; ถ้ารวมหลายเดือนพยากรณ์ ตำบลเดิมอาจถูกนับหลายครั้ง', 'Sum of subdistrict-horizon rows after Pivot filters; totals across multiple horizons can count the same subdistrict more than once.', 'integer', 1734, 'ตำบล-เดือน / subdistrict-months'),
     entry('analysisDistrictSelection', 'วิเคราะห์!B4; ที่มาและนิยาม!D1:D', 'อำเภอที่เลือกสำหรับสูตรและกราฟ หรือ ทั้งหมด เฉพาะข้อมูลที่รวมในไฟล์', 'District selection for live formulas and chart, or ทั้งหมด, limited to records included in the file.', 'string', 'ทั้งหมด'),
     entry('analysisIrrigationSelection', 'วิเคราะห์!E4; ที่มาและนิยาม!E1:E', 'สถานะชลประทานที่เลือกสำหรับสูตรและกราฟ หรือ ทั้งหมด เฉพาะข้อมูลที่รวมในไฟล์', 'Irrigation selection for live formulas and chart, or ทั้งหมด, limited to records included in the file.', 'string', 'ทั้งหมด'),
     entry('metadataTopic', 'ที่มาและนิยาม!A', 'ชื่อหัวข้อสำหรับอธิบายที่มา ขอบเขต รุ่นข้อมูล และนิยามของรายงาน', 'Topic identifying report provenance, scope, data revision, or business definition.', 'string', 'Dataset version'),
@@ -262,7 +263,7 @@ export async function createForecastWorkbook(report: ForecastExport, templateByt
   const origin = formatMonth(report.options.originPeriod, 'th');
   const area = report.options.areaCode === '30' ? 'จังหวัดนครราชสีมา' : `อำเภอ${report.districts[0].name}`;
   const context = `เดือนตั้งต้น ${origin} | ${area} | ชลประทาน: ${irrigationLabels[report.options.irrigation]}`;
-  const horizonHeaders = report.targets.map((target, index) => `T+${index + 1} ${formatMonth(target, 'th')}`);
+  const horizonHeaders = report.targets.map((target, index) => `${forecastHorizonLabel(index + 1, 'short')} · ${formatMonth(target, 'th')}`);
   setup(districts, [14, 28, 16, 16, ...exportHorizons.map(() => 23)]);
   heading(districts, 'ระดับสูงสุดที่พบในตำบล แยกรายอำเภอ', context);
   table(districts, 'DistrictSummary', ['รหัสอำเภอ', 'อำเภอ', 'ตำบลตามตัวกรอง', 'ตำบลทั้งอำเภอ', ...horizonHeaders], report.districts.map(district => [
@@ -273,7 +274,7 @@ export async function createForecastWorkbook(report: ForecastExport, templateByt
   districts.getCell('A3').value = 'ระดับสูงสุด ไม่ใช่ค่าเฉลี่ยหรือสถานะของทุกตำบล; 0 = ไม่พบสัญญาณเสี่ยง, 1 = ปานกลาง, 2 = สูง';
 
   setup(tambons, [13, 14, 27, 14, 25, 33, 16, ...exportHorizons.map(() => 23), 30, 25, 21]);
-  heading(tambons, 'ค่าพยากรณ์รายตำบล T+1–T+6', context);
+  heading(tambons, 'ค่าพยากรณ์รายตำบลล่วงหน้า 1–6 เดือน', context);
   const rawRows: CellValue[][] = report.rows.map(row => [row.sourceId, row.districtCode, row.districtNameTh, row.subdistrictCode,
     row.subdistrictNameTh, irrigationLabels[irrigationStatusFromSource(row.irrigationStatus)], report.options.originPeriod,
     ...row.risks.map(risk => risk ?? exportRiskLabel(risk)), row.sourceAmphoeEn, row.sourceTambonEn, row.irrigationStatusRaw]);
@@ -283,7 +284,7 @@ export async function createForecastWorkbook(report: ForecastExport, templateByt
 
   const longRows: CellValue[][] = report.rows.flatMap(row => exportHorizons.map((horizon, index) => [row.sourceId, row.districtCode, row.districtNameTh,
     row.subdistrictCode, row.subdistrictNameTh, irrigationLabels[irrigationStatusFromSource(row.irrigationStatus)], report.options.originPeriod,
-    `T+${horizon}`, formatMonth(report.targets[index], 'th'), row.risks[index] ?? exportRiskLabel(row.risks[index]),
+    forecastHorizonLabel(horizon, 'short'), formatMonth(report.targets[index], 'th'), row.risks[index] ?? exportRiskLabel(row.risks[index]),
     exportRiskLabel(row.risks[index]), 1, `${row.sourceId}|${report.options.originPeriod}|T+${horizon}`]));
   setup(data, [13, 14, 27, 14, 25, 33, 16, 10, 20, 26, 28, 17, 28]);
   table(data, 'ForecastData', longHeaders, longRows, 1);
@@ -292,7 +293,7 @@ export async function createForecastWorkbook(report: ForecastExport, templateByt
   setup(statistics, [14, 27, 10, 20, 17, 17, 20, 20, 17, 19, 17, 20]);
   heading(statistics, 'จำนวนตำบลแยกตามระดับและเดือนพยากรณ์', context);
   const groups = [{ code: 'รวม', name: area, horizons: report.totals }, ...report.districts];
-  const statsRows = groups.flatMap(group => group.horizons.map((item, index) => [group.code, group.name, `T+${index + 1}`,
+  const statsRows = groups.flatMap(group => group.horizons.map((item, index) => [group.code, group.name, forecastHorizonLabel(index + 1, 'short'),
     formatMonth(report.targets[index], 'th'), item.total, item.valid, ...item.counts, item.riskShare ?? 'ไม่มีค่าพยากรณ์']));
   table(statistics, 'MonthlyStatistics', ['รหัสอำเภอ', 'อำเภอ/รวม', 'ระยะ', 'เดือนพยากรณ์', 'ตำบลตามตัวกรอง', 'มีค่าพยากรณ์', 'ไม่พบสัญญาณเสี่ยง', 'เสี่ยงปานกลาง', 'เสี่ยงสูง', 'นอกขอบเขต', 'ไม่มีข้อมูล', 'สัดส่วนตำบลเสี่ยง'], statsRows);
   statistics.getColumn(12).numFmt = '0.0%';
@@ -320,9 +321,9 @@ export async function createForecastWorkbook(report: ForecastExport, templateByt
   const range = (column: string) => `'ฐาน Pivot'!$${column}$2:$${column}$${end}`;
   report.totals.forEach((item, index) => {
     const row = index + 9;
-    dashboard.getCell(`A${row}`).value = `T+${index + 1} ${formatMonth(report.targets[index], 'th')}`;
+    dashboard.getCell(`A${row}`).value = `${forecastHorizonLabel(index + 1, 'short')} · ${formatMonth(report.targets[index], 'th')}`;
     exportRiskLabels.forEach((label, risk) => {
-      dashboard.getCell(row, risk + 2).value = formula(`COUNTIFS(${range('H')},"T+${index + 1}",${range('C')},IF($B$4="ทั้งหมด","*",$B$4),${range('F')},IF($E$4="ทั้งหมด","*",$E$4),${range('K')},"${label}")`, item.counts[risk]);
+      dashboard.getCell(row, risk + 2).value = formula(`COUNTIFS(${range('H')},"${forecastHorizonLabel(index + 1, 'short')}",${range('C')},IF($B$4="ทั้งหมด","*",$B$4),${range('F')},IF($E$4="ทั้งหมด","*",$E$4),${range('K')},"${label}")`, item.counts[risk]);
     });
     dashboard.getCell(`G${row}`).value = formula(`SUM(B${row}:D${row})`, item.valid);
     dashboard.getCell(`H${row}`).value = formula(`IF(G${row}=0,"",(C${row}+D${row})/G${row})`, item.riskShare ?? '');
@@ -341,17 +342,17 @@ export async function createForecastWorkbook(report: ForecastExport, templateByt
   pivot.mergeCells('D1:H1');
   pivot.getCell('D1').value = 'หากตารางยังว่าง เลือก Data > Refresh All';
   pivot.mergeCells('D2:H2');
-  pivot.getCell('D2').value = 'ผลรวมข้าม T+ คือจำนวนตำบล-เดือน ตำบลเดิมนับซ้ำได้';
+  pivot.getCell('D2').value = 'ผลรวมข้ามเดือนพยากรณ์ คือจำนวนตำบล-เดือน ตำบลเดิมนับซ้ำได้';
   pivot.getCell('A45').value = 'PivotTable: ใช้ตัวกรองระดับความเสี่ยงและชลประทาน; หากยังไม่แสดงผล เลือก Data > Refresh All ใน Microsoft Excel';
-  pivot.getCell('A46').value = 'จำนวนที่รวมข้าม T+ คือจำนวนตำบล-เดือน ตำบลเดิมนับซ้ำได้ ไม่ใช่จำนวนตำบลไม่ซ้ำ';
+  pivot.getCell('A46').value = 'จำนวนที่รวมข้ามเดือนพยากรณ์ คือจำนวนตำบล-เดือน ตำบลเดิมนับซ้ำได้ ไม่ใช่จำนวนตำบลไม่ซ้ำ';
 
   setup(notes, [32, 105]);
   heading(notes, 'แหล่งข้อมูลและนิยาม', 'รายงานพยากรณ์ ไม่ใช่สถานการณ์ตรวจวัดจริง');
   const source = forecastSourceForOrigin(report.meta, report.options.originPeriod);
   const baselineSource = report.comparison ? forecastSourceForOrigin(report.comparison.baselineMeta, report.comparison.baselineOriginPeriod) : null;
   const metadata: CellValue[][] = [
-    ['เดือนตั้งต้น (T)', report.options.originPeriod], ['ขอบเขตพื้นที่', area], ['ตัวกรองชลประทาน', irrigationLabels[report.options.irrigation]],
-    ['ขอบเขตความเสี่ยง', 'ทุกระดับ ตลอด T+1–T+6'], ['เวลาส่งออก (Asia/Bangkok)', new Intl.DateTimeFormat('th-TH', { dateStyle: 'long', timeStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(report.exportedAt)],
+    ['เดือนตั้งต้น', report.options.originPeriod], ['ขอบเขตพื้นที่', area], ['ตัวกรองชลประทาน', irrigationLabels[report.options.irrigation]],
+    ['ขอบเขตความเสี่ยง', 'ทุกระดับ ตลอด 6 เดือนพยากรณ์'], ['เวลาส่งออก (Asia/Bangkok)', new Intl.DateTimeFormat('th-TH', { dateStyle: 'long', timeStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(report.exportedAt)],
     ['ต้นทาง', 'Supabase: ข้อมูลที่ตรวจสอบรุ่นล่าสุดก่อนส่งออก'], ['ไฟล์ต้นฉบับ / ที่มารอบนี้', source.workbook], ['ชีตพยากรณ์', source.sheet],
     ['Dataset ID', report.meta.datasetId], ['Dataset version', report.meta.datasetVersion], ['SHA-256 ต้นฉบับ', source.sha || 'ไม่มีไฟล์ต้นฉบับ: ตรวจแก้ใน CMS'], ['SHA-256 normalized manifest', report.meta.normalizedManifestSha256],
     ['รุ่นรูปแบบส่งออก / Export format version', report.exportVersion], ['รุ่นแม่แบบ / Template version', FORECAST_TEMPLATE_VERSION],
@@ -364,8 +365,8 @@ export async function createForecastWorkbook(report: ForecastExport, templateByt
       ['SHA-256 รอบอ้างอิง / Baseline source SHA-256', baselineSource!.sha || 'ไม่มีไฟล์ต้นฉบับ: ตรวจแก้ใน CMS'],
       ['นิยามการเปรียบเทียบ / Comparison meaning', 'จับคู่รหัสตำบลและเดือนเป้าหมายเดียวกันเท่านั้น ผลต่างเป็นรหัสรอบที่เลือกลบรอบอ้างอิง ไม่ใช่เปอร์เซ็นต์ / Matches subdistrict code and identical target month only; delta is current minus baseline class code, not a percentage.'],
     ] : []),
-    ['วิธีตรวจย้อนกลับ', 'Source ID + เดือนตั้งต้น (Source_YearMonth) + T+ ของคอลัมน์ เทียบกับไฟล์และชีตต้นฉบับที่ระบุ'],
-    ['การนับเดือน', 'T+1 คือเดือนถัดจากเดือนตั้งต้น; T+6 คือเดือนตั้งต้นบวก 6 เดือน'],
+    ['วิธีตรวจย้อนกลับ', 'Source ID + เดือนตั้งต้น (Source_YearMonth) + จำนวนเดือนล่วงหน้าในหัวคอลัมน์ เทียบกับไฟล์และชีตต้นฉบับที่ระบุ'],
+    ['การนับเดือน', 'เริ่มเดือนถัดจากเดือนตั้งต้นและนับไปจนครบ 6 เดือน'],
     ...exportRiskLabels.map((label, index) => [index < 3 ? `ค่า ${index}` : label, index < 3 ? label : index === 3 ? 'ช่องว่างในต้นฉบับ อยู่นอกขอบเขตการพยากรณ์ ไม่ใช่ 0' : 'ไม่มีรายการสำหรับตำบลและระยะที่เลือก แยกจากช่องว่างต้นฉบับ']),
     ['ระดับอำเภอ', 'ระดับสูงสุดที่พบในตำบลที่ผ่านตัวกรอง ไม่ใช่ค่าเฉลี่ย ไม่ได้หมายความว่าทุกตำบลในอำเภอมีความเสี่ยงระดับนี้'],
     ['สัดส่วนความเสี่ยง', '(จำนวนปานกลาง + จำนวนสูง) / จำนวนที่มีค่า 0/1/2; ไม่มีค่าพยากรณ์แสดงว่าง ไม่แสดง 0%'],
@@ -492,7 +493,7 @@ async function finalizeWorkbookArchive(bytes: Uint8Array, book: ExcelJS.Workbook
     const xml = parser.parseFromString(await entry.async('string'), 'application/xml');
     const drawingNs = 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing';
     for (const properties of Array.from(xml.getElementsByTagNameNS(drawingNs, 'cNvPr'))) {
-      properties.setAttribute('descr', 'จำนวนตำบลที่มีผลพยากรณ์แต่ละระดับตลอด T+1–T+6; ดูตัวเลขและสถานะข้อมูลครบในตารางชีตวิเคราะห์ แถว 8–14 / Subdistrict counts by forecast class for T+1–T+6; complete values and data statuses are in the Analysis sheet, rows 8–14.');
+      properties.setAttribute('descr', 'จำนวนตำบลที่มีผลพยากรณ์แต่ละระดับตลอด 6 เดือนพยากรณ์; ดูตัวเลขและสถานะข้อมูลครบในตารางชีตวิเคราะห์ แถว 8–14 / Subdistrict counts by forecast class for the six forecast months; complete values and data statuses are in the Analysis sheet, rows 8–14.');
       properties.setAttribute('title', 'พยากรณ์ภัยแล้ง 6 เดือน / Six-month drought forecast');
     }
     zip.file(name, new XMLSerializer().serializeToString(xml));

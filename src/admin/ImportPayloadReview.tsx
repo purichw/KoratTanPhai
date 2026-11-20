@@ -25,7 +25,7 @@ export function ImportPayloadReview({ kind, payload, base, validation, onChange 
     {validation.error && <p className="cms-error" role="alert">{validation.error}<button type="button" className="cms-text-button" onClick={validation.retry}><RefreshCw size={16} />ลองตรวจใหม่</button></p>}
     {base && <details className="cms-issues"><summary>ต่างจากชุดที่เผยแพร่ {changes.length} ค่า · ตรงกัน {rows.length - changes.length} ค่า</summary>
       <p>การเปลี่ยนค่าจากชุดเดิมไม่ใช่แถวซ้ำขัดแย้ง ยังต้องยืนยันเผยแพร่จากฉบับร่าง</p>
-      <ul>{changes.slice(0, 100).map(row => <li key={`${row.subdistrictCode}/${row.horizonMonths}`}>รหัส {String(row.subdistrictCode)} · T+{String(row.horizonMonths)}:
+      <ul>{changes.slice(0, 100).map(row => <li key={`${row.subdistrictCode}/${row.horizonMonths}`}>รหัส {String(row.subdistrictCode)} · ล่วงหน้า {String(row.horizonMonths)} เดือน
         {' '}{displayCell('riskCode', baseline.get(`${row.subdistrictCode}/${row.horizonMonths}`)!.riskCode)} → {displayCell('riskCode', row.riskCode)}</li>)}</ul>
       {changes.length > 100 && <p>แสดง 100 จาก {changes.length} ค่าที่เปลี่ยน</p>}</details>}
     {validation.report && !validation.report.valid && <details className="cms-issues" open><summary>รายละเอียดที่ต้องแก้ไข</summary><ul>

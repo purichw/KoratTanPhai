@@ -140,7 +140,7 @@ export function DroughtForecastArchiveSummaryMetrics({
       value: selectedRecord
         ? forecastArchiveRecordLabel(selectedRecord)
         : "ไม่มีข้อมูลในรอบนี้",
-      detail: selectedRecord ? `${forecastHorizonLabel(selectedRecord.horizon)} · พยากรณ์ ${formatMonth(selectedRecord.targetMonth, "th")} · เดือนตั้งต้น (T) ${formatMonth(selectedRecord.issueMonth, "th")}` : "ไม่แปลงเป็นไม่มีความเสี่ยง",
+      detail: selectedRecord ? `${forecastHorizonLabel(selectedRecord.horizon)} · พยากรณ์ ${formatMonth(selectedRecord.targetMonth, "th")} · เดือนตั้งต้น ${formatMonth(selectedRecord.issueMonth, "th")}` : "ไม่แปลงเป็นไม่มีความเสี่ยง",
       icon: <TrendingUp size={18} />,
       tone: selectedRecord
         ? selectedRecord.forecastRisk === 2

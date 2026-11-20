@@ -5,11 +5,11 @@
 The shared `ForecastExcelExport` entry lives in the primary navigation, including
 the mobile menu. It is available only inside `DatabaseWorkspaceProvider`.
 
-- Filters: source/origin month T, province or district, irrigation status, optional
+- Filters: origin month, province or district, irrigation status, optional
   second origin whose six-month forecast window overlaps the selected origin.
 - Prefills the visible route. A tambon route defaults to its parent district so
   the district summary does not silently represent a single tambon.
-- Always includes all risk states and T+1 through T+6. The map's selected horizon
+- Always includes all risk states for the six months after the origin. The map's selected horizon
   and risk filter do not truncate this multi-month report.
 - Changing export filters does not navigate or change the map's filters.
 
@@ -17,9 +17,10 @@ the mobile menu. It is available only inside `DatabaseWorkspaceProvider`.
 
 Opening the dialog loads the lightweight overview slice for available months.
 **ตรวจข้อมูลก่อนส่งออก** prepares a preview with the number of districts,
-subdistricts and location-month records, missing/out-of-scope counts, the forecast
-window and dataset revision. One record means one tambon in one target month;
-neither missing nor out-of-scope records are counted as numeric risk zero.
+subdistricts, the forecast window and the total location-month rows. The preview
+breaks that total down into rows with a forecast, rows outside the study scope
+and rows with missing data. One row means one tambon in one target month. Revision
+metadata remains in the workbook for traceability.
 
 The dialog owns isolated Supabase loaders. Prepare and Download both call
 `full.load({ areaCode, originPeriod })`: this checks the

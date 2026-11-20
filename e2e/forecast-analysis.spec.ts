@@ -62,6 +62,9 @@ for (const sample of samples) test(`analysis scope and six monthly filters ${sam
     : `ตำบล${members[0].subdistrictNameTh} · อำเภอ${members[0].districtNameTh}`;
   await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(`วิเคราะห์พยากรณ์ · ${scopeName}`);
   await expectDialogBounds(page);
+  await expect(dialog.locator('.nr-analysis-table thead th').filter({ hasText: /เดือน/ })).toHaveCount(6);
+  await expect(dialog.getByRole('columnheader', { name: /^1 เดือน/ })).toBeVisible();
+  await expect(dialog.getByRole('columnheader', { name: /^6 เดือน/ })).toBeVisible();
   if (sample.code === '30') {
     const expected = [...new Set(members.map(l => l.districtCode))].sort().map(code => ({ code,
       risks: [0, 1, 2, 3, 4, 5].map(h => {
@@ -89,7 +92,7 @@ for (const sample of samples) test(`analysis scope and six monthly filters ${sam
   })))).toEqual(expectedAll);
   const settledReads = reads.length;
   for (let h = 1; h <= 6; h++) {
-    await choose(page, 'รูปแบบความเสี่ยง 6 เดือน', `มีความเสี่ยงใน T+${h}`);
+    await choose(page, 'รูปแบบความเสี่ยง 6 เดือน', `มีความเสี่ยงที่ระยะ ${h} เดือน`);
     const expected = members.filter(l => [1, 2].includes(archive.packedRiskByTargetMonth[sample.origin][l.subdistrictCode][h - 1] as number));
     await expect(tableRows).toHaveCount(expected.length);
     expect(await tableRows.locator('th small').allTextContents()).toEqual(expected.map(l => `อ.${l.districtNameTh} · ${l.subdistrictCode} · ID ${l.sourceId}`));
@@ -97,7 +100,7 @@ for (const sample of samples) test(`analysis scope and six monthly filters ${sam
     await expect(page.locator('.nr-analysis-loading, .nr-analysis-refresh')).toHaveCount(0);
     await expectDialogBounds(page);
   }
-  await choose(page, 'รูปแบบความเสี่ยง 6 เดือน', 'เริ่มเสี่ยงครั้งแรกในรอบที่ T+3');
+  await choose(page, 'รูปแบบความเสี่ยง 6 เดือน', 'เริ่มเสี่ยงครั้งแรกที่ระยะ 3 เดือน');
   const first3 = members.filter(l => {
     const values = archive.packedRiskByTargetMonth[sample.origin][l.subdistrictCode];
     return values[0] === 0 && values[1] === 0 && [1, 2].includes(values[2] as number);
@@ -153,7 +156,7 @@ test('analysis empty results fit their content and offer a scoped reset', async 
   const url = page.url();
   const empty = dialog.locator('.nr-analysis-empty');
   const search = dialog.getByRole('searchbox', { name: 'ค้นหาในตารางพยากรณ์' });
-  await choose(page, 'รูปแบบความเสี่ยง 6 เดือน', 'มีความเสี่ยงใน T+5');
+  await choose(page, 'รูปแบบความเสี่ยง 6 เดือน', 'มีความเสี่ยงที่ระยะ 5 เดือน');
   await expect(empty.getByRole('heading')).toHaveText('ไม่พบตำบลตามตัวกรองนี้');
   await expect(dialog.getByRole('button', { name: 'แสดงบนแผนที่', exact: true })).toBeDisabled();
   await empty.getByRole('button', { name: 'ล้างตัวกรองการวิเคราะห์' }).click();
