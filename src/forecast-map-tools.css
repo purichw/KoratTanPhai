@@ -85,16 +85,6 @@ html:has(.nr-tool-dialog[open]) { scrollbar-gutter: stable; }
 .nr-tool-dialog-content { padding: 16px 20px 20px; max-height: calc(100dvh - 116px); overflow-y: auto; overscroll-behavior: contain; }
 .nr-tool-dialog-content p { line-height: 1.65; }
 .nr-tool-dialog .primary-button, .nr-tool-dialog .secondary-button { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-.nr-tool-search { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); }
-.nr-tool-search input { flex: 1; width: 100%; min-width: 0; min-height: 42px; padding: 8px 0; border: 0; background: none; font: inherit; font-size: 14px; }
-.nr-tool-search:focus-within { outline: 2px solid var(--primary); outline-offset: 1px; }
-.nr-tool-search input:focus { outline: 0; }
-.nr-tool-search svg { flex: none; color: var(--primary); }
-.nr-area-search-results { list-style: none; padding: 0; margin: 12px 0 0; max-height: 52dvh; overflow-y: auto; }
-.nr-area-search-results li { border-bottom: 1px solid var(--line); }
-.nr-area-search-results button { display: grid; width: 100%; gap: 2px; min-height: 52px; text-align: left; padding: 8px 10px; border: 0; background: none; }
-.nr-area-search-results button:hover { background: var(--green-soft); }
-.nr-area-search-results span { font-size: 12px; color: var(--muted); }
 .nr-point-form { display: grid; gap: 12px; }
 .nr-point-form label { display: grid; gap: 6px; font-size: 14px; }
 .nr-point-form input { min-height: 44px; width: 100%; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: 6px; font: inherit; }

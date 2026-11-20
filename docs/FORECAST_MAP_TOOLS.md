@@ -35,9 +35,10 @@ irrigation infrastructure, nationwide GIS layers or new forecast records.
 
 ## User Flows
 
-1. Map search accepts district/tambon names and administrative codes within the
-   current route. Select a result to focus the existing map. A filter-excluded
-   result is reported explicitly instead of changing the filters implicitly.
+1. Map search opens the shared Visitor search dialog with the current map scope
+   applied. Select an in-scope result to focus the map. A result hidden by
+   active map filters produces an explanation. Clear the map scope to search
+   across the province and open results through normal Visitor search.
 2. Coordinate lookup accepts latitude/longitude in WGS84 decimal degrees. Turf's
    point-in-polygon implementation respects holes and rejects ambiguous matches.
    Outside-province and outside-route coordinates return different errors. The

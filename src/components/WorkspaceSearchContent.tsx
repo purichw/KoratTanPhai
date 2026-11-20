@@ -1,19 +1,19 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { ArrowRight, History, MapPin, Search, X } from 'lucide-react';
 import { AppSelect } from './AppSelect';
+import type { WorkspaceSearchProps } from './WorkspaceSearch';
 import { buildWorkspaceSearchIndex, commitSearchHistory, isSearchQueryReady, readSearchHistory, searchDestination,
   searchDistrictOptions, searchHistoryKey, searchKinds, searchQueryLimit, searchSuggestions, searchWorkspace,
   type SearchEntry, type SearchKind, type SearchMatchMode } from '../workspaceSearch';
 
 const pageSize = 24;
-export function WorkspaceSearchContent({ userId, includeExport, onNavigate, onExport, onClose }: {
-  userId: string; includeExport: boolean; onNavigate: (path: string) => void; onExport: () => void; onClose: () => void;
-}) {
+export function WorkspaceSearchContent({ userId, includeExport, onNavigate, onExport, onClose, mapScope }: WorkspaceSearchProps) {
   const index = useMemo(() => buildWorkspaceSearchIndex(includeExport), [includeExport]);
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('all');
   const [district, setDistrict] = useState('all');
   const [tag, setTag] = useState('all');
+  const [mapScopeEnabled, setMapScopeEnabled] = useState(Boolean(mapScope));
   const [mode, setMode] = useState<SearchMatchMode>('contains');
   const [filtersOpen, setFiltersOpen] = useState(() => window.matchMedia('(min-width: 601px)').matches);
   const filtersId = useId();
@@ -40,13 +40,16 @@ export function WorkspaceSearchContent({ userId, includeExport, onNavigate, onEx
     return () => window.removeEventListener('storage', refresh);
   }, [userId]);
   const raw = useMemo(() => searchWorkspace(index, query, mode), [index, query, mode]);
-  const filtered = raw.filter(({ entry }) => (kind === 'all' || entry.kind === kind)
+  const activeMapScope = mapScopeEnabled ? mapScope : undefined;
+  const scoped = activeMapScope ? raw.filter(({ entry }) => entry.code && activeMapScope.areaCodes.has(entry.code)) : raw;
+  const filtered = scoped.filter(({ entry }) => (kind === 'all' || entry.kind === kind)
     && (district === 'all' || entry.districtCode === district) && (tag === 'all' || entry.tags.includes(tag)));
   const visible = filtered.slice(0, visibleCount);
-  const hasFilters = kind !== 'all' || district !== 'all' || tag !== 'all';
-  const tags = [...new Set(raw.flatMap(({ entry }) => entry.tags))];
-  const districts = new Set(raw.map(({ entry }) => entry.districtCode));
+  const hasFilters = Boolean(activeMapScope) || kind !== 'all' || district !== 'all' || tag !== 'all';
+  const tags = [...new Set(scoped.flatMap(({ entry }) => entry.tags))];
+  const districts = new Set(scoped.map(({ entry }) => entry.districtCode));
   function resetFilters() { setKind('all'); setDistrict('all'); setTag('all'); setVisibleCount(pageSize); }
+  function toggleMapScope(enabled: boolean) { setMapScopeEnabled(enabled); setVisibleCount(pageSize); setError(''); }
   function updateQuery(value: string) { setQuery(value); resetFilters(); setNotice(''); setError(''); }
   function remember(value = query) {
     try { setHistory(commitSearchHistory(window.localStorage, userId, value)); }
@@ -59,7 +62,12 @@ export function WorkspaceSearchContent({ userId, includeExport, onNavigate, onEx
     } catch { setError('ไม่สามารถล้างประวัติการค้นหาได้ กรุณาตรวจสอบการตั้งค่าเบราว์เซอร์แล้วลองอีกครั้ง'); }
   }
   function openResult(entry: SearchEntry) {
+    if (activeMapScope && entry.code) {
+      const problem = activeMapScope.onSelect(entry.code);
+      if (problem) { setError(problem); return; }
+    }
     remember(); onClose();
+    if (activeMapScope) return;
     if (entry.action === 'export') onExport();
     else if (entry.path) onNavigate(searchDestination(entry.path, window.location.search, window.history.state, window.location.pathname));
   }
@@ -73,6 +81,12 @@ export function WorkspaceSearchContent({ userId, includeExport, onNavigate, onEx
         {query && <button type="button" className="icon-button" aria-label="ล้างคำค้นหา" onClick={() => updateQuery('')}><X size={19} /></button>}
         <button className="primary-button" type="submit">ค้นหา</button>
       </form>
+      {mapScope && <div className="workspace-search-scope">
+        <button type="button" className="secondary-button" aria-pressed={mapScopeEnabled} onClick={() => toggleMapScope(!mapScopeEnabled)}>
+          <MapPin size={16} aria-hidden="true" />เฉพาะพื้นที่บนแผนที่
+        </button>
+        {activeMapScope && <span>{activeMapScope.name}</span>}
+      </div>}
       {error && <p className="form-error" role="alert">{error}</p>}
       {notice && <p className="workspace-search-notice" role="status">{notice}</p>}
       {!query.trim() ? <section aria-label="คำค้นหาแนะนำและประวัติ">
@@ -91,7 +105,7 @@ export function WorkspaceSearchContent({ userId, includeExport, onNavigate, onEx
         {filtersOpen && <section id={filtersId} className="workspace-search-filters" aria-label="ตัวกรองผลการค้นหา">
           <AppSelect label="ประเภทข้อมูล" value={kind} options={[{ value: 'all', label: 'ทุกประเภท' },
             ...Object.entries(searchKinds).map(([value, label]) => ({ value, label }))]} onChange={value => { setKind(value); setVisibleCount(pageSize); }} />
-          <AppSelect searchable label="อำเภอ" value={district} options={[{ value: 'all', label: 'ทุกอำเภอ' },
+          <AppSelect searchable label="อำเภอ" value={district} options={[{ value: 'all', label: activeMapScope ? 'ทุกอำเภอในขอบเขต' : 'ทุกอำเภอ' },
             ...searchDistrictOptions.filter(option => districts.has(option.value) || option.value === district)]} onChange={value => { setDistrict(value); setVisibleCount(pageSize); }} />
           <AppSelect label="หัวข้อ" value={tag} options={[{ value: 'all', label: 'ทุกหัวข้อ' }, ...[...new Set([...tags, ...(tag === 'all' ? [] : [tag])])].map(value => ({ value, label: value }))]}
             onChange={value => { setTag(value); setVisibleCount(pageSize); }} />
@@ -100,7 +114,7 @@ export function WorkspaceSearchContent({ userId, includeExport, onNavigate, onEx
             <button type="button" aria-pressed={mode === 'exact'} onClick={() => { setMode('exact'); resetFilters(); }}>ตรงกับคำค้นหาทั้งหมด</button>
           </div></fieldset>
         </section>}
-        {hasFilters && <button type="button" className="secondary-button workspace-search-reset" onClick={resetFilters}>ล้างตัวกรอง</button>}
+        {hasFilters && <button type="button" className="secondary-button workspace-search-reset" onClick={() => { resetFilters(); toggleMapScope(false); }}>ล้างตัวกรอง</button>}
         {!filtered.length && <div className="workspace-search-empty">
           <h3>{isSearchQueryReady(query) ? 'ไม่พบข้อมูลที่ตรงกับคำค้นหา' : 'กรุณาระบุคำค้นหาเพิ่มเติม'}</h3>
           <p>{!isSearchQueryReady(query) ? 'กรุณาระบุคำค้นหาภาษาไทยอย่างน้อย 2 ตัวอักษร หรือระบุรหัสพื้นที่'

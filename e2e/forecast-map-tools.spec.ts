@@ -168,8 +168,9 @@ for (const path of ['/?mapLayer=forecast-archive&target=2025-12', '/drought?mapL
     await expect(page.locator('.nr-map-svg')).toBeVisible();
     const plot = await page.locator('.nr-map-svg').boundingBox(); expect(plot!.height).toBeGreaterThanOrEqual(260);
     await page.getByRole('button', { name: 'ค้นหาพื้นที่บนแผนที่' }).click();
-    await page.getByRole('searchbox', { name: 'ชื่อหรือรหัสพื้นที่นครราชสีมา' }).fill('เชียงใหม่');
-    await expect(page.locator('.nr-area-search-results li')).toHaveCount(0);
+    const search = page.getByRole('dialog', { name: 'ค้นหาข้อมูล', exact: true });
+    await search.getByRole('searchbox', { name: 'คำค้นหา' }).fill('เชียงใหม่');
+    await expect(search.getByRole('heading', { name: 'ไม่พบข้อมูลที่ตรงกับคำค้นหา' })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('button', { name: 'ค้นหาพื้นที่บนแผนที่' })).toBeFocused();
     await openAnalysis(page);
@@ -391,7 +392,7 @@ test('Korat map tools coordinates, playback, search focus and PNG/PDF download',
   await page.getByRole('button', { name: 'หยุดลำดับพยากรณ์' }).click();
   await page.getByRole('button', { name: 'ค้นหาพื้นที่บนแผนที่' }).click();
   await page.getByRole('searchbox').fill('301503');
-  await page.locator('.nr-area-search-results button').click();
+  await page.getByRole('button', { name: /รหัสพื้นที่ 301503/ }).click();
   await expect(page.locator('[data-nr-subdistrict-code="301503"]')).toHaveClass(/is-selected/);
   await page.evaluate(() => {
     const policy = document.createElement('meta');

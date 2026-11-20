@@ -7,7 +7,7 @@ import { DatabaseWorkspaceProvider, useDatabaseWorkspace } from "./DatabaseWorks
 import { WorkspaceAccessProvider } from './access/WorkspaceAccessProvider';
 import { WorkspaceBookmarks } from "./components/WorkspaceBookmarks";
 import { ForecastExcelExport } from "./components/ForecastExcelExport";
-import { WorkspaceSearch, WorkspaceSearchTrigger } from "./components/WorkspaceSearch";
+import { WorkspaceSearch, WorkspaceSearchContext, WorkspaceSearchTrigger } from "./components/WorkspaceSearch";
 import { WorkspaceEmptyState } from "./components/WorkspaceEmptyState";
 import { getAccountDisplayName, type LoginUser } from "./auth";
 import { authScopeForPath } from './authScope';
@@ -190,6 +190,12 @@ function AppShell({
     setSavedSelectionVersion((version) => version + 1);
     onNavigate(destination);
   };
+  const searchActions = {
+    userId: loginUser.id,
+    includeExport: Boolean(databaseWorkspace),
+    onNavigate: (destination: string) => { setIsMobileMenuOpen(false); restoreSavedWorkspace(destination); },
+    onExport: () => setExportRequest(value => value + 1),
+  };
   const appRoute = resolveAppRoute(path);
   const isAdmin = authScopeForPath(path) === 'admin';
   const adminView = adminViewFromSearch(window.location.search);
@@ -293,7 +299,9 @@ function AppShell({
           {isAdmin ? <Suspense fallback={<PageLoadPending />}>
             <AdminWorkspace userId={loginUser.id} draftId={new URLSearchParams(window.location.search).get('draft')} view={adminView} onNavigate={onNavigate} />
           </Suspense> : nakhonRoute ? (
-            <NakhonRatchasimaWorkspace key={savedSelectionVersion} route={nakhonRoute} onNavigate={onNavigate} />
+            <WorkspaceSearchContext.Provider value={searchActions}>
+              <NakhonRatchasimaWorkspace key={savedSelectionVersion} route={nakhonRoute} onNavigate={onNavigate} />
+            </WorkspaceSearchContext.Provider>
           ) : (
             <WorkspaceEmptyState heading="h2" title="ไม่พบพื้นที่" description="ที่อยู่เว็บนี้ไม่ตรงกับพื้นที่ในจังหวัดนครราชสีมา"
               action={<button type="button" className="primary-button" onClick={() => onNavigate("/")}>กลับภาพรวม</button>} />
@@ -301,9 +309,7 @@ function AppShell({
           </AppErrorBoundary>
         </div>
       </main>
-      {!isAdmin && searchOpen && <WorkspaceSearch userId={loginUser.id} includeExport={Boolean(databaseWorkspace)}
-        onNavigate={destination => { setIsMobileMenuOpen(false); restoreSavedWorkspace(destination); }}
-        onExport={() => setExportRequest(value => value + 1)} onClose={() => setSearchOpen(false)} />}
+      {!isAdmin && searchOpen && <WorkspaceSearch {...searchActions} onClose={() => setSearchOpen(false)} />}
     </div>
   );
 }

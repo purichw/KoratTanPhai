@@ -1,8 +1,9 @@
-import { lazy, Suspense, useEffect, useId, useRef, useState } from 'react';
+import { lazy, Suspense, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Crosshair, Download, MapPin, Pause, Play, Search, Table2, X } from 'lucide-react';
 import { WorkspaceDialog } from '../WorkspaceDialog';
+import { WorkspaceSearch, WorkspaceSearchContext } from '../WorkspaceSearch';
 import { AppSelect } from '../AppSelect';
-import { areaMatchesSearch, type ForecastAnalysisOverlay } from '../../forecastAnalysis';
+import type { ForecastAnalysisOverlay } from '../../forecastAnalysis';
 import { formatMonth } from '../../i18n';
 import { forecastTargetPeriod } from '../../forecastPeriod';
 import { irrigationLabels, irrigationStatusFromSource, type IrrigationCriterion } from '../../irrigation';
@@ -26,7 +27,7 @@ export function ForecastMapTools({ archive, originPeriod, horizon, areaCode, sco
   exportMap: () => { svg: SVGSVGElement; context: MapExportContext } | null;
 }) {
   const [tool, setTool] = useState<'search' | 'pin' | 'export' | 'analysis' | null>(null);
-  const [query, setQuery] = useState('');
+  const searchActions = useContext(WorkspaceSearchContext);
   const [lat, setLat] = useState(''); const [lon, setLon] = useState('');
   const [pointMode, setPointMode] = useState<'coordinates' | 'plus-code'>('coordinates');
   const [plusCode, setPlusCode] = useState('');
@@ -58,12 +59,15 @@ export function ForecastMapTools({ archive, originPeriod, horizon, areaCode, sco
     }, 1600);
     return () => clearTimeout(timer);
   }, [playing, horizon]);
-  const scopeFeatures = features.filter(f => areaCode === '30' || f.properties.Admin_code.startsWith(areaCode));
-  const districtMap = new Map(scopeFeatures.map(f => [f.properties.Admin_code.slice(0, 4), f.properties.A_Name_T]));
-  const choices = [
-    ...(areaCode.length === 6 ? [] : [...districtMap].map(([code, name]) => ({ code, name, detail: 'อำเภอ' }))),
-    ...scopeFeatures.map(f => ({ code: f.properties.Admin_code, name: f.properties.T_Name_T, detail: f.properties.A_Name_T })),
-  ].filter(item => areaMatchesSearch(query, item.code, item.name, item.detail));
+  const searchAreaCodes = useMemo(() => {
+    const codes = new Set<string>();
+    for (const { properties: { Admin_code: code } } of features) {
+      if (!code.startsWith(areaCode)) continue;
+      codes.add(code);
+      if (areaCode.length < 6) codes.add(code.slice(0, 4));
+    }
+    return codes;
+  }, [areaCode, features]);
   function open(next: typeof tool) { opener.current = document.activeElement; setPlaying(false); setTool(next); setError(''); setMessage(''); }
   function close() {
     job.current += 1; setExporting(false); setLocating(false); setTool(null);
@@ -71,9 +75,9 @@ export function ForecastMapTools({ archive, originPeriod, horizon, areaCode, sco
   }
   function focus(code: string) {
     const problem = onFocus(code);
-    if (problem) { setError(problem); return; }
+    if (problem) return problem;
     onPin(null);
-    setPickedCode(code); setMessage(''); close();
+    setPickedCode(code); setMessage('');
   }
   async function locate() {
     if (locating) return;
@@ -117,7 +121,7 @@ export function ForecastMapTools({ archive, originPeriod, horizon, areaCode, sco
   const picked = archive.locations.find(row => row.subdistrictCode === (pin?.code ?? pickedCode));
   return <div className="nr-map-tools">
     <div className="nr-map-tool-actions" role="group" aria-label="เครื่องมือข้อมูลนครราชสีมา">
-      <button className="icon-button" type="button" title="ค้นหาอำเภอ / ตำบล" aria-label="ค้นหาพื้นที่บนแผนที่" onClick={() => open('search')}><Search size={17} /></button>
+      {searchActions && <button className="icon-button" type="button" title="ค้นหาอำเภอ / ตำบล" aria-label="ค้นหาพื้นที่บนแผนที่" aria-haspopup="dialog" onClick={() => open('search')}><Search size={17} aria-hidden="true" /></button>}
       <button className="icon-button" type="button" title="ค้นหาด้วยพิกัด / Plus Code" aria-label="ค้นหาด้วยพิกัด" onClick={() => open('pin')}><Crosshair size={17} /></button>
       <button className="nr-tool-analysis-trigger" type="button" onClick={() => open('analysis')}><Table2 size={17} /><span>วิเคราะห์พยากรณ์</span></button>
       <button className="icon-button" type="button" title="ส่งออกแผนที่ PDF / PNG" aria-label="ส่งออกแผนที่" onClick={() => open('export')}><Download size={17} /></button>
@@ -135,14 +139,18 @@ export function ForecastMapTools({ archive, originPeriod, horizon, areaCode, sco
     {pin && <div className="nr-map-tool-status"><Crosshair size={15} /><span>{pin.point[1].toFixed(5)}, {pin.point[0].toFixed(5)} · พยากรณ์ระดับตำบล</span><button className="icon-button" type="button" title="ล้างจุดพิกัด" aria-label="ล้างจุดพิกัด" onClick={() => { onPin(null); setPickedCode(null); setMessage(''); onClearFocus(); }}><X size={15} /></button></div>}
     {message && <span className="nr-map-tool-status" role="status">{message}</span>}
     {error && !tool && <span className="nr-tool-error" role="alert">{error}</span>}
+    {tool === 'search' && searchActions && <WorkspaceSearch {...searchActions} onClose={close}
+      mapScope={{ name: scopeName, areaCodes: searchAreaCodes, onSelect: focus }} />}
     {tool === 'analysis' && <WorkspaceDialog title={`วิเคราะห์พยากรณ์ · ${scopeName}`} wide bounded onClose={close}>
       <Suspense fallback={<LoadingAnalysisTable />}><AnalysisDialog
         archive={archive} originPeriod={originPeriod} horizon={horizon} areaCode={areaCode} scopeName={scopeName} irrigation={irrigation}
-        onClose={close} onFocus={focus} onOverlay={onOverlay} /></Suspense>
+        onClose={close} onFocus={code => {
+          const problem = focus(code);
+          if (problem) setError(problem);
+          else close();
+        }} onOverlay={onOverlay} /></Suspense>
     </WorkspaceDialog>}
-    {tool && tool !== 'analysis' && <WorkspaceDialog title={tool === 'search' ? 'ค้นหาพื้นที่นครราชสีมา' : tool === 'pin' ? 'ค้นหาตำบลจากพิกัด' : 'ส่งออกแผนที่'} onClose={close}>
-      {tool === 'search' && <><label className="nr-tool-search"><Search size={18} /><input autoFocus type="search" aria-label="ชื่อหรือรหัสพื้นที่นครราชสีมา" placeholder="ชื่ออำเภอ ตำบล หรือรหัสพื้นที่" value={query} onChange={event => setQuery(event.target.value)} /></label><p className="nr-analysis-context" role="status">พบ {choices.length} พื้นที่ในขอบเขตหน้านี้</p>
-        <ul className="nr-area-search-results">{choices.map(item => <li key={item.code}><button type="button" onClick={() => focus(item.code)}><strong>{item.name}</strong><span>{item.detail} · {item.code}</span></button></li>)}</ul></>}
+    {(tool === 'pin' || tool === 'export') && <WorkspaceDialog title={tool === 'pin' ? 'ค้นหาตำบลจากพิกัด' : 'ส่งออกแผนที่'} onClose={close}>
       {tool === 'pin' && <form className="nr-point-form" onSubmit={event => { event.preventDefault(); void locate(); }}>
         <div className="nr-tool-tabs nr-point-modes" role="group" aria-label="รูปแบบพิกัด">
           <button type="button" aria-pressed={pointMode === 'coordinates'} onClick={() => { resetPointLookup(); setPointMode('coordinates'); }}><Crosshair size={17} />ละติจูด / ลองจิจูด</button>

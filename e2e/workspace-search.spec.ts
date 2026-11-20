@@ -23,6 +23,47 @@ async function open(page: Page) {
   return dialog;
 }
 
+test('map search shares the workspace dialog and history with a removable map filter', async ({ page }, info) => {
+  const path = '/mueang-nakhon-ratchasima?mapLayer=forecast-archive&target=2025-12&horizon=1';
+  await setup(page, path);
+  const mapTrigger = page.getByRole('button', { name: 'ค้นหาพื้นที่บนแผนที่', exact: true });
+  const dialog = page.getByRole('dialog', { name: 'ค้นหาข้อมูล', exact: true });
+  const search = dialog.getByRole('searchbox', { name: 'คำค้นหา', exact: true });
+  const mapFilter = dialog.getByRole('button', { name: 'เฉพาะพื้นที่บนแผนที่', exact: true });
+  const joHo = dialog.getByRole('button', { name: /ตำบลจอหอ.*รหัสพื้นที่ 300116/ });
+  await mapTrigger.click();
+  await expect(search).toBeFocused();
+  await expect(mapFilter).toHaveAttribute('aria-pressed', 'true');
+  await expect(dialog.locator('.workspace-search-scope')).toContainText('อำเภอเมืองนครราชสีมา');
+  await search.fill('ปากช่อง');
+  await expect(dialog.getByRole('heading', { name: 'ไม่พบข้อมูลที่ตรงกับคำค้นหา' })).toBeVisible();
+  await search.fill('จอหอ');
+  await expect(joHo).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await page.screenshot({ path: info.outputPath('map-search-after.png'), scale: 'css' });
+  await joHo.click();
+  await expect(mapTrigger).toBeFocused();
+  await expect(page).toHaveURL(url => url.pathname + url.search === path);
+  await expect(page.locator('[data-nr-subdistrict-code="300116"]')).toHaveClass(/is-selected/);
+
+  await open(page);
+  await expect(mapFilter).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'จอหอ', exact: true }).click();
+  await expect(joHo).toBeVisible();
+  await page.screenshot({ path: info.outputPath('global-search-reference.png'), scale: 'css' });
+  await page.keyboard.press('Escape');
+
+  await mapTrigger.click();
+  await expect(mapFilter).toHaveAttribute('aria-pressed', 'true');
+  await search.fill('ปากช่อง');
+  await dialog.getByRole('button', { name: 'ล้างตัวกรอง', exact: true }).click();
+  await expect(mapFilter).toHaveAttribute('aria-pressed', 'false');
+  await dialog.getByRole('button', { name: /อำเภอปากช่อง.*รหัสพื้นที่ 3021 ตรงกับ/ }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page).toHaveURL(url => url.pathname === '/pak-chong'
+    && url.searchParams.get('target') === '2025-12' && url.searchParams.get('horizon') === '1');
+});
+
 test('search trigger stays in the upper-right toolbar and restores focus after dismissal', async ({ page }, info) => {
   await setup(page, '/?mapLayer=forecast-archive&target=2025-12&horizon=1');
   await expect(page.locator('.nr-forecast-overview-summary')).toBeVisible();
